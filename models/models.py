@@ -48,7 +48,7 @@ class KMeans(models.Model):
 
 class Sensor(models.Model):
     id = models.AutoField(primary_key=True)
-    pid = models.CharField(max_length=50, unique=True)
+    pid = models.CharField(max_length=50)
     description = models.TextField(null=True)
     measure_unit = models.TextField(null=True)
 
