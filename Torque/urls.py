@@ -19,6 +19,7 @@ from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
 from models import views
+from models.views import upload_data
 
 router = DefaultRouter()
 routa_api = 'api/'
@@ -33,5 +34,6 @@ router.register(routa_api + 'prediction', views.PredictionViewSet, basename='pre
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(router.urls))
+    path('', include(router.urls)),
+    path('upload/', upload_data)
 ]

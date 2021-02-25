@@ -3,7 +3,6 @@ from django.db import models
 
 # Create your models here.
 class Dataset(models.Model):
-    id = models.AutoField(primary_key=True)
     date = models.BigIntegerField(null=True)
     name = models.TextField(null=True)
     rows_number = models.IntegerField(null=True, default=0)
@@ -16,13 +15,11 @@ class Dataset(models.Model):
 
 
 class SVM(models.Model):
-    id = models.AutoField(primary_key=True)
     two_first_components_plot = models.TextField(null=True)
     dataset = models.OneToOneField(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
 
 
 class Prediction(models.Model):
-    id = models.AutoField(primary_key=True)
     learning_curve_plot = models.TextField(null=True)
     prediction_plot = models.TextField(null=True)
     time = models.IntegerField(null=True)
@@ -35,7 +32,6 @@ class Prediction(models.Model):
 
 
 class KMeans(models.Model):
-    id = models.AutoField(primary_key=True)
     two_first_components_plot = models.TextField(null=True)
     explained_variance_ratio = models.TextField(null=True)
     components_and_features_plot = models.TextField(null=True)
@@ -47,7 +43,6 @@ class KMeans(models.Model):
 
 
 class Sensor(models.Model):
-    id = models.AutoField(primary_key=True)
     pid = models.CharField(max_length=50)
     description = models.TextField(null=True)
     measure_unit = models.TextField(null=True)
@@ -57,13 +52,18 @@ class Sensor(models.Model):
 
 
 class Log(models.Model):
-    id = models.AutoField(primary_key=True)
+    session = models.BigIntegerField(primary_key=True)
     time = models.TimeField()
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
 
 class Record(models.Model):
-    id = models.AutoField(primary_key=True)
+    sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
+    log = models.ForeignKey(Log, to_field='session', on_delete=models.CASCADE)
     value = models.FloatField()
-    sensor = models.OneToOneField(Sensor, null=True, on_delete=models.SET_NULL)
-    log = models.ForeignKey(Log, null=True, on_delete=models.SET_NULL)
+
+
+class DataTorque(models.Model):
+    key = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    session = models.CharField(null=True, max_length=255)
