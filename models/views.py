@@ -2,10 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 
 # Create your views here.
-from django.template.backends import django
-from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
 
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
