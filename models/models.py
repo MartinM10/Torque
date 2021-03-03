@@ -59,6 +59,14 @@ class Log(models.Model):
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
 
+class Profile(models.Model):
+    name = models.CharField(null=True, max_length=255)
+    vehicle = models.CharField(null=True, max_length=255)
+    weight = models.FloatField(null=True)
+    fuel_type = models.CharField(null=True, max_length=50)
+    fuel_cost = models.FloatField(null=True)
+
+
 class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
