@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 class Dataset(models.Model):
     date = models.BigIntegerField(null=True)
-    name = models.TextField(null=True)
+    name = models.CharField(null=True, max_length=255)
     rows_number = models.IntegerField(null=True, default=0)
     column_names = models.TextField(null=True)
     classification_applied = models.BooleanField(null=True, default=False)
@@ -43,23 +43,25 @@ class KMeans(models.Model):
 
 
 class Sensor(models.Model):
-    pid = models.CharField(max_length=50)
-    description = models.TextField(null=True)
-    measure_unit = models.TextField(null=True)
+    pid = models.CharField(unique=True, max_length=255)
+    user_full_name = models.CharField(null=True, max_length=255)
+    user_short_name = models.CharField(null=True, max_length=255)
+    user_unit = models.CharField(null=True, max_length=50)
+    default_unit = models.CharField(null=True, max_length=50)
 
     def __str__(self):
         return self.pid
 
 
 class Log(models.Model):
-    session = models.BigIntegerField(primary_key=True)
-    time = models.TimeField()
+    session = models.BigIntegerField(null=True)
+    time = models.BigIntegerField(null=True)
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
 
 class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
-    log = models.ForeignKey(Log, to_field='session', on_delete=models.CASCADE)
+    log = models.ForeignKey(Log, on_delete=models.CASCADE)
     value = models.FloatField()
 
 
@@ -67,3 +69,5 @@ class DataTorque(models.Model):
     key = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     session = models.CharField(null=True, max_length=255)
+    id_app = models.CharField(null=True, max_length=255)
+    time = models.BigIntegerField(null=True)
