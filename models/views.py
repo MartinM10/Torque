@@ -61,7 +61,7 @@ def upload_data(request):
         Log(session=session_app, time=time_app, dataset_id=None).save()
 
     for key, value in request.GET.items():
-        print(key, " -> ", value)
+        # print(key, " -> ", value)
 
         # TABLE DATA_TORQUE
         DataTorque(key=key, value=value, session=session_app, id_app=id_app, time=time_app).save()
