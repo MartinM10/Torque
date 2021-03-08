@@ -6,7 +6,7 @@ from rest_framework import viewsets
 
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
-    PredictionSerializer, KMeansSerializer, SVMSerializer
+    PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -17,6 +17,11 @@ class LogViewSet(viewsets.ModelViewSet):
 class RecordViewSet(viewsets.ModelViewSet):
     serializer_class = RecordSerializer
     queryset = Record.objects.all()
+
+
+class DataTorqueViewSet(viewsets.ModelViewSet):
+    serializer_class = DataTorqueSerializer
+    queryset = DataTorque.objects.all()
 
 
 class DatasetViewSet(viewsets.ModelViewSet):
@@ -61,7 +66,7 @@ def upload_data(request):
         Log(session=session_app, time=time_app, dataset_id=None).save()
 
     for key, value in request.GET.items():
-        # print(key, " -> ", value)
+        print(key, " -> ", value)
 
         # TABLE DATA_TORQUE
         DataTorque(key=key, value=value, session=session_app, id_app=id_app, time=time_app).save()
@@ -70,7 +75,7 @@ def upload_data(request):
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
                 'defaultUnit' in key or 'kff' in key:
 
-            pid = key[-6:]
+            pid = key[-4:]
             sensor = Sensor.objects.get_or_create(pid=pid)
 
             if 'kff' not in key:

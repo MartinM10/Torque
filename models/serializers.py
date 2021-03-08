@@ -31,6 +31,12 @@ class RecordSerializer(serializers.ModelSerializer):
         # fields = ['id', 'value', 'sensor', 'log']
 
 
+class DataTorqueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Record
+        fields = '__all__'
+
+
 class KMeansSerializer(serializers.ModelSerializer):
     class Meta:
         model = KMeans

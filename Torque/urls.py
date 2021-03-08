@@ -31,6 +31,7 @@ router.register(routa_api + 'kmeans', views.KMeansViewSet, basename='KMeans')
 router.register(routa_api + 'svm', views.SVMViewSet, basename='SVM')
 router.register(routa_api + 'dataset', views.DatasetViewSet, basename='Dataset')
 router.register(routa_api + 'prediction', views.PredictionViewSet, basename='prediction')
+router.register(routa_api + 'datatorque', views.DataTorqueViewSet, basename='datatorque')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
