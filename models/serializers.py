@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from models.models import Log, Dataset, Sensor, Record, KMeans, Prediction, SVM
+from models.models import Log, Dataset, Sensor, Record, KMeans, Prediction, SVM, DataTorque
 
 
 class LogSerializer(serializers.ModelSerializer):
@@ -33,7 +33,7 @@ class RecordSerializer(serializers.ModelSerializer):
 
 class DataTorqueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Record
+        model = DataTorque
         fields = '__all__'
 
 
