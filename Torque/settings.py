@@ -90,7 +90,10 @@ DATABASES = {
         'USER': 'martin',
         'PASSWORD': 'martinjs',
         'HOST': 'localhost',
+        # 3306 por defecto,
         'PORT': '3306',
+        # 3307 para el server de prueba
+        # 'PORT': '3307',
     }
 }
 
