@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.utils.datetime_safe import datetime
 from django.shortcuts import render
 
 # Create your views here.
@@ -59,11 +60,14 @@ def upload_data(request):
     # print("TIMESTAMP---------------------------------- ")
     # ts = int(time_app)
     # print(ts, '\n')
-    # print(datetime.datetime.fromtimestamp(ts/ 1000))
+    # from django.utils.datetime_safe import datetime
+    # print(datetime.utcfromtimestamp(ts/1000).strftime('%Y-%m-%d %H:%M:%S' '.' '%f'))
 
     # TABLE LOG
     if session_app:
-        Log(session=session_app, time=time_app, dataset_id=None).save()
+        log = Log.objects.filter(session=session_app, id_app=id_app)
+        if not log:
+            Log(session=session_app, id_app=id_app, time=None, dataset_id=None).save()
 
     for key, value in request.GET.items():
         # print(key, " -> ", value)
@@ -96,6 +100,8 @@ def upload_data(request):
             elif 'kff' in key:
                 sensor_id = Sensor.objects.get(pid=pid).id
                 log_id = Log.objects.filter(session=session_app).first().id
-                Record(sensor_id=sensor_id, value=value, log_id=log_id).save()
+                timestamp = int(time_app)
+                date_time = datetime.utcfromtimestamp(timestamp/1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
+                Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time).save()
 
     return HttpResponse('Ok!')

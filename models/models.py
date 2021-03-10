@@ -55,7 +55,8 @@ class Sensor(models.Model):
 
 class Log(models.Model):
     session = models.BigIntegerField(null=True)
-    time = models.BigIntegerField(null=True)
+    id_app = models.CharField(null=True, max_length=255)
+    time = models.DateTimeField(null=True, auto_now_add=True)
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
 
@@ -71,6 +72,7 @@ class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
     value = models.FloatField()
+    time = models.DateTimeField(null=True)
 
 
 class DataTorque(models.Model):
