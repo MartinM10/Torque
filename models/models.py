@@ -59,6 +59,9 @@ class Log(models.Model):
     time = models.DateTimeField(null=True, auto_now_add=True)
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
+    class Meta:
+        unique_together = ('id_app', 'session')
+
 
 class Profile(models.Model):
     name = models.CharField(null=True, max_length=255)
@@ -73,6 +76,8 @@ class Record(models.Model):
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
     value = models.FloatField()
     time = models.DateTimeField(null=True)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
 
 
 class DataTorque(models.Model):
@@ -81,3 +86,5 @@ class DataTorque(models.Model):
     session = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
     time = models.BigIntegerField(null=True)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)

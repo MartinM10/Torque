@@ -1,10 +1,12 @@
 from django.http import HttpResponse
 from django.utils.datetime_safe import datetime
 from django.shortcuts import render
+import os
 
 # Create your views here.
 from rest_framework import viewsets
 
+from Torque.settings import DATA_URL, BASE_DIR
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
@@ -50,12 +52,27 @@ class SVMViewSet(viewsets.ModelViewSet):
     queryset = SVM.objects.all()
 
 
+def viewMap(request):
+    filename = 'data/torqueTrackLog.kml'
+    data = (
+        os.path.join(BASE_DIR, "data/torqueTrackLog.kml"),
+    )
+    print(data)
+
+    context = {
+        'data': data
+    }
+    return render(request, 'map.html', context={'data': data})
+
+
 def upload_data(request):
     # print(request.query_params)
     # print(request.GET)
     session_app = request.GET.get('session')
     id_app = request.GET.get('id')
     time_app = request.GET.get('time')
+    latitude = request.GET.get('kff1006')
+    longitude = request.GET.get('kff1005')
 
     # print("TIMESTAMP---------------------------------- ")
     # ts = int(time_app)
@@ -65,21 +82,24 @@ def upload_data(request):
 
     # TABLE LOG
     if session_app:
-        log = Log.objects.filter(session=session_app, id_app=id_app)
-        if not log:
+        log, created = Log.objects.get_or_create(session=session_app, id_app=id_app)
+        if created:
+            print('-----------------------------LOG-----------------------')
+            print(log)
             Log(session=session_app, id_app=id_app, time=None, dataset_id=None).save()
 
     for key, value in request.GET.items():
         # print(key, " -> ", value)
 
         # TABLE DATA_TORQUE
-        DataTorque(key=key, value=value, session=session_app, id_app=id_app, time=time_app).save()
+        DataTorque(key=key, value=value, session=session_app, id_app=id_app, time=time_app,
+                   latitude=latitude, longitude=longitude).save()
 
         # TABLE SENSOR
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
                 'defaultUnit' in key or 'kff' in key:
 
-            pid = key[-4:]
+            pid = key[-6:]
             sensor = Sensor.objects.get_or_create(pid=pid)
 
             if 'kff' not in key:
@@ -98,10 +118,17 @@ def upload_data(request):
 
             # TABLE RECORD
             elif 'kff' in key:
+
+                if 'kff1006' in key:
+                    latitude = value
+                if 'kff1005' in key:
+                    longitude = value
+
                 sensor_id = Sensor.objects.get(pid=pid).id
                 log_id = Log.objects.filter(session=session_app).first().id
                 timestamp = int(time_app)
-                date_time = datetime.utcfromtimestamp(timestamp/1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
-                Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time).save()
+                date_time = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
+                Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
+                       longitude=longitude).save()
 
     return HttpResponse('Ok!')
