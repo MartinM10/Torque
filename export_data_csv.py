@@ -12,9 +12,9 @@ db_opts = {
 db = pymysql.connect(**db_opts)
 cur = db.cursor()
 
-sql = 'select * from export_csv;'
+sql = 'select l.id_app, l.session, l.time, r.time as record_time, r.latitude, r.longitude, s.user_full_name, r.value from models_log l inner join models_record r on l.id = r.log_id inner join models_sensor s where r.sensor_id = s.id and s.pid like "ff5203";'
 
-csv_file_path = 'my_csv_file.csv'
+csv_file_path = 'consumo_medio.csv'
 
 try:
     cur.execute(sql)
