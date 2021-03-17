@@ -32,7 +32,7 @@ f.write("<Placemark>\n"
         "       <coordinates>\n")
 
 for row in data:
-    f.write("           " + str(row[5]) + "," + str(row[4]) + "\n")
+    f.write("           " + str(row[4]) + "," + str(row[3]) + "\n")
 
 f.write("       </coordinates>\n"
         "   </LineString>\n"
