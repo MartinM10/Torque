@@ -9,7 +9,11 @@ db_opts = {
     'user': 'martin',
     'password': 'martinjs',
     'host': 'localhost',
-    'database': 'torque_db'
+    'database': 'torque_db',
+    # local
+    # 'port': 3306
+    # server
+    'port': 3307
 }
 
 db = pymysql.connect(**db_opts)
