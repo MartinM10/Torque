@@ -17,16 +17,28 @@ f.write("<?xml version='1.0' encoding='UTF-8'?>\n")
 f.write("<kml xmlns='http://earth.google.com/kml/2.1'>\n")
 f.write("<Document>\n")
 f.write("<name>" + fname + '_line.kml' + "</name>\n")
-f.write("   <Style id=\"style1\">  <LineStyle> <color>990000ff</color>"
-        "   <width>4</width>    </LineStyle>   </Style>")
-f.write("   <Placemark> <name>" + "Logging session 1" + "</name>   <description></description>"
-                                                        " <styleUrl>#style1</styleUrl>"
-        "<LineString>   <altitudeMode>relative</altitudeMode>   <coordinates>")
+f.write("<Style id=\"style1\">\n"
+        "   <LineStyle>\n"
+        "       <color>990000ff</color>\n"
+        "       <width>4</width>\n"
+        "   </LineStyle>\n"
+        "</Style>\n")
+f.write("<Placemark>\n"
+        "   <name>" + "Logging session 1" + "</name>\n"
+        "   <description></description>\n"
+        "   <styleUrl>#style1</styleUrl>\n"
+        "   <LineString>\n"
+        "       <altitudeMode>relative</altitudeMode>\n"
+        "       <coordinates>\n")
 
 for row in data:
-    f.write(str(row[5]) + "," + str(row[4]) + "\n")
+    f.write("           " + str(row[5]) + "," + str(row[4]) + "\n")
 
-f.write("</coordinates> </LineString>   </Placemark>    </Document>\n")
+f.write("       </coordinates>\n"
+        "   </LineString>\n"
+        "</Placemark>\n"
+        "</Document>\n")
+
 f.write("</kml>\n")
 f.close()
 print("File Created. ")

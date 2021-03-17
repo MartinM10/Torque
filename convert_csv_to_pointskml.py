@@ -24,7 +24,7 @@ for row in data:
     f.write("       <Style><IconStyle>")
     f.write("       <Icon>http://maps.google.com/mapfiles/kml/shapes/arrow.png</Icon><color>cc00ff00</color><heading>1"
             "</heading""></IconStyle></Style>")
-    f.write("       <description>" + '  <![CDATA[<b>' + str(row[6]) + '</b>:&nbsp;' + str(row[7]) + '<br />'
+    f.write("       <description>" + '  <![CDATA[<b>' + str(row[6]) + '</b>:&nbsp;' + str(row[7]) + ' km/h<br />'
             + ']]>' + "</description>\n")
     f.write("       <Point>\n")
     f.write("           <coordinates>" + str(row[5]) + "," + str(row[4]) + "</coordinates>\n")

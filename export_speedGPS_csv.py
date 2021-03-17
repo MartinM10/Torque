@@ -12,9 +12,9 @@ db_opts = {
 db = pymysql.connect(**db_opts)
 cur = db.cursor()
 
-sql = 'select l.id_app, l.session, l.time, r.time as record_time, r.latitude, r.longitude, s.user_full_name, r.value from models_log l inner join models_record r on l.id = r.log_id inner join models_sensor s where r.sensor_id = s.id and s.pid like "ff5203";'
+sql = 'select distinct l.id_app, l.session, l.time, r.time as record_time, r.latitude, r.longitude, s.user_full_name, r.value from models_log l inner join models_record r on l.id = r.log_id inner join models_sensor s on r.sensor_id = s.id where s.pid like "ff1001" and l.session = 1615807853045 order by record_time;'
 
-csv_file_path = 'consumo_medio.csv'
+csv_file_path = 'speedGPS.csv'
 
 try:
     cur.execute(sql)

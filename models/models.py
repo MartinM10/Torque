@@ -54,9 +54,10 @@ class Sensor(models.Model):
 
 
 class Log(models.Model):
-    session = models.BigIntegerField(null=True)
+    session = models.DateTimeField(null=True)
     id_app = models.CharField(null=True, max_length=255)
-    time = models.DateTimeField(null=True, auto_now_add=True)
+    # la session ya trae el tiempo en unix timestamp
+    # time = models.DateTimeField(null=True, auto_now_add=True)
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
     class Meta:

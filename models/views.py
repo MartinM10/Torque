@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.utils.datetime_safe import datetime
+import datetime
 from django.shortcuts import render
 import os
 
@@ -73,6 +73,7 @@ def upload_data(request):
     time_app = request.GET.get('time')
     latitude = request.GET.get('kff1006')
     longitude = request.GET.get('kff1005')
+    session_time = None
 
     # print("TIMESTAMP---------------------------------- ")
     # ts = int(time_app)
@@ -82,17 +83,22 @@ def upload_data(request):
 
     # TABLE LOG
     if session_app:
-        log, created = Log.objects.get_or_create(session=session_app, id_app=id_app)
+
+        # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
+        #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
+
+        session_time = datetime.datetime.fromtimestamp(int(session_app)/1000)
+        session_time += datetime.timedelta(hours=1)
+
+        log, created = Log.objects.get_or_create(session=session_time, id_app=id_app)
         if created:
-            print('-----------------------------LOG-----------------------')
-            print(log)
-            Log(session=session_app, id_app=id_app, time=None, dataset_id=None).save()
+            Log(session=session_time, id_app=id_app, dataset_id=None).save()
 
     for key, value in request.GET.items():
         # print(key, " -> ", value)
 
         # TABLE DATA_TORQUE
-        DataTorque(key=key, value=value, session=session_app, id_app=id_app, time=time_app,
+        DataTorque(key=key, value=value, session=session_time, id_app=id_app, time=time_app,
                    latitude=latitude, longitude=longitude).save()
 
         # TABLE SENSOR
@@ -125,9 +131,9 @@ def upload_data(request):
                     longitude = value
 
                 sensor_id = Sensor.objects.get(pid=pid).id
-                log_id = Log.objects.filter(session=session_app).first().id
+                log_id = Log.objects.filter(id_app=id_app, session=session_time).first().id
                 timestamp = int(time_app)
-                date_time = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
+                date_time = datetime.datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()
 
