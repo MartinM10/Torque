@@ -12,7 +12,7 @@ db_opts = {
     # local
     # 'port': 3306
     # server
-    'port': 3307
+    'port': 3306
 }
 
 db = pymysql.connect(**db_opts)

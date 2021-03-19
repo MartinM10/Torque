@@ -15,20 +15,39 @@
 
             map.addLayer(osm);
 
+            var sessions = L.layerGroup([]);
+            // sessions.add
             // Load kml file
-            fetch('{% static 'data/data_19.kml'%}')
-                .then(res => res.text())
-                .then(kmltext => {
-                    // Create new kml overlay
-                    const parser = new DOMParser();
-                    const kml = parser.parseFromString(kmltext, 'text/xml');
-                    const track = new L.KML(kml);
-                    map.addLayer(track);
+            {% for file in files %}
+                fetch('{{ file }}')
+                    .then(res => res.text())
+                    .then(kmltext => {
+                        // Create new kml overlay
+                        const parser = new DOMParser();
+                        const kml = parser.parseFromString(kmltext, 'text/xml');
+                        const track = new L.KML(kml);
+                        //map.addLayer(track);
 
-                    // Adjust map to show the kml
-                    const bounds = track.getBounds();
-                    map.fitBounds(bounds);
-                });
+                        sessions.addLayer(track);
+                        // Adjust map to show the kml
+                        //const bounds = track.getBounds();
+                        //map.fitBounds(bounds);
+                    });
+            {% endfor %}
+
+            var overlays = {
+                "sessions" : sessions,
+            };
+            /*
+            var baselayers = {
+                "Grayscale" : grayscale,
+                "Streets" : streets
+            };
+            */
+
+            L.control.layers(null, overlays).addTo(map)
+            // sessions.addTo(map)
+            // map.addLayer(sessions)
 
         </script>
     </body>

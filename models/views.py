@@ -6,7 +6,7 @@ import os
 # Create your views here.
 from rest_framework import viewsets
 
-from Torque.settings import DATA_URL, BASE_DIR
+from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
@@ -53,16 +53,14 @@ class SVMViewSet(viewsets.ModelViewSet):
 
 
 def viewMap(request):
-    filename = 'data/torqueTrackLog.kml'
-    data = (
-        os.path.join(BASE_DIR, "data/torqueTrackLog.kml"),
-    )
-    print(data)
+
+    dir = os.path.join(str(BASE_DIR) + str(STATIC_URL) + 'data/')
+    files = [STATIC_URL + 'data/' + arch.name for arch in os.scandir(str(dir)) if arch.is_file() and os.path.splitext(arch)[1] == ".kml"]
 
     context = {
-        'data': data
+        'files': files
     }
-    return render(request, 'map.html', context={'data': data})
+    return render(request, 'map.html', context=context)
 
 
 def upload_data(request):
@@ -87,7 +85,7 @@ def upload_data(request):
         # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
         #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
 
-        session_time = datetime.datetime.fromtimestamp(int(session_app)/1000)
+        session_time = datetime.datetime.fromtimestamp(int(session_app) / 1000)
         session_time += datetime.timedelta(hours=1)
 
         log, created = Log.objects.get_or_create(session=session_time, id_app=id_app)
