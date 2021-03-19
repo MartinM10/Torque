@@ -27,7 +27,7 @@ for row in data:
     f.write("       <description>" + '  <![CDATA[<b>' + str(row[6]) + '</b>:&nbsp;' + str(row[7]) + ' km/h<br />'
             + ']]>' + "</description>\n")
     f.write("       <Point>\n")
-    f.write("           <coordinates>" + str(row[5]) + "," + str(row[4]) + "</coordinates>\n")
+    f.write("           <coordinates>" + str(row[4]) + "," + str(row[3]) + "</coordinates>\n")
     f.write("       </Point>\n")
     f.write("   </Placemark>\n")
 f.write("</Document>\n")

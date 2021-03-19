@@ -24,9 +24,6 @@ sessions_list = 'SELECT ' \
                 '   models_log ' \
                 'ORDER BY id DESC;'
 
-
-csv_file_path = 'data'
-
 try:
     cur.execute(sessions_list)
     sessions_rows = cur.fetchall()
@@ -78,7 +75,8 @@ if sessions_rows:
         cur.execute(sql)
         rows = cur.fetchall()
 
-        fp = open(csv_file_path + '_' + session_id + '.csv', 'w', encoding='utf-8')
+        csv_file_path = 'static/data/'
+        fp = open(csv_file_path + 'data_' + session_id + '.csv', 'w', encoding='utf-8')
 
         cols = [i[0] for i in cur.description]
 

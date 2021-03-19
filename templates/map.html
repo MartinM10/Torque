@@ -2,76 +2,34 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="initial-scale=1.0">
-        <title>Map</title>
-        <style>
-          #map {
-            height: 100%;
-          }
-
-          html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            box-shadow: 5px 5px 5px #888;
-          }
-        </style>
-
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-            integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-        crossorigin=""/>
-
-        <!-- Make sure you put this AFTER Leaflet's CSS -->
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-            crossorigin="">
-        </script>
-
+        <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+        <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+        <script src="{% static 'L.KML.js'%}"></script>
     </head>
-
     <body>
-		<div id ="map"> </div>
-          <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
-      <script src="https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script>
+        <div style="width: 100vw; height: 100vh" id="map"></div>
+        <script type="text/javascript">
+            // Make basemap
+            const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11 });
+            const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-	</body>
+            map.addLayer(osm);
 
-    <script>
+            // Load kml file
+            fetch('{% static 'data/data_19.kml'%}')
+                .then(res => res.text())
+                .then(kmltext => {
+                    // Create new kml overlay
+                    const parser = new DOMParser();
+                    const kml = parser.parseFromString(kmltext, 'text/xml');
+                    const track = new L.KML(kml);
+                    map.addLayer(track);
 
-       // Creamos la variable "map" que será el contenedor de nuestro visor
-        var map = L.map('map',{
-          center: [38.398600, -0.436578],
-          zoom: 15
-        });
+                    // Adjust map to show the kml
+                    const bounds = track.getBounds();
+                    map.fitBounds(bounds);
+                });
 
-        // Carga del mapa base de OSM
-        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom : 18,
-          attribution : 'Map data © <a href="https://openstreetmap.org">OpenStreetMap'
-          +'</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">'
-          +'CC-BY-SA</a>'
-        }).addTo(map);
-
-        // Le damos estilos .SVG a nuestra capa personalizada de tiendas de Sant Joan d'Alacant
-        // (opcional, otra opción es definir una variable de estilos para puntos de leaflet)
-
-        var iconoSVG = L.icon({
-            iconUrl: './datos/shop.svg',
-            iconSize: [30, 65],
-            });
-
-        // Capa de puntos .kml cargada con omnivore
-        var establecimientos = L.geoJson(null, {
-            onEachFeature: function(feature, layer){
-                layer.bindPopup(feature.properties["name"])
-            },
-            pointToLayer: function(feature, latlng) {
-                return L.marker(latlng, {icon: iconoSVG});
-            }
-        });
-
-        omnivore.kml({% data %}, null, establecimientos).addTo(map);
-
-    </script>
+        </script>
+    </body>
 </html>
