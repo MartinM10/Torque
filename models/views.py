@@ -135,8 +135,7 @@ def session_in_map(request, session_id):
     gjson_dict["features"] = feat_list
     # 'DISTINCT id_app, session, record_time, latitude, longitude, '
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
-
-    print(data)
+    # print(data)
     return render(request, 'map.html', context={'data': data})
 
 
