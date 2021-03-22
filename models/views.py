@@ -1,6 +1,10 @@
+import json
+
+from shapely.geometry import Point, mapping
+from django.db import connection
 from django.http import HttpResponse
 import datetime
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import os
 
 # Create your views here.
@@ -52,10 +56,94 @@ class SVMViewSet(viewsets.ModelViewSet):
     queryset = SVM.objects.all()
 
 
-def viewMap(request):
+def sessions_by_id_list(request):
+    sessions = Log.objects.all()
+    return render(request, 'sessions_list.html', context={'sessions': sessions})
 
+def myconverter(o):
+    if isinstance(o, datetime.datetime):
+        return o.__str__()
+
+
+def session_in_map(request, session_id):
+
+    cursor = connection.cursor()
+
+    sql = '' \
+          'SELECT ' \
+          'DISTINCT id_app, session, record_time, latitude, longitude, ' \
+          'MAX(CASE WHEN description = "GPS Accuracy" THEN value ELSE char(32) END ) AS `GPSAccuracy`, ' \
+          'MAX(CASE WHEN description = "Speed (GPS)" THEN value ELSE char(32) END ) AS `Speed (GPS)`, ' \
+          'MAX(CASE WHEN description = "CO₂ in g/km (Instantaneous)" THEN value ELSE char(32) END ) ' \
+          'AS `CO₂ in g/km (Instantaneous)`, ' \
+          'MAX(CASE WHEN description = "CO₂ in g/km (Average)" THEN value ELSE char(32) END ) ' \
+          'AS `CO₂ in g/km (Average)`, ' \
+          'MAX(CASE WHEN description = "Litres Per 100 Kilometer(Long Term Average)" THEN value ELSE char(32) END ) ' \
+          'AS `LitresPer100Kilometer(LongTermAverage)`, ' \
+          'MAX(CASE WHEN description = "Android device Battery Level" THEN value ELSE char(32) END ) ' \
+          'AS `AndroiddeviceBatteryLevel` ' \
+          'FROM ' \
+          '(' \
+          ' SELECT DISTINCT ' \
+          '     id_app, session, record_time, latitude, longitude, description, value, ' \
+          '     if (value <> @p, @rn:=1 ,@rn:=@rn+1) rn, @p:=value p ' \
+          ' FROM ' \
+          '     (' \
+          '         SELECT DISTINCT ' \
+          '             l.id_app, l.session, s.user_full_name AS description, ' \
+          '             CONCAT(r.value, " ", s.user_unit) AS value, r.time AS record_time, ' \
+          '             r.latitude, r.longitude FROM torque_db.models_log l ' \
+          '         INNER JOIN torque_db.models_record r ON r.log_id = l.id ' \
+          '         INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
+          '         WHERE s.pid != "ff1005" AND s.pid != "ff1006" AND l.id = %s' \
+          '         ORDER BY r.time' \
+          '     ) t ' \
+          'CROSS JOIN ' \
+          '     (' \
+          '         SELECT @rn:=0,@p:=null) r ORDER BY rn) s ' \
+          'GROUP BY id_app, session, record_time, latitude, longitude;' % session_id
+
+    cursor.execute(sql)
+    crs_list = cursor.fetchall()
+    # gjson is th emain dictionary
+    gjson_dict = {}
+    gjson_dict["type"] = "FeatureCollection"
+    feat_list = []
+
+    for crs in crs_list:
+        type_dict = {}
+        pt_dict = {}
+        prop_dict = {}
+
+        type_dict["type"] = "Feature"
+
+        pt_dict["type"] = "Point"
+
+        # GEOJSON looks for long,lat so reverse order
+        type_dict["geometry"] = mapping(Point(crs[4], crs[3]))
+
+        prop_dict["id_app"] = crs[0]
+        prop_dict["session"] = crs[1]
+        prop_dict["record_time"] = crs[2]
+        prop_dict["speed_GPS"] = crs[6]
+        prop_dict["CO2_Instantaneous"] = crs[7]
+        prop_dict["CO2_Average"] = crs[8]
+        prop_dict["Litres_Per_100_Kilometer"] = crs[9]
+        type_dict["properties"] = prop_dict
+        feat_list.append(type_dict)
+
+    gjson_dict["features"] = feat_list
+    # 'DISTINCT id_app, session, record_time, latitude, longitude, '
+    data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
+
+    print(data)
+    return render(request, 'map.html', context={'data': data})
+
+
+def viewMap(request):
     dir = os.path.join(str(BASE_DIR) + str(STATIC_URL) + 'data/')
-    files = [STATIC_URL + 'data/' + arch.name for arch in os.scandir(str(dir)) if arch.is_file() and os.path.splitext(arch)[1] == ".kml"]
+    files = [STATIC_URL + 'data/' + arch.name for arch in os.scandir(str(dir)) if
+             arch.is_file() and os.path.splitext(arch)[1] == ".kml"]
 
     context = {
         'files': files

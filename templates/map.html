@@ -15,37 +15,29 @@
 
             map.addLayer(osm);
 
-            var sessions = L.layerGroup([]);
-            // sessions.add
-            // Load kml file
-            {% for file in files %}
-                fetch('{{ file }}')
-                    .then(res => res.text())
-                    .then(kmltext => {
-                        // Create new kml overlay
-                        const parser = new DOMParser();
-                        const kml = parser.parseFromString(kmltext, 'text/xml');
-                        const track = new L.KML(kml);
-                        //map.addLayer(track);
+            function onEachFeature(feature, layer) {
+                // does this feature have a property named popupContent?
+                var co2;
 
-                        sessions.addLayer(track);
-                        // Adjust map to show the kml
-                        //const bounds = track.getBounds();
-                        //map.fitBounds(bounds);
-                    });
-            {% endfor %}
+                if (feature.properties) {
 
-            var overlays = {
-                "sessions" : sessions,
-            };
-            /*
-            var baselayers = {
-                "Grayscale" : grayscale,
-                "Streets" : streets
-            };
-            */
+                    layer.bindPopup(
+                        "<strong>id_app: </strong> " + feature.properties.id_app + "<br/>" +
+                        "<strong>session: </strong> " + feature.properties.session + "<br/>" +
+                        "<strong>Speed(GPS): </strong>" + feature.properties.speed_GPS + "<br/>" +
+                        "<strong>CO₂ in g/km (Average): </strong>" + feature.properties.CO2_Average + "<br/>" +
+                        "<strong>CO₂ in g/km (Instantaneous): </strong> " + feature.properties.CO2_Instantaneous + "<br/>" +
+                        "<strong>Litres Per 100 Kilometer</strong> " + feature.properties.Litres_Per_100_Kilometer
+                    );
 
-            L.control.layers(null, overlays).addTo(map)
+                }
+            }
+            L.geoJSON({{ data|safe }}, {
+                onEachFeature: onEachFeature
+            }).addTo(map);
+
+            // var sessions = L.layerGroup([]);
+
             // sessions.addTo(map)
             // map.addLayer(sessions)
 

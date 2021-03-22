@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Lista de sesiones</title>
+    </head>
+
+    <body>
+
+        {% csrf_token %}
+        <ul>
+            {% for session in sessions%}
+                <li>
+                   <a href="{% url 'session_map' session.id %}">
+                       {{ session.id_app }} - {{ session.session }}
+                   </a>
+                </li>
+            {% endfor %}
+        </ul>
+
+    </body>
+</html>

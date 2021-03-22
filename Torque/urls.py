@@ -19,7 +19,7 @@ from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
 from models import views
-from models.views import upload_data, viewMap
+from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map
 
 router = DefaultRouter()
 routa_api = 'api/'
@@ -36,6 +36,9 @@ router.register(routa_api + 'datatorque', views.DataTorqueViewSet, basename='dat
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
-    path('upload/', upload_data),
-    path('map/', viewMap)
+    path('upload/', upload_data, name='upload'),
+    path('map2/', viewMap, name='map2'),
+    path('sessions/', sessions_by_id_list, name='sessions_list'),
+    path('map/<int:session_id>/', session_in_map, name='session_map')
+
 ]
