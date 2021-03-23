@@ -10,31 +10,44 @@
         <div style="width: 100vw; height: 100vh" id="map"></div>
         <script type="text/javascript">
             // Make basemap
-            const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11 });
+            const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
             const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
             map.addLayer(osm);
 
             function onEachFeature(feature, layer) {
-                // does this feature have a property named popupContent?
-                var co2;
-
                 if (feature.properties) {
-
                     layer.bindPopup(
-                        "<strong>id_app: </strong> " + feature.properties.id_app + "<br/>" +
-                        "<strong>session: </strong> " + feature.properties.session + "<br/>" +
-                        "<strong>Speed(GPS): </strong>" + feature.properties.speed_GPS + "<br/>" +
-                        "<strong>CO₂ in g/km (Average): </strong>" + feature.properties.CO2_Average + "<br/>" +
-                        "<strong>CO₂ in g/km (Instantaneous): </strong> " + feature.properties.CO2_Instantaneous + "<br/>" +
-                        "<strong>Litres Per 100 Kilometer: </strong> " + feature.properties.Litres_Per_100_Kilometer
+                        "<div style=text-align:center><h3>" + feature.properties.id_app +
+                        "<br/>" + feature.properties.session + "<br/>" +
+                        "<h3></div><hr><table><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
+                        "</td></tr><tr><td>CO₂ in g/km (Average): " + feature.properties.CO2_Average +
+                        "</td></tr><tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous +
+                        "</td></tr><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer +
+                        "</td></tr></table>",
                     );
-
-                }
+                };
             }
-            L.geoJSON({{ data|safe }}, {
-                onEachFeature: onEachFeature
-            }).addTo(map);
+
+            function createCustomIcon (feature, latlng) {
+                var myIcon = L.icon({
+                    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Green_Arrow_Up.svg/600px-Green_Arrow_Up.svg.png',
+                    //shadowUrl: 'my-icon.png',
+                    iconSize:     [25, 25], // width and height of the image in pixels
+                    shadowSize:   [35, 20], // width, height of optional shadow image
+                    iconAnchor:   [12, 12], // point of the icon which will correspond to marker's location
+                    shadowAnchor: [12, 6],  // anchor point of the shadow. should be offset
+                    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+                  })
+                  return L.marker(latlng, { icon: myIcon })
+                }
+
+            var myLayerOptions = {
+                onEachFeature: onEachFeature,
+                pointToLayer: createCustomIcon
+            }
+
+            L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
 
             // var sessions = L.layerGroup([]);
 
