@@ -20,7 +20,9 @@
                     layer.bindPopup(
                         "<div style=text-align:center><h3>" + feature.properties.id_app +
                         "<br/>" + feature.properties.session + "<br/>" +
-                        "<h3></div><hr><table><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
+                        "<br/>" + feature.properties.email + "<br/>" +
+                        "<h3></div><hr><table><tr><td>GPS Accuracy: " + feature.properties.gps_accuracy +
+                        "</td></tr><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
                         "</td></tr><tr><td>CO₂ in g/km (Average): " + feature.properties.CO2_Average +
                         "</td></tr><tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous +
                         "</td></tr><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer +

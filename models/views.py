@@ -1,7 +1,7 @@
 import json
 
 from shapely.geometry import Point, mapping
-from django.db import connection
+from django.db import connection, transaction
 from django.http import HttpResponse
 import datetime
 from django.shortcuts import render, redirect
@@ -60,18 +60,18 @@ def sessions_by_id_list(request):
     sessions = Log.objects.all()
     return render(request, 'sessions_list.html', context={'sessions': sessions})
 
+
 def myconverter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
 
 
 def session_in_map(request, session_id):
-
     cursor = connection.cursor()
 
     sql = '' \
           'SELECT ' \
-          'DISTINCT id_app, session, record_time, latitude, longitude, ' \
+          'DISTINCT id_app, session, email, record_time, latitude, longitude, ' \
           'MAX(CASE WHEN description = "GPS Accuracy" THEN value ELSE char(32) END ) AS `GPSAccuracy`, ' \
           'MAX(CASE WHEN description = "Speed (GPS)" THEN value ELSE char(32) END ) AS `Speed (GPS)`, ' \
           'MAX(CASE WHEN description = "CO₂ in g/km (Instantaneous)" THEN value ELSE char(32) END ) ' \
@@ -85,12 +85,12 @@ def session_in_map(request, session_id):
           'FROM ' \
           '(' \
           ' SELECT DISTINCT ' \
-          '     id_app, session, record_time, latitude, longitude, description, value, ' \
+          '     id_app, session, email, record_time, latitude, longitude, description, value, ' \
           '     if (value <> @p, @rn:=1 ,@rn:=@rn+1) rn, @p:=value p ' \
           ' FROM ' \
           '     (' \
           '         SELECT DISTINCT ' \
-          '             l.id_app, l.session, s.user_full_name AS description, ' \
+          '             l.id_app, l.session, l.email, s.user_full_name AS description, ' \
           '             CONCAT(r.value, " ", s.user_unit) AS value, r.time AS record_time, ' \
           '             r.latitude, r.longitude FROM torque_db.models_log l ' \
           '         INNER JOIN torque_db.models_record r ON r.log_id = l.id ' \
@@ -101,7 +101,7 @@ def session_in_map(request, session_id):
           'CROSS JOIN ' \
           '     (' \
           '         SELECT @rn:=0,@p:=null) r ORDER BY rn) s ' \
-          'GROUP BY id_app, session, record_time, latitude, longitude;' % session_id
+          'GROUP BY id_app, session, email, record_time, latitude, longitude;' % session_id
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
@@ -120,15 +120,17 @@ def session_in_map(request, session_id):
         pt_dict["type"] = "Point"
 
         # GEOJSON looks for long,lat so reverse order
-        type_dict["geometry"] = mapping(Point(crs[4], crs[3]))
+        type_dict["geometry"] = mapping(Point(crs[5], crs[4]))
 
         prop_dict["id_app"] = crs[0]
         prop_dict["session"] = crs[1]
-        prop_dict["record_time"] = crs[2]
-        prop_dict["speed_GPS"] = crs[6]
-        prop_dict["CO2_Instantaneous"] = crs[7]
-        prop_dict["CO2_Average"] = crs[8]
-        prop_dict["Litres_Per_100_Kilometer"] = crs[9]
+        prop_dict["email"] = crs[2]
+        prop_dict["record_time"] = crs[3]
+        prop_dict["gps_accuracy"] = crs[6]
+        prop_dict["speed_GPS"] = crs[7]
+        prop_dict["CO2_Instantaneous"] = crs[8]
+        prop_dict["CO2_Average"] = crs[9]
+        prop_dict["Litres_Per_100_Kilometer"] = crs[10]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
@@ -150,11 +152,13 @@ def viewMap(request):
     return render(request, 'map.html', context=context)
 
 
+@transaction.atomic
 def upload_data(request):
     # print(request.query_params)
     # print(request.GET)
     session_app = request.GET.get('session')
     id_app = request.GET.get('id')
+    email = request.GET.get('eml')
     time_app = request.GET.get('time')
     latitude = request.GET.get('kff1006')
     longitude = request.GET.get('kff1005')
@@ -167,24 +171,37 @@ def upload_data(request):
     # print(datetime.utcfromtimestamp(ts/1000).strftime('%Y-%m-%d %H:%M:%S' '.' '%f'))
 
     # TABLE LOG
+
+    # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
+    #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
     if session_app:
-
-        # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
-        #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-
         session_time = datetime.datetime.fromtimestamp(int(session_app) / 1000)
         session_time += datetime.timedelta(hours=1)
-
-        log, created = Log.objects.get_or_create(session=session_time, id_app=id_app)
-        if created:
-            Log(session=session_time, id_app=id_app, dataset_id=None).save()
-
+    if session_time and email and id_app:
+        try:
+            with transaction.atomic():
+                Log.objects.get(session=session_time, email=email, id_app=id_app)
+        except Log.DoesNotExist:
+            try:
+                with transaction.atomic():
+                    Log(session=session_time, email=email, id_app=id_app).save()
+            except:
+                pass
+    ''' 
+    log, created = Log.objects.get_or_create(session=session_time, email=email, id_app=id_app)
+    if created:
+        Log(session=session_time, email=email, id_app=id_app, dataset_id=None).save()
+    '''
     for key, value in request.GET.items():
         # print(key, " -> ", value)
 
         # TABLE DATA_TORQUE
-        DataTorque(key=key, value=value, session=session_time, id_app=id_app, time=time_app,
-                   latitude=latitude, longitude=longitude).save()
+        try:
+            with transaction.atomic():
+                DataTorque(key=key, value=value, session=session_time, email=email, id_app=id_app, time=time_app,
+                           latitude=latitude, longitude=longitude).save()
+        except:
+            pass
 
         # TABLE SENSOR
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
@@ -216,10 +233,10 @@ def upload_data(request):
                     longitude = value
 
                 sensor_id = Sensor.objects.get(pid=pid).id
-                log_id = Log.objects.filter(id_app=id_app, session=session_time).first().id
+                log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
                 timestamp = int(time_app)
                 date_time = datetime.datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()
 
-    return HttpResponse('Ok!')
+    return HttpResponse('OK!')

@@ -22,23 +22,23 @@ from models import views
 from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map
 
 router = DefaultRouter()
-routa_api = 'api/'
+router_api = 'api/'
 # Register ViewSets with Router
-router.register(routa_api + 'log', views.LogViewSet, basename='log')
-router.register(routa_api + 'record', views.RecordViewSet, basename='record')
-router.register(routa_api + 'sensor', views.SensorViewSet, basename='sensor')
-router.register(routa_api + 'kmeans', views.KMeansViewSet, basename='KMeans')
-router.register(routa_api + 'svm', views.SVMViewSet, basename='SVM')
-router.register(routa_api + 'dataset', views.DatasetViewSet, basename='Dataset')
-router.register(routa_api + 'prediction', views.PredictionViewSet, basename='prediction')
-router.register(routa_api + 'datatorque', views.DataTorqueViewSet, basename='datatorque')
+router.register(router_api + 'log', views.LogViewSet, basename='log')
+router.register(router_api + 'record', views.RecordViewSet, basename='record')
+router.register(router_api + 'sensor', views.SensorViewSet, basename='sensor')
+router.register(router_api + 'kmeans', views.KMeansViewSet, basename='KMeans')
+router.register(router_api + 'svm', views.SVMViewSet, basename='SVM')
+router.register(router_api + 'dataset', views.DatasetViewSet, basename='Dataset')
+router.register(router_api + 'prediction', views.PredictionViewSet, basename='prediction')
+router.register(router_api + 'datatorque', views.DataTorqueViewSet, basename='datatorque')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(router.urls)),
+    path(router_api, include(router.urls)),
     path('upload/', upload_data, name='upload'),
-    path('map2/', viewMap, name='map2'),
-    path('sessions/', sessions_by_id_list, name='sessions_list'),
+    path('map2/', viewMap, name='map2'),  # Need to generate geojson/kml and csv files (using 'map/session_id)'
+    path('', sessions_by_id_list, name='sessions_list'),
     path('map/<int:session_id>/', session_in_map, name='session_map')
 
 ]

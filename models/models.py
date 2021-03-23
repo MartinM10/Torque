@@ -55,13 +55,14 @@ class Sensor(models.Model):
 
 class Log(models.Model):
     session = models.DateTimeField(null=True)
+    email = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
     # la session ya trae el tiempo en unix timestamp
     # time = models.DateTimeField(null=True, auto_now_add=True)
     dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
     class Meta:
-        unique_together = ('id_app', 'session')
+        unique_together = ('email', 'session')
 
 
 class Profile(models.Model):
@@ -85,6 +86,7 @@ class DataTorque(models.Model):
     key = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
     session = models.CharField(null=True, max_length=255)
+    email = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
     time = models.BigIntegerField(null=True)
     latitude = models.FloatField(null=True)
