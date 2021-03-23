@@ -18,9 +18,10 @@
             function onEachFeature(feature, layer) {
                 if (feature.properties) {
                     layer.bindPopup(
-                        "<div style=text-align:center><h3>" + feature.properties.id_app +
-                        "<br/>" + feature.properties.session + "<br/>" +
-                        "<br/>" + feature.properties.email + "<br/>" +
+                        "<div style=text-align:center><h3>"
+                        + feature.properties.id_app + "<br/>"
+                        + feature.properties.session + "<br/>" +
+                        + feature.properties.email + "<br/>" +
                         "<h3></div><hr><table><tr><td>GPS Accuracy: " + feature.properties.gps_accuracy +
                         "</td></tr><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
                         "</td></tr><tr><td>CO₂ in g/km (Average): " + feature.properties.CO2_Average +
