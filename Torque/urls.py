@@ -38,7 +38,7 @@ urlpatterns = [
     path(router_api, include(router.urls)),
     path('upload/', upload_data, name='upload'),
     path('map2/', viewMap, name='map2'),  # Need to generate geojson/kml and csv files (using 'map/session_id)'
-    path('', sessions_by_id_list, name='sessions_list'),
+    path('', sessions_by_id_list, name='session_list'),
     path('map/<int:session_id>/', session_in_map, name='session_map')
 
 ]

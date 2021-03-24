@@ -1,4 +1,6 @@
+{% extends 'main.html' %}
 {% load static %}
+{% block content%}
 <!DOCTYPE html>
 <html>
     <head>
@@ -7,7 +9,7 @@
         <script src="{% static 'L.KML.js'%}"></script>
     </head>
     <body>
-        <div style="width: 100vw; height: 100vh" id="map"></div>
+        <div style="width: 80vw; height: 80vh; margin-top: 10px" id="map"></div>
         <script type="text/javascript">
             // Make basemap
             const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
@@ -18,11 +20,11 @@
             function onEachFeature(feature, layer) {
                 if (feature.properties) {
                     layer.bindPopup(
-                        "<div style=text-align:center><h3>"
-                        + feature.properties.id_app + "<br/>"
-                        + feature.properties.session + "<br/>" +
+                        "<div style=text-align:center><h5>"
                         + feature.properties.email + "<br/>" +
-                        "<h3></div><hr><table><tr><td>GPS Accuracy: " + feature.properties.gps_accuracy +
+                        + feature.properties.session + "<br/>" +
+                        // + feature.properties.id_app + "<br/>"
+                        "<h5></div><hr><table><tr><td>GPS Accuracy: " + feature.properties.gps_accuracy +
                         "</td></tr><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
                         "</td></tr><tr><td>CO₂ in g/km (Average): " + feature.properties.CO2_Average +
                         "</td></tr><tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous +
@@ -34,7 +36,7 @@
 
             function createCustomIcon (feature, latlng) {
                 var myIcon = L.icon({
-                    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Green_Arrow_Up.svg/600px-Green_Arrow_Up.svg.png',
+                    iconUrl: 'http://earth.google.com/images/kml-icons/track-directional/track-0.png',
                     //shadowUrl: 'my-icon.png',
                     iconSize:     [25, 25], // width and height of the image in pixels
                     shadowSize:   [35, 20], // width, height of optional shadow image
@@ -60,3 +62,4 @@
         </script>
     </body>
 </html>
+{% endblock %}
