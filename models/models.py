@@ -46,6 +46,7 @@ class Sensor(models.Model):
     pid = models.CharField(unique=True, max_length=255)
     user_full_name = models.CharField(null=True, max_length=255)
     user_short_name = models.CharField(null=True, max_length=255)
+    ai4drive_name = models.CharField(null=True, max_length=255)
     user_unit = models.CharField(null=True, max_length=50)
     default_unit = models.CharField(null=True, max_length=50)
 

@@ -19,24 +19,55 @@
 
             function onEachFeature(feature, layer) {
                 if (feature.properties) {
-                    layer.bindPopup(
-                        "<div style=text-align:center><h5>"
-                        + feature.properties.email + "<br/>" +
-                        + feature.properties.session + "<br/>" +
-                        // + feature.properties.id_app + "<br/>"
-                        "<h5></div><hr><table><tr><td>GPS Accuracy: " + feature.properties.gps_accuracy +
-                        "</td></tr><tr><td>Speed(GPS): " + feature.properties.speed_GPS +
-                        "</td></tr><tr><td>CO₂ in g/km (Average): " + feature.properties.CO2_Average +
-                        "</td></tr><tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous +
-                        "</td></tr><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer +
-                        "</td></tr></table>",
-                    );
+                    var popupContent = '<div style=text-align:center><strong>';
+
+                    if (feature.properties.email) {
+                        popupContent+= feature.properties.email + '<br/'
+                    }
+
+                    if (feature.properties.session) {
+                        popupContent+= feature.properties.session + '<br/>'
+                    }
+                    popupContent+='</strong></div><hr>';
+
+                    for (var p in feature.properties) {
+                        if ((
+                            feature.properties[p] == feature.properties.gps_accuracy  ||
+                            feature.properties[p] == feature.properties.speed_GPS ||
+                            feature.properties[p] == feature.properties.CO2_Average ||
+                            feature.properties[p] == feature.properties.CO2_Instantaneous ||
+                            feature.properties[p] == feature.properties.Litres_Per_100_Kilometer
+                            ) &&
+                            feature.properties[p] != null
+                            ) {
+                                popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';
+                            }
+                    }
+                    popupContent += '</table>';
+                    layer.bindPopup(popupContent);
+                        /*
+                        if(feature.properties.gps_accuracy) {
+                            layer.bindPopup.append("<tr><td>Speed (GPS): " + feature.properties.speed_GPS);
+                        }
+
+                        if(feature.properties.CO2_Average) {
+                            layer.bindPopup.append("<tr><td>CO₂ in g/km (Average):: " + feature.properties.CO2_Average);
+                        }
+
+                        if(feature.properties.CO2_Instantaneous) {
+                            layer.bindPopup.append("<tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous);
+                        }
+
+                        if(feature.properties.Litres_Per_100_Kilometer) {
+                            layer.bindPopup.append("<hr><table><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer + "</td></tr>");
+                        }
+                        */
                 };
             }
 
             function createCustomIcon (feature, latlng) {
                 var myIcon = L.icon({
-                    iconUrl: 'http://earth.google.com/images/kml-icons/track-directional/track-0.png',
+                    iconUrl: 'https://cdn.icon-icons.com/icons2/1102/PNG/128/1485969928-17-location_78896.png',
                     //shadowUrl: 'my-icon.png',
                     iconSize:     [25, 25], // width and height of the image in pixels
                     shadowSize:   [35, 20], // width, height of optional shadow image

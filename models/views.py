@@ -72,15 +72,15 @@ def session_in_map(request, session_id):
     sql = '' \
           'SELECT ' \
           'DISTINCT id_app, session, email, record_time, latitude, longitude, ' \
-          'MAX(CASE WHEN description = "GPS Accuracy" THEN value ELSE char(32) END ) AS `GPSAccuracy`, ' \
-          'MAX(CASE WHEN description = "Speed (GPS)" THEN value ELSE char(32) END ) AS `Speed (GPS)`, ' \
-          'MAX(CASE WHEN description = "CO₂ in g/km (Instantaneous)" THEN value ELSE char(32) END ) ' \
+          'MAX(CASE WHEN description = "GPS Accuracy" THEN value ELSE null END ) AS `GPSAccuracy`, ' \
+          'MAX(CASE WHEN description = "Speed (GPS)" THEN value ELSE null END ) AS `Speed (GPS)`, ' \
+          'MAX(CASE WHEN description = "CO₂ in g/km (Instantaneous)" THEN value ELSE null END ) ' \
           'AS `CO₂ in g/km (Instantaneous)`, ' \
-          'MAX(CASE WHEN description = "CO₂ in g/km (Average)" THEN value ELSE char(32) END ) ' \
+          'MAX(CASE WHEN description = "CO₂ in g/km (Average)" THEN value ELSE null END ) ' \
           'AS `CO₂ in g/km (Average)`, ' \
-          'MAX(CASE WHEN description = "Litres Per 100 Kilometer(Long Term Average)" THEN value ELSE char(32) END ) ' \
+          'MAX(CASE WHEN description = "Litres Per 100 Kilometer(Long Term Average)" THEN value ELSE null END ) ' \
           'AS `LitresPer100Kilometer(LongTermAverage)`, ' \
-          'MAX(CASE WHEN description = "Android device Battery Level" THEN value ELSE char(32) END ) ' \
+          'MAX(CASE WHEN description = "Android device Battery Level" THEN value ELSE null END ) ' \
           'AS `AndroiddeviceBatteryLevel` ' \
           'FROM ' \
           '(' \
