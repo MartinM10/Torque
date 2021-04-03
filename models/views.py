@@ -96,9 +96,9 @@ def session_in_map(request, session_id):
           '                 CONCAT(r.value, " ", s.user_unit) AS value, r.latitude, r.longitude ' \
           '             FROM ' \
           '                 torque_db.models_log l ' \
-          '             INNER JOIN torque_db.models_record r ON r.log_id = l.id ' \
+          '             INNER JOIN torque_db.models_record r ON r.log_id = l.id and l.id = %s ' \
           '             INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
-          '             WHERE s.pid != "ff1005" and s.pid != "ff1006" and l.id = %s ' \
+          '             WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
           '         ) base ' \
           '         INNER JOIN ' \
           '         ( ' \
@@ -161,8 +161,8 @@ def session_in_map(request, session_id):
         prop_dict["email"] = crs[1]
         prop_dict["session"] = crs[2]
         prop_dict["record_time"] = crs[7]
-        prop_dict["gps_accuracy"] = crs[17]
-        prop_dict["speed_GPS"] = crs[16]
+        prop_dict["GPS_Speed"] = crs[16]
+        prop_dict["GPS_Accuracy"] = crs[17]
         prop_dict["CO2_Instantaneous"] = crs[18]
         # prop_dict["CO2_Average"] = crs[9]
         prop_dict["Litres_Per_100_Kilometer"] = crs[15]
