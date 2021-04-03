@@ -71,7 +71,7 @@ def session_in_map(request, session_id):
 
     sql = '' \
           'select distinct ' \
-          'log_id, email, session, Total_Trip_Time, Total_Trip_Fuel_Used, Total_Trip_Distance, CO2_Average, ' \
+          'log_id as session_id, email, session, Total_Trip_Time, Total_Trip_Fuel_Used, Total_Trip_Distance, CO2_Average, ' \
           'record_time, latitude, longitude, ' \
           'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
@@ -144,7 +144,9 @@ def session_in_map(request, session_id):
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
     feat_list = []
-
+    # print(cursor.description)
+    field_names = [i[0] for i in cursor.description]
+    # print(field_names[0])
     for crs in crs_list:
         type_dict = {}
         pt_dict = {}
@@ -156,13 +158,20 @@ def session_in_map(request, session_id):
 
         # GEOJSON looks for long,lat so reverse order
         type_dict["geometry"] = mapping(Point(crs[9], crs[8]))
-
-        prop_dict["id_session"] = crs[0]
-        prop_dict["email"] = crs[1]
-        prop_dict["session"] = crs[2]
-        prop_dict["record_time"] = crs[7]
-        prop_dict["GPS_Speed"] = crs[16]
-        prop_dict["GPS_Accuracy"] = crs[17]
+        id_session = field_names[0]
+        prop_dict[id_session] = crs[0]
+        email = field_names[1]
+        prop_dict[email] = crs[1]
+        session = field_names[2]
+        prop_dict[session] = crs[2]
+        record_time = field_names[7]
+        prop_dict[record_time] = crs[7]
+        total_trip_time = field_names[3]
+        prop_dict[total_trip_time] = crs[3]
+        gps_speed = field_names[16]
+        prop_dict[gps_speed] = crs[16]
+        gps_accuracy = field_names[17]
+        prop_dict[gps_accuracy] = crs[17]
         # prop_dict["CO2_Instantaneous"] = crs[18]
         # prop_dict["CO2_Average"] = crs[9]
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]

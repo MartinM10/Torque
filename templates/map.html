@@ -31,13 +31,13 @@
                     popupContent+='</strong></div><hr>';
 
                     for (var p in feature.properties) {
-                        if ((
+                        if (/*(
                             feature.properties[p] === feature.properties.GPS_Accuracy  ||
                             feature.properties[p] === feature.properties.GPS_Speed ||
                             // feature.properties[p] == feature.properties.CO2_Average ||
                             feature.properties[p] === feature.properties.CO2_Instantaneous ||
                             feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
-                            ) &&
+                            ) && */
                             feature.properties[p] != null
                             ) {
                                 popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';
