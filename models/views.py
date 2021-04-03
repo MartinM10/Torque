@@ -155,17 +155,17 @@ def session_in_map(request, session_id):
         pt_dict["type"] = "Point"
 
         # GEOJSON looks for long,lat so reverse order
-        type_dict["geometry"] = mapping(Point(crs[8], crs[7]))
+        type_dict["geometry"] = mapping(Point(crs[9], crs[8]))
 
         prop_dict["id_session"] = crs[0]
         prop_dict["email"] = crs[1]
         prop_dict["session"] = crs[2]
-        prop_dict["record_time"] = crs[6]
-        prop_dict["gps_accuracy"] = crs[16]
-        prop_dict["speed_GPS"] = crs[15]
-        prop_dict["CO2_Instantaneous"] = crs[17]
+        prop_dict["record_time"] = crs[7]
+        prop_dict["gps_accuracy"] = crs[17]
+        prop_dict["speed_GPS"] = crs[16]
+        prop_dict["CO2_Instantaneous"] = crs[18]
         # prop_dict["CO2_Average"] = crs[9]
-        prop_dict["Litres_Per_100_Kilometer"] = crs[14]
+        prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
