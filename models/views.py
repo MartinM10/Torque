@@ -70,38 +70,73 @@ def session_in_map(request, session_id):
     cursor = connection.cursor()
 
     sql = '' \
-          'SELECT ' \
-          'DISTINCT id_app, session, email, record_time, latitude, longitude, ' \
-          'MAX(CASE WHEN description = "GPS Accuracy" THEN value ELSE null END ) AS `GPSAccuracy`, ' \
-          'MAX(CASE WHEN description = "Speed (GPS)" THEN value ELSE null END ) AS `Speed (GPS)`, ' \
-          'MAX(CASE WHEN description = "CO₂ in g/km (Instantaneous)" THEN value ELSE null END ) ' \
-          'AS `CO₂ in g/km (Instantaneous)`, ' \
-          'MAX(CASE WHEN description = "CO₂ in g/km (Average)" THEN value ELSE null END ) ' \
-          'AS `CO₂ in g/km (Average)`, ' \
-          'MAX(CASE WHEN description = "Litres Per 100 Kilometer(Long Term Average)" THEN value ELSE null END ) ' \
-          'AS `LitresPer100Kilometer(LongTermAverage)`, ' \
-          'MAX(CASE WHEN description = "Android device Battery Level" THEN value ELSE null END ) ' \
-          'AS `AndroiddeviceBatteryLevel` ' \
-          'FROM ' \
-          '(' \
-          ' SELECT DISTINCT ' \
-          '     id_app, session, email, record_time, latitude, longitude, description, value, ' \
-          '     if (value <> @p, @rn:=1 ,@rn:=@rn+1) rn, @p:=value p ' \
-          ' FROM ' \
-          '     (' \
-          '         SELECT DISTINCT ' \
-          '             l.id_app, l.session, l.email, s.user_full_name AS description, ' \
-          '             CONCAT(r.value, " ", s.user_unit) AS value, r.time AS record_time, ' \
-          '             r.latitude, r.longitude FROM torque_db.models_log l ' \
-          '         INNER JOIN torque_db.models_record r ON r.log_id = l.id ' \
-          '         INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
-          '         WHERE s.pid != "ff1005" AND s.pid != "ff1006" AND l.id = %s' \
-          '         ORDER BY r.time' \
-          '     ) t ' \
-          'CROSS JOIN ' \
-          '     (' \
-          '         SELECT @rn:=0,@p:=null) r ORDER BY rn) s ' \
-          'GROUP BY id_app, session, email, record_time, latitude, longitude;' % session_id
+          'select distinct ' \
+          'log_id, email, session, Total_Trip_Time, Total_Trip_Fuel_Used, Total_Trip_Distance, CO2_Average, ' \
+          'record_time, latitude, longitude, ' \
+          'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
+          'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
+          'max(case when pid = "ff1258" then value else null end) as `CO2_Average`, ' \
+          'max(case when pid = "ff1263" then value else null end) as `Trip_Speed_Average_Only_Moving`, ' \
+          'max(case when pid = "ff1271" then value else null end) as `Trip_Fuel_Used`, ' \
+          'max(case when pid = "ff1208" then value else null end) as `Trip_LPK_Average`, ' \
+          'max(case when pid = "ff1001" then value else null end) as `GPS_Speed`, ' \
+          'max(case when pid = "ff1239" then value else null end) as `GPS_Accuracy`, ' \
+          'max(case when pid = "ff1257" then value else null end) as `CO2_Instantaneous` ' \
+          'from ' \
+          ' ( ' \
+          '     select distinct ' \
+          '         base.log_id, base.email, base.session, base.record_time, base.latitude, base.longitude, ' \
+          '         base.pid, base.value, Total_Trip_Fuel_Used, Total_Trip_Time, ' \
+          '         Total_Trip_Distance, CO2_Average, ' \
+          '	        if (value <> @p, @rn:=1 ,@rn:=@rn+1) rn, @p:=value p ' \
+          '     from' \
+          '         ( ' \
+          '             SELECT distinct ' \
+          '                 l.id as log_id, l.email, l.session, r.time AS record_time, s.pid as pid, ' \
+          '                 CONCAT(r.value, " ", s.user_unit) AS value, r.latitude, r.longitude ' \
+          '             FROM ' \
+          '                 torque_db.models_log l ' \
+          '             INNER JOIN torque_db.models_record r ON r.log_id = l.id ' \
+          '             INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
+          '             WHERE s.pid != "ff1005" and s.pid != "ff1006" and l.id = %s ' \
+          '         ) base ' \
+          '         INNER JOIN ' \
+          '         ( ' \
+          '             SELECT DISTINCT ' \
+          '                     l.id as log_id, l.session, ' \
+          '                     max(case when s.pid = "ff1204" then concat(value, " ", user_unit) else null end) AS `Total_Trip_Distance`,' \
+          '                     max(case when s.pid = "ff1266" then substr(sec_to_time(r.value), 1, 8) else null end) AS `Total_Trip_Time`,' \
+          '                     max(case when s.pid = "ff1271" then concat(value, " ", s.user_unit) else null end) AS `Total_Trip_Fuel_Used`' \
+          '             FROM ' \
+          '                 torque_db.models_log l ' \
+          '             INNER JOIN torque_db.models_record r ON r.log_id = l.id and l.id = %s ' \
+          '             INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
+          '             WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
+          '                     and s.pid = "ff1204" or s.pid = "ff1266" or s.pid = "ff1271" ' \
+          '             GROUP BY l.id, l.session ' \
+          '             ORDER BY l.id ' \
+          '         ) totals on base.log_id = totals.log_id ' \
+          '         INNER JOIN ' \
+          '         (' \
+          '         SELECT ' \
+          '                 l.id as log_id, concat(r.value, " ", s.user_unit) as `CO2_Average` ' \
+          '         FROM models_log l ' \
+          '         INNER JOIN models_record r on l.id = r.log_id and l.id = %s ' \
+          '         INNER JOIN models_sensor s on r.sensor_id = s.id ' \
+          '         WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
+          '         and s.pid = "ff1258" and ' \
+          '         r.time = ( ' \
+          '                     SELECT max(r.time) ' \
+          '                     FROM models_log l ' \
+          '                     INNER JOIN models_record r on l.id = r.log_id and l.id = %s' \
+          '                     INNER JOIN models_sensor s on r.sensor_id = s.id ' \
+          '                     WHERE s.pid = "ff1258" ' \
+          '                 ) ' \
+          '         ) averages on base.log_id = averages.log_id ' \
+          'cross join (select @rn:=0,@p:=null) r ' \
+          'order by rn ' \
+          ') s ' \
+          'group by s.log_id, email, session, CO2_Average, record_time, latitude, longitude; ' % (session_id, session_id, session_id ,session_id)
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
@@ -120,17 +155,17 @@ def session_in_map(request, session_id):
         pt_dict["type"] = "Point"
 
         # GEOJSON looks for long,lat so reverse order
-        type_dict["geometry"] = mapping(Point(crs[5], crs[4]))
+        type_dict["geometry"] = mapping(Point(crs[8], crs[7]))
 
-        prop_dict["id_app"] = crs[0]
-        prop_dict["session"] = crs[1]
-        prop_dict["email"] = crs[2]
-        prop_dict["record_time"] = crs[3]
-        prop_dict["gps_accuracy"] = crs[6]
-        prop_dict["speed_GPS"] = crs[7]
-        prop_dict["CO2_Instantaneous"] = crs[8]
-        prop_dict["CO2_Average"] = crs[9]
-        prop_dict["Litres_Per_100_Kilometer"] = crs[10]
+        prop_dict["id_session"] = crs[0]
+        prop_dict["email"] = crs[1]
+        prop_dict["session"] = crs[2]
+        prop_dict["record_time"] = crs[6]
+        prop_dict["gps_accuracy"] = crs[16]
+        prop_dict["speed_GPS"] = crs[15]
+        prop_dict["CO2_Instantaneous"] = crs[17]
+        # prop_dict["CO2_Average"] = crs[9]
+        prop_dict["Litres_Per_100_Kilometer"] = crs[14]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
