@@ -100,7 +100,7 @@ def session_in_map(request, session_id):
           '             INNER JOIN torque_db.models_sensor s ON s.id = r.sensor_id ' \
           '             WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
           '         ) base ' \
-          '         INNER JOIN ' \
+          '         LEFT JOIN ' \
           '         ( ' \
           '             SELECT DISTINCT ' \
           '                     l.id as log_id, l.session, ' \
@@ -116,7 +116,7 @@ def session_in_map(request, session_id):
           '             GROUP BY l.id, l.session ' \
           '             ORDER BY l.id ' \
           '         ) totals on base.log_id = totals.log_id ' \
-          '         INNER JOIN ' \
+          '         LEFT JOIN ' \
           '         (' \
           '         SELECT ' \
           '                 l.id as log_id, concat(r.value, " ", s.user_unit) as `CO2_Average` ' \
@@ -163,9 +163,9 @@ def session_in_map(request, session_id):
         prop_dict["record_time"] = crs[7]
         prop_dict["GPS_Speed"] = crs[16]
         prop_dict["GPS_Accuracy"] = crs[17]
-        prop_dict["CO2_Instantaneous"] = crs[18]
+        # prop_dict["CO2_Instantaneous"] = crs[18]
         # prop_dict["CO2_Average"] = crs[9]
-        prop_dict["Litres_Per_100_Kilometer"] = crs[15]
+        # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
