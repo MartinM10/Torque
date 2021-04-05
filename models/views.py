@@ -1,5 +1,6 @@
 import json
 
+from geopy.geocoders import Nominatim
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
 from django.http import HttpResponse
@@ -72,8 +73,17 @@ def session_in_map(request, session_id):
 
     sql = '' \
           'select distinct ' \
-          'log_id as session_id, email, session as date, Total_Trip_Time, Total_Trip_Fuel_Used,' \
-          ' Total_Trip_Distance, CO2_Average, Speed_Only_Mov_Average, record_time, latitude, longitude, ' \
+          'log_id as session_id, ' \
+          'email, ' \
+          'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, ' \
+          'Total_Trip_Time, ' \
+          'Total_Trip_Fuel_Used,' \
+          'Total_Trip_Distance, ' \
+          'CO2_Average, ' \
+          'Speed_Only_Mov_Average, ' \
+          'substring(substring(record_time, 1, length(record_time) - 7), 12) as time_now, ' \
+          'latitude, ' \
+          'longitude, ' \
           'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
           'max(case when pid = "ff1258" then value else null end) as `CO2_Average`, ' \
@@ -105,9 +115,12 @@ def session_in_map(request, session_id):
           '         ( ' \
           '             SELECT DISTINCT ' \
           '                     l.id as log_id, l.session, ' \
-          '                     max(case when s.pid = "ff1204" then concat(value, " ", user_unit) else null end) AS `Total_Trip_Distance`,' \
-          '                     max(case when s.pid = "ff1266" then substr(sec_to_time(r.value), 1, 8) else null end) AS `Total_Trip_Time`,' \
-          '                     max(case when s.pid = "ff1271" then concat(value, " ", s.user_unit) else null end) AS `Total_Trip_Fuel_Used`' \
+          '                     max(case when s.pid = "ff1204" then concat(value, " ", user_unit) else null end) ' \
+          '                         AS `Total_Trip_Distance`,' \
+          '                     max(case when s.pid = "ff1266" then substr(sec_to_time(r.value), 1, 8) else null end) ' \
+          '                         AS `Total_Trip_Time`,' \
+          '                     max(case when s.pid = "ff1271" then concat(value, " ", s.user_unit) else null end) ' \
+          '                         AS `Total_Trip_Fuel_Used`' \
           '             FROM ' \
           '                 torque_db.models_log l ' \
           '             INNER JOIN torque_db.models_record r ON r.log_id = l.id and l.id = %s ' \
@@ -162,9 +175,11 @@ def session_in_map(request, session_id):
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
     feat_list = []
-    # print(cursor.description)
     field_names = [i[0] for i in cursor.description]
-    # print(field_names[0])
+
+    track = []
+    geolocator = Nominatim(user_agent="http")
+
     for crs in crs_list:
         type_dict = {}
         pt_dict = {}
@@ -195,7 +210,10 @@ def session_in_map(request, session_id):
         date = field_names[2]
         prop_dict[date] = crs[2]
         # total_trip_time = field_names[3]
-        # prop_dict[total_trip_time] = crs[3]
+        prop_dict[total_trip_time] = crs[3]
+        prop_dict[total_trip_fuel_used] = crs[4]
+        prop_dict[total_trip_distance] = crs[5]
+
         record_time = field_names[8]
         prop_dict[record_time] = crs[8]
         gps_speed = field_names[17]
@@ -208,6 +226,10 @@ def session_in_map(request, session_id):
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
+        coordenates = (crs[9], crs[10])
+        location = geolocator.reverse(coordenates, addressdetails=False)
+        print(location)
+        # print(location.address.street)
 
     gjson_dict["features"] = feat_list
     # 'DISTINCT id_app, session, record_time, latitude, longitude, '
@@ -216,6 +238,8 @@ def session_in_map(request, session_id):
 
     summary = [values]
     # print(summary)
+
+    # location =  geolocation.reverse()
     return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': summary})
 
 
