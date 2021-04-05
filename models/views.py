@@ -179,12 +179,12 @@ def session_in_map(request, session_id):
 
     track = []
     geolocator = Nominatim(user_agent="http")
+    values = {}
 
     for crs in crs_list:
         type_dict = {}
         pt_dict = {}
         prop_dict = {}
-        values = {}
 
         total_trip_time = field_names[3]
         values[total_trip_time] = crs[3]
