@@ -177,8 +177,8 @@ def session_in_map(request, session_id):
     feat_list = []
     field_names = [i[0] for i in cursor.description]
 
-    track = []
-    geolocator = Nominatim(user_agent="http")
+    # track = []
+    # geolocator = Nominatim(user_agent="http")
     values = {}
 
     for crs in crs_list:
@@ -226,10 +226,10 @@ def session_in_map(request, session_id):
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
-        coordenates = (crs[9], crs[10])
-        location = geolocator.reverse(coordenates, addressdetails=False)
-        print(location.raw)
-        print(location.raw['display_name'])
+        # coordenates = (crs[9], crs[10])
+        # location = geolocator.reverse(coordenates, addressdetails=False)
+        # print(location.raw)
+        # print(location.raw['display_name'])
         # print(location.address.street)
 
     gjson_dict["features"] = feat_list
