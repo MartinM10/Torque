@@ -7,9 +7,44 @@
         <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
         <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
         <script src="{% static 'L.KML.js'%}"></script>
+        <style>
+            .sidenav {
+                padding-top: 20px;
+                background-color: #f1f1f1;
+                height: 100%;
+                width: auto;
+            }
+        </style>
     </head>
     <body>
-        <div style="width: 80vw; height: 80vh; margin-top: 10px" id="map"></div>
+    <div class="col-sm-2 sidenav">
+        {% if summary %}
+            {% for i in summary %}
+                <p>{{ i }}</p>
+            {% endfor %}
+
+        {% endif %}
+    </div>
+        <div style="width: 80vw; height: 60vh; margin-top: 10px" id="map"></div>
+        {% if  data %}
+            <h1>Session List</h1>
+             {% for session in sessions%}
+                      <p><a href="{% url 'session_map' session.id %}">
+                          {% if not session.email %}
+                              No_Email
+                          {% else %}
+                              {{ session.email }}
+                          {% endif %}
+                          -
+                          {% if not session.session %}
+                              No_Date_Session
+                          {% else %}
+                              {{ session.session }}
+                          {% endif %}
+                          </a></p>
+             {% endfor %}
+        {% endif %}
+
         <script type="text/javascript">
             // Make basemap
             const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
@@ -22,22 +57,23 @@
                     var popupContent = '<div style=text-align:center><strong>';
 
                     if (feature.properties.email) {
-                        popupContent+= feature.properties.email + '<br/'
+                        popupContent+= feature.properties.email + '<br/>'
+                        //popupContent+= feature.properties.date + '<br/>'
                     }
 
-                    if (feature.properties.session) {
-                        popupContent+= feature.properties.session + '<br/>'
+                    if (feature.properties.date) {
+                        popupContent+= feature.properties.date + '<br/>'
                     }
                     popupContent+='</strong></div><hr>';
 
                     for (var p in feature.properties) {
-                        if (/*(
-                            feature.properties[p] === feature.properties.GPS_Accuracy  ||
-                            feature.properties[p] === feature.properties.GPS_Speed ||
+                        if ((
+                            feature.properties[p] != feature.properties.email  &&
+                            feature.properties[p] != feature.properties.date
                             // feature.properties[p] == feature.properties.CO2_Average ||
-                            feature.properties[p] === feature.properties.CO2_Instantaneous ||
-                            feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
-                            ) && */
+                            // feature.properties[p] === feature.properties.CO2_Instantaneous ||
+                            // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
+                            ) &&
                             feature.properties[p] != null
                             ) {
                                 popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';

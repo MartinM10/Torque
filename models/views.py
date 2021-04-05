@@ -68,11 +68,12 @@ def myconverter(o):
 
 def session_in_map(request, session_id):
     cursor = connection.cursor()
+    sessions = Log.objects.all()
 
     sql = '' \
           'select distinct ' \
-          'log_id as session_id, email, session, Total_Trip_Time, Total_Trip_Fuel_Used, Total_Trip_Distance, CO2_Average, ' \
-          'Speed_Only_Mov_Average, record_time, latitude, longitude, ' \
+          'log_id as session_id, email, session as date, Total_Trip_Time, Total_Trip_Fuel_Used,' \
+          ' Total_Trip_Distance, CO2_Average, Speed_Only_Mov_Average, record_time, latitude, longitude, ' \
           'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
           'max(case when pid = "ff1258" then value else null end) as `CO2_Average`, ' \
@@ -168,6 +169,18 @@ def session_in_map(request, session_id):
         type_dict = {}
         pt_dict = {}
         prop_dict = {}
+        values = {}
+
+        total_trip_time = field_names[3]
+        values[total_trip_time] = crs[3]
+        total_trip_fuel_used = field_names[4]
+        values[total_trip_fuel_used] = crs[4]
+        total_trip_distance = field_names[5]
+        values[total_trip_distance] = crs[5]
+        co2_average = field_names[6]
+        values[co2_average] = crs[6]
+        speed_only_mov_average = field_names[7]
+        values[speed_only_mov_average] = crs[7]
 
         type_dict["type"] = "Feature"
 
@@ -175,21 +188,22 @@ def session_in_map(request, session_id):
 
         # GEOJSON looks for long,lat so reverse order
         type_dict["geometry"] = mapping(Point(crs[10], crs[9]))
-        id_session = field_names[0]
-        prop_dict[id_session] = crs[0]
+        # id_session = field_names[0]
+        # prop_dict[id_session] = crs[0]
         email = field_names[1]
         prop_dict[email] = crs[1]
-        session = field_names[2]
-        prop_dict[session] = crs[2]
-        total_trip_time = field_names[3]
-        prop_dict[total_trip_time] = crs[3]
+        date = field_names[2]
+        prop_dict[date] = crs[2]
+        # total_trip_time = field_names[3]
+        # prop_dict[total_trip_time] = crs[3]
         record_time = field_names[8]
         prop_dict[record_time] = crs[8]
         gps_speed = field_names[17]
         prop_dict[gps_speed] = crs[17]
         gps_accuracy = field_names[18]
         prop_dict[gps_accuracy] = crs[18]
-        # prop_dict["CO2_Instantaneous"] = crs[18]
+        c02_instantaneous = field_names[19]
+        prop_dict[c02_instantaneous] = crs[19]
         # prop_dict["CO2_Average"] = crs[9]
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
@@ -199,7 +213,10 @@ def session_in_map(request, session_id):
     # 'DISTINCT id_app, session, record_time, latitude, longitude, '
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
     # print(data)
-    return render(request, 'map.html', context={'data': data})
+
+    summary = [values]
+    # print(summary)
+    return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': summary})
 
 
 def viewMap(request):
