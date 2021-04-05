@@ -14,17 +14,18 @@
             {% for session in sessions%}
                 <li>
                    <p><a href="{% url 'session_map' session.id %}">
-                        {% if not session.email %}
-                              No_Email
-                          {% else %}
-                              {{ session.email }}
-                          {% endif %}
-                          -
-                          {% if not session.session %}
-                              No_Date_Session
-                          {% else %}
-                              {{ session.session }}
-                          {% endif %}
+                       {{ session.id }} -
+                       {% if not session.email %}
+                           No_Email
+                       {% else %}
+                           {{ session.email }}
+                       {% endif %}
+                        -
+                       {% if not session.session %}
+                           No_Date_Session
+                       {% else %}
+                           {{ session.session }}
+                       {% endif %}
                    </a></p>
                 </li>
             {% endfor %}

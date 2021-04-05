@@ -30,12 +30,13 @@
             <h1>Session List</h1>
              {% for session in sessions%}
                       <p><a href="{% url 'session_map' session.id %}">
+                          {{ session.id }} -
                           {% if not session.email %}
                               No_Email
                           {% else %}
                               {{ session.email }}
                           {% endif %}
-                          -
+                           -
                           {% if not session.session %}
                               No_Date_Session
                           {% else %}
