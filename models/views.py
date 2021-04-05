@@ -72,7 +72,7 @@ def session_in_map(request, session_id):
     sql = '' \
           'select distinct ' \
           'log_id as session_id, email, session, Total_Trip_Time, Total_Trip_Fuel_Used, Total_Trip_Distance, CO2_Average, ' \
-          'record_time, latitude, longitude, ' \
+          'Speed_Only_Mov_Average, record_time, latitude, longitude, ' \
           'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
           'max(case when pid = "ff1258" then value else null end) as `CO2_Average`, ' \
@@ -87,7 +87,7 @@ def session_in_map(request, session_id):
           '     select distinct ' \
           '         base.log_id, base.email, base.session, base.record_time, base.latitude, base.longitude, ' \
           '         base.pid, base.value, Total_Trip_Fuel_Used, Total_Trip_Time, ' \
-          '         Total_Trip_Distance, CO2_Average, ' \
+          '         Total_Trip_Distance, CO2_Average, Speed_Only_Mov_Average, ' \
           '	        if (value <> @p, @rn:=1 ,@rn:=@rn+1) rn, @p:=value p ' \
           '     from' \
           '         ( ' \
@@ -133,10 +133,27 @@ def session_in_map(request, session_id):
           '                     WHERE s.pid = "ff1258" ' \
           '                 ) ' \
           '         ) averages on base.log_id = averages.log_id ' \
+          '         LEFT JOIN ' \
+          '         (' \
+          '         SELECT ' \
+          '                 l.id as log_id, concat(r.value, " ", s.user_unit) as `Speed_Only_Mov_Average` ' \
+          '         FROM models_log l ' \
+          '         INNER JOIN models_record r on l.id = r.log_id and l.id = %s ' \
+          '         INNER JOIN models_sensor s on r.sensor_id = s.id ' \
+          '         WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
+          '         and s.pid = "ff1263" and ' \
+          '         r.time = ( ' \
+          '                     SELECT max(r.time) ' \
+          '                     FROM models_log l ' \
+          '                     INNER JOIN models_record r on l.id = r.log_id and l.id = %s' \
+          '                     INNER JOIN models_sensor s on r.sensor_id = s.id ' \
+          '                     WHERE s.pid = "ff1263" ' \
+          '                 ) ' \
+          '         ) av_sp on base.log_id = av_sp.log_id ' \
           'cross join (select @rn:=0,@p:=null) r ' \
           'order by rn ' \
           ') s ' \
-          'group by s.log_id, email, session, CO2_Average, record_time, latitude, longitude; ' % (session_id, session_id, session_id ,session_id)
+          'group by s.log_id, email, session, CO2_Average, Speed_Only_Mov_Average, record_time, latitude, longitude; ' % (session_id, session_id, session_id, session_id, session_id ,session_id)
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
@@ -157,21 +174,21 @@ def session_in_map(request, session_id):
         pt_dict["type"] = "Point"
 
         # GEOJSON looks for long,lat so reverse order
-        type_dict["geometry"] = mapping(Point(crs[9], crs[8]))
+        type_dict["geometry"] = mapping(Point(crs[10], crs[9]))
         id_session = field_names[0]
         prop_dict[id_session] = crs[0]
         email = field_names[1]
         prop_dict[email] = crs[1]
         session = field_names[2]
         prop_dict[session] = crs[2]
-        record_time = field_names[7]
-        prop_dict[record_time] = crs[7]
         total_trip_time = field_names[3]
         prop_dict[total_trip_time] = crs[3]
-        gps_speed = field_names[16]
-        prop_dict[gps_speed] = crs[16]
-        gps_accuracy = field_names[17]
-        prop_dict[gps_accuracy] = crs[17]
+        record_time = field_names[8]
+        prop_dict[record_time] = crs[8]
+        gps_speed = field_names[17]
+        prop_dict[gps_speed] = crs[17]
+        gps_accuracy = field_names[18]
+        prop_dict[gps_accuracy] = crs[18]
         # prop_dict["CO2_Instantaneous"] = crs[18]
         # prop_dict["CO2_Average"] = crs[9]
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
