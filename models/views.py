@@ -20,6 +20,7 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
 geolocator = Nominatim(user_agent="http")
 rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
+
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
     queryset = Log.objects.all()
@@ -243,8 +244,10 @@ def session_in_map(request, session_id):
         coordenates = (crs[9], crs[10])
         location = rev(coordenates)
         road = location.raw['address']['road']
-        if road not in track:
-            track.append(road)
+        for key in location.raw:
+            if road in key and road not in track:
+                print(road)
+                track.append(road)
         # print(location.raw)
         # print(location.raw['address']['road'])
         # print(location.address.street)
