@@ -17,8 +17,9 @@ from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM,
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
-geolocator = Nominatim(user_agent="http")
-rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
+
+# geolocator = Nominatim(user_agent="http")
+# rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -176,13 +177,12 @@ def session_in_map(request, session_id):
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
-    # gjson is th emain dictionary
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
     feat_list = []
     field_names = [i[0] for i in cursor.description]
 
-    track = []
+    # track = []
     values = {}
 
     for crs in crs_list:
@@ -211,6 +211,7 @@ def session_in_map(request, session_id):
         # prop_dict[id_session] = crs[0]
         email = field_names[1]
         prop_dict[email] = crs[1]
+
         date = field_names[2]
         prop_dict[date] = crs[2]
 
@@ -231,39 +232,39 @@ def session_in_map(request, session_id):
 
         record_time = field_names[8]
         prop_dict[record_time] = crs[8]
+
         gps_speed = field_names[17]
         prop_dict[gps_speed] = crs[17]
+
         gps_accuracy = field_names[18]
         prop_dict[gps_accuracy] = crs[18]
+
         c02_instantaneous = field_names[19]
         prop_dict[c02_instantaneous] = crs[19]
-        # prop_dict["CO2_Average"] = crs[9]
-        # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
+
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
-        coordenates = (crs[9], crs[10])
-        location = rev(coordenates)
+
+        # Name of streets
+        # coordenates = (crs[9], crs[10])
+        # location = rev(coordenates)
         # road = location.raw['address']['road']
+        '''
         for key in location.raw:
             if 'road' in key:
                 road = location.raw['address']['road']
                 if road not in track:
                     print(road)
                     track.append(road)
+        '''
         # print(location.raw)
-        # print(location.raw['address']['road'])
-        # print(location.address.street)
 
-    print(track)
+    # print(track)
     gjson_dict["features"] = feat_list
-    # 'DISTINCT id_app, session, record_time, latitude, longitude, '
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
-    # print(data)
 
     summary = [values]
     # print(summary)
-
-    # location =  geolocation.reverse()
     return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': summary})
 
 
