@@ -1,5 +1,6 @@
 import json
 
+from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
@@ -12,10 +13,12 @@ import os
 from rest_framework import viewsets
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
-from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque
+from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Address
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
+geolocator = Nominatim(user_agent="http")
+rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
@@ -76,23 +79,23 @@ def session_in_map(request, session_id):
           'log_id as session_id, ' \
           'email, ' \
           'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, ' \
-          'Total_Trip_Time, ' \
-          'Total_Trip_Fuel_Used,' \
-          'Total_Trip_Distance, ' \
-          'CO2_Average, ' \
-          'Speed_Only_Mov_Average, ' \
-          'substring(substring(record_time, 1, length(record_time) - 7), 12) as Time_now, ' \
+          'Total_Trip_Time as `Trip Duration`, ' \
+          'Total_Trip_Fuel_Used as `Trip Fuel Used`,' \
+          'Total_Trip_Distance as `Trip Distance`, ' \
+          'CO2_Average as `Trip CO2 Average`, ' \
+          'Speed_Only_Mov_Average as `Trip Speed Only Moving Average`, ' \
+          'substring(substring(record_time, 1, length(record_time) - 7), 12) as `Time Now`, ' \
           'latitude, ' \
           'longitude, ' \
-          'max(case when pid = "ff1266" then value else null end) as `Trip_Time`, ' \
-          'max(case when pid = "ff1204" then value else null end) as `Trip_Distance`, ' \
-          'max(case when pid = "ff1258" then value else null end) as `CO2_Average`, ' \
-          'max(case when pid = "ff1263" then value else null end) as `Trip_Speed_Average_Only_Moving`, ' \
-          'max(case when pid = "ff1271" then value else null end) as `Trip_Fuel_Used`, ' \
-          'max(case when pid = "ff1208" then value else null end) as `Trip_LPK_Average`, ' \
-          'max(case when pid = "ff1001" then value else null end) as `GPS_Speed`, ' \
-          'max(case when pid = "ff1239" then value else null end) as `GPS_Accuracy`, ' \
-          'max(case when pid = "ff1257" then value else null end) as `CO2_Instantaneous` ' \
+          'max(case when pid = "ff1266" then value else null end) as `Duration`, ' \
+          'max(case when pid = "ff1204" then value else null end) as `Distance`, ' \
+          'max(case when pid = "ff1258" then value else null end) as `CO2 Average`, ' \
+          'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
+          'max(case when pid = "ff1271" then value else null end) as `Fuel Used`, ' \
+          'max(case when pid = "ff1208" then value else null end) as `Liters per kilometer Average`, ' \
+          'max(case when pid = "ff1001" then value else null end) as `GPS Speed`, ' \
+          'max(case when pid = "ff1239" then value else null end) as `GPS Accuracy`, ' \
+          'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous` ' \
           'from ' \
           ' ( ' \
           '     select distinct ' \
@@ -104,7 +107,7 @@ def session_in_map(request, session_id):
           '         ( ' \
           '             SELECT distinct ' \
           '                 l.id as log_id, l.email, l.session, r.time AS record_time, s.pid as pid, ' \
-          '                 CONCAT(r.value, " ", s.user_unit) AS value, r.latitude, r.longitude ' \
+          '                 CONCAT(round(r.value, 2), " ", s.user_unit) AS value, r.latitude, r.longitude ' \
           '             FROM ' \
           '                 torque_db.models_log l ' \
           '             INNER JOIN torque_db.models_record r ON r.log_id = l.id and l.id = %s ' \
@@ -115,12 +118,12 @@ def session_in_map(request, session_id):
           '         ( ' \
           '             SELECT DISTINCT ' \
           '                     l.id as log_id, l.session, ' \
-          '                     max(case when s.pid = "ff1204" then concat(value, " ", user_unit) else null end) ' \
-          '                         AS `Total_Trip_Distance`,' \
+          '                     max(case when s.pid = "ff1204" then concat(round(value, 2), " ", user_unit) ' \
+          '                             else null end) AS `Total_Trip_Distance`,' \
           '                     max(case when s.pid = "ff1266" then substr(sec_to_time(r.value), 1, 8) else null end) ' \
           '                         AS `Total_Trip_Time`,' \
-          '                     max(case when s.pid = "ff1271" then concat(value, " ", s.user_unit) else null end) ' \
-          '                         AS `Total_Trip_Fuel_Used`' \
+          '                     max(case when s.pid = "ff1271" then concat(round(value, 2), " ", s.user_unit) ' \
+          '                             else null end) AS `Total_Trip_Fuel_Used`' \
           '             FROM ' \
           '                 torque_db.models_log l ' \
           '             INNER JOIN torque_db.models_record r ON r.log_id = l.id and l.id = %s ' \
@@ -133,7 +136,7 @@ def session_in_map(request, session_id):
           '         LEFT JOIN ' \
           '         (' \
           '         SELECT ' \
-          '                 l.id as log_id, concat(r.value, " ", s.user_unit) as `CO2_Average` ' \
+          '                 l.id as log_id, concat(round(r.value, 2), " ", s.user_unit) as `CO2_Average` ' \
           '         FROM models_log l ' \
           '         INNER JOIN models_record r on l.id = r.log_id and l.id = %s ' \
           '         INNER JOIN models_sensor s on r.sensor_id = s.id ' \
@@ -150,7 +153,7 @@ def session_in_map(request, session_id):
           '         LEFT JOIN ' \
           '         (' \
           '         SELECT ' \
-          '                 l.id as log_id, concat(r.value, " ", s.user_unit) as `Speed_Only_Mov_Average` ' \
+          '                 l.id as log_id, concat(round(r.value, 2), " ", s.user_unit) as `Speed_Only_Mov_Average` ' \
           '         FROM models_log l ' \
           '         INNER JOIN models_record r on l.id = r.log_id and l.id = %s ' \
           '         INNER JOIN models_sensor s on r.sensor_id = s.id ' \
@@ -167,7 +170,8 @@ def session_in_map(request, session_id):
           'cross join (select @rn:=0,@p:=null) r ' \
           'order by rn ' \
           ') s ' \
-          'group by s.log_id, email, session, CO2_Average, Speed_Only_Mov_Average, record_time, latitude, longitude; ' % (session_id, session_id, session_id, session_id, session_id ,session_id)
+          'group by s.log_id, email, session, CO2_Average, Speed_Only_Mov_Average, record_time, latitude, longitude; ' \
+          % (session_id, session_id, session_id, session_id, session_id, session_id)
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
@@ -177,8 +181,7 @@ def session_in_map(request, session_id):
     feat_list = []
     field_names = [i[0] for i in cursor.description]
 
-    # track = []
-    # geolocator = Nominatim(user_agent="http")
+    track = []
     values = {}
 
     for crs in crs_list:
@@ -192,10 +195,10 @@ def session_in_map(request, session_id):
         values[total_trip_fuel_used] = crs[4]
         total_trip_distance = field_names[5]
         values[total_trip_distance] = crs[5]
-        co2_average = field_names[6]
-        values[co2_average] = crs[6]
-        speed_only_mov_average = field_names[7]
-        values[speed_only_mov_average] = crs[7]
+        trip_co2_average = field_names[6]
+        values[trip_co2_average] = crs[6]
+        trip_speed_only_mov_average = field_names[7]
+        values[trip_speed_only_mov_average] = crs[7]
 
         type_dict["type"] = "Feature"
 
@@ -209,10 +212,21 @@ def session_in_map(request, session_id):
         prop_dict[email] = crs[1]
         date = field_names[2]
         prop_dict[date] = crs[2]
-        # total_trip_time = field_names[3]
-        prop_dict[total_trip_time] = crs[3]
-        prop_dict[total_trip_fuel_used] = crs[4]
-        prop_dict[total_trip_distance] = crs[5]
+
+        trip_time = field_names[11]
+        prop_dict[trip_time] = crs[11]
+
+        trip_distance = field_names[12]
+        prop_dict[trip_distance] = crs[12]
+
+        co2_average = field_names[13]
+        prop_dict[co2_average] = crs[13]
+
+        speed_only_mov_average = field_names[14]
+        prop_dict[speed_only_mov_average] = crs[14]
+
+        trip_fuel_used = field_names[15]
+        prop_dict[trip_fuel_used] = crs[15]
 
         record_time = field_names[8]
         prop_dict[record_time] = crs[8]
@@ -226,12 +240,16 @@ def session_in_map(request, session_id):
         # prop_dict["Litres_Per_100_Kilometer"] = crs[15]
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
-        # coordenates = (crs[9], crs[10])
-        # location = geolocator.reverse(coordenates, addressdetails=False)
+        coordenates = (crs[9], crs[10])
+        location = rev(coordenates)
+        road = location.raw['address']['road']
+        if road not in track:
+            track.append(road)
         # print(location.raw)
-        # print(location.raw['display_name'])
+        # print(location.raw['address']['road'])
         # print(location.address.street)
 
+    print(track)
     gjson_dict["features"] = feat_list
     # 'DISTINCT id_app, session, record_time, latitude, longitude, '
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
@@ -255,6 +273,13 @@ def viewMap(request):
     return render(request, 'map.html', context=context)
 
 
+def sql_query_longs_lats(sql_query):
+    cursor = connection.cursor()
+    cursor.execute(sql_query)
+    crs_list = cursor.fetchall()
+    return crs_list
+
+
 @transaction.atomic
 def upload_data(request):
     # print(request.query_params)
@@ -266,6 +291,7 @@ def upload_data(request):
     latitude = request.GET.get('kff1006')
     longitude = request.GET.get('kff1005')
     session_time = None
+    log = None
 
     # print("TIMESTAMP---------------------------------- ")
     # ts = int(time_app)
@@ -283,7 +309,7 @@ def upload_data(request):
     if session_time and email and id_app:
         try:
             with transaction.atomic():
-                Log.objects.get(session=session_time, email=email, id_app=id_app)
+                log = Log.objects.get(session=session_time, email=email, id_app=id_app)
         except Log.DoesNotExist:
             try:
                 with transaction.atomic():
@@ -306,7 +332,7 @@ def upload_data(request):
         except:
             pass
 
-        # TABLE SENSOR
+        # TABLE SENSOR AND TABLE RECORD
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
                 'defaultUnit' in key or 'kff' in key:
 
@@ -337,6 +363,33 @@ def upload_data(request):
 
                 sensor_id = Sensor.objects.get(pid=pid).id
                 log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
+                '''
+                if longitude and latitude:
+                    coordenates = (latitude, longitude)
+                    location = rev(coordenates, language='es', exactly_one=True)
+                    print(location.raw)
+                    # print(location.raw['address']['city'])
+                    # house_number = location.raw['address']['house_number']
+                    road = location.raw['address']['road']
+                    neighbourhood = location.raw['address']['neighbourhood']
+                    borough = location.raw['address']['borough']
+                    city = location.raw['address']['city']
+                    county = location.raw['address']['county']
+                    state = location.raw['address']['state']
+                    postcode = location.raw['address']['postcode']
+                    country = location.raw['address']['country']
+                    country_code = location.raw['address']['country_code']
+                    try:
+                        with transaction.atomic():
+                            Address.objects.get(road=road, neighbourhood=neighbourhood,
+                                                borough=borough, city=city, county=county, state=state,
+                                                postcode=postcode,
+                                                country=country, country_code=country_code, log_id=log_id).save()
+                    except Address.DoesNotExist:
+                        Address(road=road, neighbourhood=neighbourhood, borough=borough,
+                                city=city, county=county, state=state, postcode=postcode, country=country,
+                                country_code=country_code, log_id=log_id).save()
+                '''
                 timestamp = int(time_app)
                 date_time = datetime.datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,

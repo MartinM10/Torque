@@ -66,6 +66,23 @@ class Log(models.Model):
         unique_together = ('email', 'session')
 
 
+class Address(models.Model):
+    house_number = models.CharField(null=True, max_length=255)
+    road = models.CharField(null=True, max_length=255)
+    neighbourhood = models.CharField(null=True, max_length=255)
+    borough = models.CharField(null=True, max_length=255)
+    city = models.CharField(null=True, max_length=255)
+    county = models.CharField(null=True, max_length=255)
+    state = models.CharField(null=True, max_length=255)
+    postcode = models.CharField(null=True, max_length=255)
+    country = models.CharField(null=True, max_length=255)
+    country_code = models.CharField(null=True, max_length=255)
+    log = models.ManyToManyField(Log)
+
+    class Meta:
+        unique_together = ('road', 'city', 'postcode', 'country')
+
+
 class Profile(models.Model):
     name = models.CharField(null=True, max_length=255)
     vehicle = models.CharField(null=True, max_length=255)
