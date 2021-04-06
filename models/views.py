@@ -243,11 +243,13 @@ def session_in_map(request, session_id):
         feat_list.append(type_dict)
         coordenates = (crs[9], crs[10])
         location = rev(coordenates)
-        road = location.raw['address']['road']
+        # road = location.raw['address']['road']
         for key in location.raw:
-            if road in key and road not in track:
-                print(road)
-                track.append(road)
+            if 'road' in key:
+                road = location.raw['address']['road']
+                if road not in track:
+                    print(road)
+                    track.append(road)
         # print(location.raw)
         # print(location.raw['address']['road'])
         # print(location.address.street)
