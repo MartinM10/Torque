@@ -89,7 +89,7 @@ def session_in_map(request, session_id):
           'substring(substring(record_time, 1, length(record_time) - 7), 12) as `Time Now`, ' \
           'latitude, ' \
           'longitude, ' \
-          'max(case when pid = "ff1266" then value else null end) as `Duration`, ' \
+          'max(case when pid = "ff1266" then substr(sec_to_time(value), 1, 8) else null end) as `Duration`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Distance`, ' \
           'max(case when pid = "ff1258" then value else null end) as `CO2 Average`, ' \
           'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
