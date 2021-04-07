@@ -55,7 +55,7 @@ class Sensor(models.Model):
 
 
 class Log(models.Model):
-    session = models.DateTimeField(null=True)
+    session = models.CharField(null=True, max_length=255)
     email = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
     # la session ya trae el tiempo en unix timestamp
@@ -95,7 +95,7 @@ class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
     value = models.FloatField()
-    time = models.DateTimeField(null=True)
+    time = models.CharField(null=True, max_length=255)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
 

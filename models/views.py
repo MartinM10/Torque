@@ -1,5 +1,6 @@
 import json
 
+from django.utils.timezone import make_aware
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point, mapping
@@ -75,18 +76,18 @@ def myconverter(o):
 def session_in_map(request, session_id):
     cursor = connection.cursor()
     sessions = Log.objects.all()
-
+    'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, '
     sql = '' \
           'select distinct ' \
           'log_id as session_id, ' \
           'email, ' \
-          'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, ' \
+          'replace(left(session, 19), " ", "    ,    ") as date, ' \
           'Total_Trip_Time as `Trip Duration`, ' \
           'Total_Trip_Fuel_Used as `Trip Fuel Used`,' \
           'Total_Trip_Distance as `Trip Distance`, ' \
           'CO2_Average as `Trip CO2 Average`, ' \
           'Speed_Only_Mov_Average as `Trip Speed Only Moving Average`, ' \
-          'substring(substring(record_time, 1, length(record_time) - 7), 12) as `Time Now`, ' \
+          'right(left(record_time, 19), 8) as `Time Now`, ' \
           'latitude, ' \
           'longitude, ' \
           'max(case when pid = "ff1266" then substr(sec_to_time(value), 1, 8) else null end) as `Duration`, ' \
@@ -97,7 +98,9 @@ def session_in_map(request, session_id):
           'max(case when pid = "ff1208" then value else null end) as `Liters per kilometer Average`, ' \
           'max(case when pid = "ff1001" then value else null end) as `GPS Speed`, ' \
           'max(case when pid = "ff1239" then value else null end) as `GPS Accuracy`, ' \
-          'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous` ' \
+          'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous`, ' \
+          'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference`, ' \
+          'max(case when pid = "0d" then value else null end) as `OBD Speed` ' \
           'from ' \
           ' ( ' \
           '     select distinct ' \
@@ -162,7 +165,7 @@ def session_in_map(request, session_id):
           '         WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
           '         and s.pid = "ff1263" and ' \
           '         r.time = ( ' \
-          '                     SELECT max(r.time) ' \
+          '                     SELECT max(str_to_date(left(r.time, 19), "Y-m-d H:i:s")) ' \
           '                     FROM models_log l ' \
           '                     INNER JOIN models_record r on l.id = r.log_id and l.id = %s' \
           '                     INNER JOIN models_sensor s on r.sensor_id = s.id ' \
@@ -309,9 +312,13 @@ def upload_data(request):
 
     # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
     #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-    if session_app:
-        session_time = datetime.datetime.fromtimestamp(int(session_app) / 1000)
-        session_time += datetime.timedelta(hours=1)
+    #if session_app:
+    session_time = make_aware(datetime.datetime.fromtimestamp(int(session_app) / 1000))
+        # session_time += datetime.timedelta(hours=1)
+        # aware_datetime = make_aware(session_time)
+        # print(type(session_time))
+        # print(session_time, '%Y-%m-%d %H:%M:%S' '.' '%f')
+
     if session_time and email and id_app:
         try:
             with transaction.atomic():
@@ -396,8 +403,10 @@ def upload_data(request):
                                 city=city, county=county, state=state, postcode=postcode, country=country,
                                 country_code=country_code, log_id=log_id).save()
                 '''
-                timestamp = int(time_app)
-                date_time = datetime.datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S''.''%f')
+
+                date_time = make_aware(datetime.datetime.fromtimestamp(int(time_app) / 1000))
+
+                # print(date_time)
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()
 
