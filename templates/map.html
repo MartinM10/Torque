@@ -1,6 +1,6 @@
-{% extends 'main.html' %}
+{% extends 'sessions_list.html' %}
 {% load static %}
-{% block content%}
+{% block map %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -9,7 +9,10 @@
         <script src="{% static 'L.KML.js'%}"></script>
         <style>
             .sidenav {
+                margin-top: 10px;
+                margin-bottom: 10px;
                 padding-top: 20px;
+                padding-bottom: 20px;
                 background-color: #f1f1f1;
                 height: 100%;
                 width: auto;
@@ -24,25 +27,9 @@
             {% endfor %}
         {% endif %}
     </div>
-        <div style="width: 80vw; height: 60vh; margin-top: 10px" id="map"></div>
+        <div style="width: 100%; height: 60vh; margin-top: 10px" id="map"></div>
         {% if  data %}
-            <h1>Session List</h1>
-             {% for session in sessions%}
-                      <p><a href="{% url 'session_map' session.id %}">
-                          {{ session.id }} -
-                          {% if not session.email %}
-                              No_Email
-                          {% else %}
-                              {{ session.email }}
-                          {% endif %}
-                           -
-                          {% if not session.session %}
-                              No_Date_Session
-                          {% else %}
-                              {{ session.session }}
-                          {% endif %}
-                          </a></p>
-             {% endfor %}
+
         {% endif %}
 
         <script type="text/javascript">
@@ -129,4 +116,4 @@
         </script>
     </body>
 </html>
-{% endblock %}
+{%endblock map %}

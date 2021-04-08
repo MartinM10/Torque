@@ -3,33 +3,73 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>Lista de sesiones</title>
+        <title>Session list</title>
     </head>
 
-    <body>
     {% block content %}
+    <body>
+        {% block map %}
+
+
+        {% endblock map%}
+
         {% csrf_token %}
-        <h1>Session List</h1>
-        <ul>
-            {% for session in sessions%}
-                <li>
-                   <p><a href="{% url 'session_map' session.id %}">
-                       {{ session.id }} -
-                       {% if not session.email %}
-                           No_Email
-                       {% else %}
-                           {{ session.email }}
-                       {% endif %}
-                        -
-                       {% if not session.session %}
-                           No_Date_Session
-                       {% else %}
-                           {{ session.session }}
-                       {% endif %}
-                   </a></p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endblock %}
+        <h1>Session list</h1>
+        <div class="container-fluid text-center" style="height: max-content">
+
+            {% if sessions %}
+                <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for anything...">
+                <table id="myTable" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center">Name</th>
+                            <th style="text-align: center">Date Session</th>
+                            <th style="text-align: center">Id</th>
+                            <th style="text-align: center">Map</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions%}
+                            <tr>
+                                <td>{{ session.email }}</td>
+                                <td>{{ session.session }}</td>
+                                <td>{{ session.id }}</td>
+                                <td><a href="{% url 'session_map' session.id %}">View</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+    <script>
+        function myFunction() {
+            // Declare variables
+            var input, filter, table, tr, td, i, j, visible;
+            input = document.getElementById("myInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("myTable");
+            tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows, and hide those who don't match the search query
+            for (i = 0; i < tr.length; i++) {
+                visible = false;
+                /* Obtenemos todas las celdas de la fila, no sólo la primera */
+                td = tr[i].getElementsByTagName("td");
+                for (j = 0; j < td.length; j++) {
+                    if (td[j] && td[j].innerHTML.toUpperCase().indexOf(filter) > -1) {
+                        visible = true;
+                    }
+                }
+                if (visible === true) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    </script>
     </body>
+    {% endblock %}
+
 </html>
