@@ -130,7 +130,7 @@ USE_I18N = True
 USE_L10N = True
 
 # Si activo el USE_TZ me salta un warning a la hora de almacenar la hora en la tabla Record
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

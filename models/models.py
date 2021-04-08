@@ -22,7 +22,7 @@ class SVM(models.Model):
 class Prediction(models.Model):
     learning_curve_plot = models.TextField(null=True)
     prediction_plot = models.TextField(null=True)
-    time = models.IntegerField(null=True)
+    time = models.DateTimeField(null=True)
     rmse = models.FloatField(null=True)
     feature = models.TextField(null=True)
     epochs = models.IntegerField(null=True, default=0)
@@ -55,7 +55,7 @@ class Sensor(models.Model):
 
 
 class Log(models.Model):
-    session = models.CharField(null=True, max_length=255)
+    session = models.DateTimeField(null=True)
     email = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
     # la session ya trae el tiempo en unix timestamp
@@ -95,7 +95,7 @@ class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
     value = models.FloatField()
-    time = models.CharField(null=True, max_length=255)
+    time = models.DateTimeField(null=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
 

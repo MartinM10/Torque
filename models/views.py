@@ -76,7 +76,7 @@ def myconverter(o):
 def session_in_map(request, session_id):
     cursor = connection.cursor()
     sessions = Log.objects.all()
-    'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, '
+    # 'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, '
     sql = '' \
           'select distinct ' \
           'log_id as session_id, ' \
@@ -165,7 +165,7 @@ def session_in_map(request, session_id):
           '         WHERE s.pid != "ff1005" and s.pid != "ff1006" ' \
           '         and s.pid = "ff1263" and ' \
           '         r.time = ( ' \
-          '                     SELECT max(str_to_date(left(r.time, 19), "Y-m-d H:i:s")) ' \
+          '                     SELECT max(r.time) ' \
           '                     FROM models_log l ' \
           '                     INNER JOIN models_record r on l.id = r.log_id and l.id = %s' \
           '                     INNER JOIN models_sensor s on r.sensor_id = s.id ' \
@@ -312,12 +312,19 @@ def upload_data(request):
 
     # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
     #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-    #if session_app:
+    # if session_app:
     session_time = make_aware(datetime.datetime.fromtimestamp(int(session_app) / 1000))
-        # session_time += datetime.timedelta(hours=1)
-        # aware_datetime = make_aware(session_time)
-        # print(type(session_time))
-        # print(session_time, '%Y-%m-%d %H:%M:%S' '.' '%f')
+    # print(session_time)
+    st = session_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
+    st = session_time.strptime(st, '%Y-%m-%d %H:%M:%S' '.' '%f')
+    # print(type(s))
+    # print(s)
+    session_time = st
+
+    # session_time += datetime.timedelta(hours=1)
+    # aware_datetime = make_aware(session_time)
+    # print(type(session_time))
+    # print(session_time, '%Y-%m-%d %H:%M:%S' '.' '%f')
 
     if session_time and email and id_app:
         try:
@@ -405,7 +412,9 @@ def upload_data(request):
                 '''
 
                 date_time = make_aware(datetime.datetime.fromtimestamp(int(time_app) / 1000))
-
+                dt = date_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
+                dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
+                date_time = dt
                 # print(date_time)
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()
