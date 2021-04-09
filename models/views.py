@@ -96,11 +96,11 @@ def session_in_map(request, session_id):
           'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
           'max(case when pid = "ff1271" then value else null end) as `Fuel Used`, ' \
           'max(case when pid = "ff1208" then value else null end) as `Liters per kilometer Average`, ' \
-          'max(case when pid = "ff1001" then value else null end) as `GPS Speed`, ' \
           'max(case when pid = "ff1239" then value else null end) as `GPS Accuracy`, ' \
           'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous`, ' \
-          'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference`, ' \
-          'max(case when pid = "0d" then value else null end) as `OBD Speed` ' \
+          'max(case when pid = "ff1001" then value else null end) as `GPS Speed`, ' \
+          'max(case when pid = "0d" then value else null end) as `OBD Speed`, ' \
+          'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference` ' \
           'from ' \
           ' ( ' \
           '     select distinct ' \
@@ -236,14 +236,20 @@ def session_in_map(request, session_id):
         record_time = field_names[8]
         prop_dict[record_time] = crs[8]
 
-        gps_speed = field_names[17]
-        prop_dict[gps_speed] = crs[17]
+        gps_accuracy = field_names[17]
+        prop_dict[gps_accuracy] = crs[17]
 
-        gps_accuracy = field_names[18]
-        prop_dict[gps_accuracy] = crs[18]
+        c02_instantaneous = field_names[18]
+        prop_dict[c02_instantaneous] = crs[18]
 
-        c02_instantaneous = field_names[19]
-        prop_dict[c02_instantaneous] = crs[19]
+        gps_speed = field_names[19]
+        prop_dict[gps_speed] = crs[19]
+
+        obd_speed = field_names[20]
+        prop_dict[obd_speed] = crs[20]
+
+        speed_diff = field_names[21]
+        prop_dict[speed_diff] = crs[21]
 
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
