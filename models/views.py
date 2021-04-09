@@ -1,4 +1,5 @@
 import json
+import re
 
 from django.utils.timezone import make_aware
 from geopy.extra.rate_limiter import RateLimiter
@@ -358,14 +359,26 @@ def upload_data(request):
         except:
             pass
 
+        # print(key)
+        # print(value)
+        # patron = "(kff)|(k[d|5])"
+        # print(patron)
         # TABLE SENSOR AND TABLE RECORD
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
-                'defaultUnit' in key or 'kff' in key:
+                'defaultUnit' in key or 'kff' in key or 'kd' in key or 'k5' in key:
 
-            pid = key[-6:]
+            pid = ''
+
+            if 'Name05' in key or 'Unit05' in key or '0d' in key:
+                pid = key[-2:]
+            else:
+                pid = key[-6:]
+
+            # print(pid)
+            # print(value)
             sensor = Sensor.objects.get_or_create(pid=pid)
 
-            if 'kff' not in key:
+            if 'kff' not in key and 'kd' not in key and 'k5' not in key:
 
                 if 'FullName' in key and Sensor.objects.get(pid=pid).user_full_name != value:
                     Sensor.objects.filter(pid=pid).update(user_full_name=value)
@@ -380,48 +393,25 @@ def upload_data(request):
                     Sensor.objects.filter(pid=pid).update(default_unit=value)
 
             # TABLE RECORD
-            elif 'kff' in key:
+            else:  # if 'kff' in key or 'kd' in key or 'k5' in key:
 
                 if 'kff1006' in key:
                     latitude = value
                 if 'kff1005' in key:
                     longitude = value
+                if 'kd' in key:
+                    pid = '0d'
+                if 'k5' in key:
+                    pid = '05'
 
                 sensor_id = Sensor.objects.get(pid=pid).id
                 log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
-                '''
-                if longitude and latitude:
-                    coordenates = (latitude, longitude)
-                    location = rev(coordenates, language='es', exactly_one=True)
-                    print(location.raw)
-                    # print(location.raw['address']['city'])
-                    # house_number = location.raw['address']['house_number']
-                    road = location.raw['address']['road']
-                    neighbourhood = location.raw['address']['neighbourhood']
-                    borough = location.raw['address']['borough']
-                    city = location.raw['address']['city']
-                    county = location.raw['address']['county']
-                    state = location.raw['address']['state']
-                    postcode = location.raw['address']['postcode']
-                    country = location.raw['address']['country']
-                    country_code = location.raw['address']['country_code']
-                    try:
-                        with transaction.atomic():
-                            Address.objects.get(road=road, neighbourhood=neighbourhood,
-                                                borough=borough, city=city, county=county, state=state,
-                                                postcode=postcode,
-                                                country=country, country_code=country_code, log_id=log_id).save()
-                    except Address.DoesNotExist:
-                        Address(road=road, neighbourhood=neighbourhood, borough=borough,
-                                city=city, county=county, state=state, postcode=postcode, country=country,
-                                country_code=country_code, log_id=log_id).save()
-                '''
 
                 date_time = make_aware(datetime.datetime.fromtimestamp(int(time_app) / 1000))
                 dt = date_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
                 dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
                 date_time = dt
-                # print(date_time)
+
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()
 
