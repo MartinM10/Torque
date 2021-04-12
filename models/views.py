@@ -261,20 +261,19 @@ def session_in_map(request, session_id):
         # Name of streets
         coordenates = (crs[9], crs[10])
         location = rev(coordenates)
-        road = location.raw['address']['road']
+        address = location.raw['address']
         # print(road)
         # print(location.raw['address'])
-        if road and road not in track:
-            print('added: ', road)
-            track.append(road)
-            '''
-            for key in location.raw:
+        if address:
+            for key in address:
                 if 'road' in key:
                     road = location.raw['address']['road']
                     if road not in track:
                         print('added: ', road)
                         track.append(road)
-            '''
+                else:
+                    print('NO HAY NOMBRE DE CALLE --------------------- ')
+                    print(address)
         # print(location.raw)
 
     print(track)
