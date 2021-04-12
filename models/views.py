@@ -186,7 +186,7 @@ def session_in_map(request, session_id):
     feat_list = []
     field_names = [i[0] for i in cursor.description]
 
-    track = []
+    # track = []
     values = {}
 
     for crs in crs_list:
@@ -259,11 +259,12 @@ def session_in_map(request, session_id):
         feat_list.append(type_dict)
 
         # Name of streets
-        coordenates = (crs[9], crs[10])
-        location = rev(coordenates)
-        address = location.raw['address']
+        # coordenates = (crs[9], crs[10])
+        # location = rev(coordenates)
+        # address = location.raw['address']
         # print(road)
         # print(location.raw['address'])
+        '''
         if address:
             for key in address:
                 if 'road' in key:
@@ -274,9 +275,10 @@ def session_in_map(request, session_id):
                 else:
                     print('NO HAY NOMBRE DE CALLE --------------------- ')
                     print(address)
+        '''
         # print(location.raw)
 
-    print(track)
+    # print(track)
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
