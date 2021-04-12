@@ -20,8 +20,8 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
 
-# geolocator = Nominatim(user_agent="http")
-# rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
+geolocator = Nominatim(user_agent="http")
+rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -186,7 +186,7 @@ def session_in_map(request, session_id):
     feat_list = []
     field_names = [i[0] for i in cursor.description]
 
-    # track = []
+    track = []
     values = {}
 
     for crs in crs_list:
@@ -219,6 +219,9 @@ def session_in_map(request, session_id):
         date = field_names[2]
         prop_dict[date] = crs[2]
 
+        record_time = field_names[8]
+        prop_dict[record_time] = crs[8]
+
         trip_time = field_names[11]
         prop_dict[trip_time] = crs[11]
 
@@ -234,8 +237,8 @@ def session_in_map(request, session_id):
         trip_fuel_used = field_names[15]
         prop_dict[trip_fuel_used] = crs[15]
 
-        record_time = field_names[8]
-        prop_dict[record_time] = crs[8]
+        liters_per_km = field_names[16]
+        prop_dict[liters_per_km] = crs[16]
 
         gps_accuracy = field_names[17]
         prop_dict[gps_accuracy] = crs[17]
@@ -256,20 +259,25 @@ def session_in_map(request, session_id):
         feat_list.append(type_dict)
 
         # Name of streets
-        # coordenates = (crs[9], crs[10])
-        # location = rev(coordenates)
-        # road = location.raw['address']['road']
-        '''
-        for key in location.raw:
-            if 'road' in key:
-                road = location.raw['address']['road']
-                if road not in track:
-                    print(road)
-                    track.append(road)
-        '''
+        coordenates = (crs[9], crs[10])
+        location = rev(coordenates)
+        road = location.raw['address']['road']
+        # print(road)
+        # print(location.raw['address'])
+        if road and road not in track:
+            print('added: ', road)
+            track.append(road)
+            '''
+            for key in location.raw:
+                if 'road' in key:
+                    road = location.raw['address']['road']
+                    if road not in track:
+                        print('added: ', road)
+                        track.append(road)
+            '''
         # print(location.raw)
 
-    # print(track)
+    print(track)
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
@@ -319,14 +327,14 @@ def upload_data(request):
 
     # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
     #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-    # if session_app:
-    session_time = make_aware(datetime.datetime.fromtimestamp(int(session_app) / 1000))
-    # print(session_time)
-    st = session_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-    st = session_time.strptime(st, '%Y-%m-%d %H:%M:%S' '.' '%f')
-    # print(type(s))
-    # print(s)
-    session_time = st
+    if session_app:
+        session_time = make_aware(datetime.datetime.fromtimestamp(int(session_app) / 1000))
+        # print(session_time)
+        st = session_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
+        st = session_time.strptime(st, '%Y-%m-%d %H:%M:%S' '.' '%f')
+        # print(type(s))
+        # print(s)
+        session_time = st
 
     # session_time += datetime.timedelta(hours=1)
     # aware_datetime = make_aware(session_time)
@@ -362,6 +370,7 @@ def upload_data(request):
         # print(key)
         # print(value)
         # patron = "(kff)|(k[d|5])"
+        # patron_OK = "(kff[0-9]{1,4}|k[0-9a-z]{0,3})"
         # print(patron)
         # TABLE SENSOR AND TABLE RECORD
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
@@ -369,16 +378,16 @@ def upload_data(request):
 
             pid = ''
 
-            if 'Name05' in key or 'Unit05' in key or '0d' in key:
+            if 'Name05' in key or 'Unit05' in key or '0d' in key or '0c' in key:
                 pid = key[-2:]
             else:
                 pid = key[-6:]
 
             # print(pid)
             # print(value)
-            sensor = Sensor.objects.get_or_create(pid=pid)
 
-            if 'kff' not in key and 'kd' not in key and 'k5' not in key:
+            if 'kff' not in key and 'kd' not in key and 'k5' not in key and 'kc' not in key:
+                sensor = Sensor.objects.get_or_create(pid=pid)
 
                 if 'FullName' in key and Sensor.objects.get(pid=pid).user_full_name != value:
                     Sensor.objects.filter(pid=pid).update(user_full_name=value)
@@ -403,6 +412,8 @@ def upload_data(request):
                     pid = '0d'
                 if 'k5' in key:
                     pid = '05'
+                if 'kc' in key:
+                    pid = '0c'
 
                 sensor_id = Sensor.objects.get(pid=pid).id
                 log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
