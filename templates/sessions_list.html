@@ -26,6 +26,7 @@
                             <th style="text-align: center">Date Session</th>
                             <th style="text-align: center">Id</th>
                             <th style="text-align: center">Map</th>
+                            <th style="text-align: center">CSV</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -35,6 +36,7 @@
                                 <td>{{ session.session }}</td>
                                 <td>{{ session.id }}</td>
                                 <td><a href="{% url 'session_map' session.id %}">View</a></td>
+                                <td><a href="{% url 'download' session.id %}">Download</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -1,3 +1,4 @@
+import csv
 import json
 import re
 
@@ -74,15 +75,33 @@ def myconverter(o):
         return o.__str__()
 
 
-def session_in_map(request, session_id):
+def download_csv(request, session_id):
+    # filename = 'session' + str(session_id) + '.csv'
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="session.csv"'
+
+    result = query(session_id=session_id)
+    crs_list = result[0]
+    field_names = result[1]
+
+    writer = csv.writer(response)
+    writer.writerow(field_names)
+
+    for crs in crs_list:
+        writer.writerow(crs)
+
+    return response
+
+
+def query(session_id):
     cursor = connection.cursor()
-    sessions = Log.objects.all()
-    # 'replace(substring(session, 1, length(session) - 7), " ", ",  ") as date, '
+    # 'replace(left(session, 19), " ", "    ,    ") as date, ' \
+
     sql = '' \
           'select distinct ' \
           'log_id as session_id, ' \
           'email, ' \
-          'replace(left(session, 19), " ", "    ,    ") as date, ' \
+          'left(session, 19) as date, ' \
           'Total_Trip_Time as `Trip Duration`, ' \
           'Total_Trip_Fuel_Used as `Trip Fuel Used`,' \
           'Total_Trip_Distance as `Trip Distance`, ' \
@@ -181,11 +200,19 @@ def session_in_map(request, session_id):
 
     cursor.execute(sql)
     crs_list = cursor.fetchall()
+    field_names = [i[0] for i in cursor.description]
+    data = [crs_list, field_names]
+    return data
+
+
+def session_in_map(request, session_id):
+    sessions = Log.objects.all()
+    res = query(session_id)
+    crs_list = res[0]
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
     feat_list = []
-    field_names = [i[0] for i in cursor.description]
-
+    field_names = res[1]
     # track = []
     values = {}
 
