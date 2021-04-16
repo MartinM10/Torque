@@ -3,40 +3,42 @@
 {% block list %}
     <div class="container-fluid text-center" style="width: 80%; margin-left: 10px">
 
-    {% csrf_token %}
+        {% csrf_token %}
 
-        <h1>Session list</h1>
+        <h3>Session list</h3>
+        <hr/>
 
-            {% if sessions %}
-                <label for="myInput">
+        {% if sessions %}
+            <label for="myInput">
 
-                </label>
+            </label>
 
-                <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for anything...">
+            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for anything...">
 
-                <table id="myTable" class="table table-striped">
-                    <thead>
+            <table id="myTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="text-align: center">Name</th>
+                        <th style="text-align: center">Date Session</th>
+                        <th style="text-align: center">Id</th>
+                        <th style="text-align: center">Map</th>
+                        <th style="text-align: center">CSV</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions%}
                         <tr>
-                            <th style="text-align: center">Name</th>
-                            <th style="text-align: center">Date Session</th>
-                            <th style="text-align: center">Id</th>
-                            <th style="text-align: center">Map</th>
-                            <th style="text-align: center">CSV</th>
+                            <td>{{ session.email }}</td>
+                            <td>{{ session.session }}</td>
+                            <td>{{ session.id }}</td>
+                            <td><a href="{% url 'session_map' session.id %}">View</a></td>
+                            <td><a href="{% url 'download' session.id %}">Download</a></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% for session in sessions%}
-                            <tr>
-                                <td>{{ session.email }}</td>
-                                <td>{{ session.session }}</td>
-                                <td>{{ session.id }}</td>
-                                <td><a href="{% url 'session_map' session.id %}">View</a></td>
-                                <td><a href="{% url 'download' session.id %}">Download</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
     </div>
 
     <script>

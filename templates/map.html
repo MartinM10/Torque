@@ -10,12 +10,15 @@
         {% if summary %}
 
             <div class="col-sm-2 sidenav">
+                <h4><b>Session summary</b></h4>
+                <hr/>
                 {% for key, value in summary.items %}
                     {% if value %}
                         <p>{{ key }}: {{ value }}</p>
                     {% endif %}
                 {% endfor %}
             </div>
+
         {% endif %}
 
     </div>
