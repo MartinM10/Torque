@@ -317,9 +317,7 @@ def session_in_map(request, session_id):
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
-    summary = [values]
-    # print(summary)
-    return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': summary})
+    return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': values})
 
 
 def viewMap(request):

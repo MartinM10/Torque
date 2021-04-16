@@ -1,119 +1,106 @@
 {% extends 'sessions_list.html' %}
 {% load static %}
 {% block map %}
-<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
-        <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
-        <script src="{% static 'L.KML.js'%}"></script>
-        <style>
-            .sidenav {
-                margin-top: 10px;
-                margin-bottom: 10px;
-                padding-top: 20px;
-                padding-bottom: 20px;
-                background-color: #f1f1f1;
-                height: 100%;
-                width: auto;
-            }
-        </style>
-    </head>
-    <body>
-    <div class="col-sm-2 sidenav">
+
+    <div class="container-fluid text-center" style="height: max-content">
+        <div class="col-sm-8 text-left" style="width: 80%; margin-left: 10px; height: 60vh; margin-top: 10px" id="map">
+
+        </div>
+
         {% if summary %}
-            {% for i in summary %}
-                <p>{{ i }}</p>
-            {% endfor %}
+
+            <div class="col-sm-2 sidenav">
+                {% for key, value in summary.items %}
+                    {% if value %}
+                        <p>{{ key }}: {{ value }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
         {% endif %}
+
     </div>
-        <div style="width: 100%; height: 60vh; margin-top: 10px" id="map"></div>
-        {% if  data %}
 
-        {% endif %}
+    <script type="text/javascript">
+        // Make basemap
+        const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
+        const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-        <script type="text/javascript">
-            // Make basemap
-            const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
-            const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+        map.addLayer(osm);
 
-            map.addLayer(osm);
+        function onEachFeature(feature, layer) {
+            if (feature.properties) {
+                var popupContent = '<div style=text-align:center><strong>';
 
-            function onEachFeature(feature, layer) {
-                if (feature.properties) {
-                    var popupContent = '<div style=text-align:center><strong>';
-
-                    if (feature.properties.email) {
-                        popupContent+= feature.properties.email + '<br/>'
-                        //popupContent+= feature.properties.date + '<br/>'
-                    }
-
-                    if (feature.properties.date) {
-                        popupContent+= feature.properties.date + '<br/>'
-                    }
-                    popupContent+='</strong></div><hr>';
-
-                    for (var p in feature.properties) {
-                        if ((
-                            feature.properties[p] != feature.properties.email  &&
-                            feature.properties[p] != feature.properties.date
-                            // feature.properties[p] == feature.properties.CO2_Average ||
-                            // feature.properties[p] === feature.properties.CO2_Instantaneous ||
-                            // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
-                            ) &&
-                            feature.properties[p] != null
-                            ) {
-                                popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';
-                            }
-                    }
-                    popupContent += '</table>';
-                    layer.bindPopup(popupContent);
-                        /*
-                        if(feature.properties.gps_accuracy) {
-                            layer.bindPopup.append("<tr><td>Speed (GPS): " + feature.properties.speed_GPS);
-                        }
-
-                        if(feature.properties.CO2_Average) {
-                            layer.bindPopup.append("<tr><td>CO₂ in g/km (Average):: " + feature.properties.CO2_Average);
-                        }
-
-                        if(feature.properties.CO2_Instantaneous) {
-                            layer.bindPopup.append("<tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous);
-                        }
-
-                        if(feature.properties.Litres_Per_100_Kilometer) {
-                            layer.bindPopup.append("<hr><table><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer + "</td></tr>");
-                        }
-                        */
-                };
-            }
-
-            function createCustomIcon (feature, latlng) {
-                var myIcon = L.icon({
-                    iconUrl: 'https://cdn.icon-icons.com/icons2/1102/PNG/128/1485969928-17-location_78896.png',
-                    //shadowUrl: 'my-icon.png',
-                    iconSize:     [25, 25], // width and height of the image in pixels
-                    shadowSize:   [35, 20], // width, height of optional shadow image
-                    iconAnchor:   [12, 12], // point of the icon which will correspond to marker's location
-                    shadowAnchor: [12, 6],  // anchor point of the shadow. should be offset
-                    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-                  })
-                  return L.marker(latlng, { icon: myIcon })
+                if (feature.properties.email) {
+                    popupContent+= feature.properties.email + '<br/>'
+                    //popupContent+= feature.properties.date + '<br/>'
                 }
 
-            var myLayerOptions = {
-                onEachFeature: onEachFeature,
-                pointToLayer: createCustomIcon
+                if (feature.properties.date) {
+                    popupContent+= feature.properties.date + '<br/>'
+                }
+                popupContent+='</strong></div><hr>';
+
+                for (var p in feature.properties) {
+                    if ((
+                        feature.properties[p] != feature.properties.email  &&
+                        feature.properties[p] != feature.properties.date
+                        // feature.properties[p] == feature.properties.CO2_Average ||
+                        // feature.properties[p] === feature.properties.CO2_Instantaneous ||
+                        // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
+                        ) &&
+                        feature.properties[p] != null
+                        ) {
+                            popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';
+                        }
+                }
+                popupContent += '</table>';
+                layer.bindPopup(popupContent);
+                    /*
+                    if(feature.properties.gps_accuracy) {
+                        layer.bindPopup.append("<tr><td>Speed (GPS): " + feature.properties.speed_GPS);
+                    }
+
+                    if(feature.properties.CO2_Average) {
+                        layer.bindPopup.append("<tr><td>CO₂ in g/km (Average):: " + feature.properties.CO2_Average);
+                    }
+
+                    if(feature.properties.CO2_Instantaneous) {
+                        layer.bindPopup.append("<tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous);
+                    }
+
+                    if(feature.properties.Litres_Per_100_Kilometer) {
+                        layer.bindPopup.append("<hr><table><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer + "</td></tr>");
+                    }
+                    */
+            }
+        }
+
+        function createCustomIcon (feature, latlng) {
+            var myIcon = L.icon({
+                iconUrl: 'https://cdn.icon-icons.com/icons2/1102/PNG/128/1485969928-17-location_78896.png',
+                //shadowUrl: 'my-icon.png',
+                iconSize:     [25, 25], // width and height of the image in pixels
+                shadowSize:   [35, 20], // width, height of optional shadow image
+                iconAnchor:   [12, 12], // point of the icon which will correspond to marker's location
+                shadowAnchor: [12, 6],  // anchor point of the shadow. should be offset
+                popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
+              })
+              return L.marker(latlng, { icon: myIcon })
             }
 
-            L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
+        var myLayerOptions = {
+            onEachFeature: onEachFeature,
+            pointToLayer: createCustomIcon
+        }
 
-            // var sessions = L.layerGroup([]);
+        L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
 
-            // sessions.addTo(map)
-            // map.addLayer(sessions)
+        // var sessions = L.layerGroup([]);
+        // sessions.addTo(map)
+        // map.addLayer(sessions)
+    </script>
 
-        </script>
-    </body>
-</html>
-{%endblock map %}
+{% endblock map %}
+
+{% include 'sessions_list.html' %}

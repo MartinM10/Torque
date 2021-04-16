@@ -5,9 +5,15 @@
     <title>AI4Drive</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.png' %}"/>
+    <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+    <script src="{% static 'L.KML.js'%}"></script>
+
     <style>
         /* Remove the navbar's default margin-bottom and rounded borders */
         .navbar {
@@ -26,9 +32,15 @@
 
         /* Set gray background color and 100% height */
         .sidenav {
-            padding-top: 20px;
+            text-align: left;
+            margin-top: 10px;
+            margin-left: 10px;
+            margin-bottom: 0;
+            padding-top: 10px;
+            padding-bottom: 1px;
             background-color: #f1f1f1;
-            height: 100%;
+            height: auto;
+            width: auto;
         }
 
         /* Set black background color, white text and some padding */
@@ -53,11 +65,13 @@
         <div class="container-fluid">
 
             <div class="navbar-header">
+                <!--
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
+                -->
                 <a class="navbar-brand" href="https://neo.lcc.uma.es/new/"><img src="{% static 'neo.png' %}" height="50px" /></a>
             </div>
 
@@ -75,29 +89,19 @@
         </div>
     </nav>
 
-    <div class="container-fluid text-center">
-        <div class="row content">
-            <div class="col-sm-8 text-left">
-                {% block content %}
+    {% block map %}
 
-                {% endblock %}
-            </div>
-            <!--
-            <div class="col-sm-2 sidenav">
-                <div class="well">
-                    <p>ADS</p>
-                </div>
-                <div class="well">
-                    <p>ADS</p>
-                </div>
-            </div>
-            -->
-        </div>
-    </div>
+    {% endblock map %}
+
+
+    {% block list %}
+
+    {% endblock list%}
     <!--
     <footer class="container-fluid text-center">
         <p>Footer Text</p>
     </footer>
     -->
 </body>
+
 </html>
