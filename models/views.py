@@ -112,15 +112,17 @@ def query(session_id):
           'longitude, ' \
           'max(case when pid = "ff1266" then substr(sec_to_time(value), 1, 8) else null end) as `Duration`, ' \
           'max(case when pid = "ff1204" then value else null end) as `Distance`, ' \
-          'max(case when pid = "ff1258" then value else null end) as `CO2 Average`, ' \
-          'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
           'max(case when pid = "ff1271" then value else null end) as `Fuel Used`, ' \
+          'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous`, ' \
+          'max(case when pid = "ff1258" then value else null end) as `CO2 Average`, ' \
+          'max(case when pid = "05" then value else null end) as `Engine Coolant Temperature`, ' \
           'max(case when pid = "ff1208" then value else null end) as `Liters per kilometer Average`, ' \
           'max(case when pid = "ff1239" then value else null end) as `GPS Accuracy`, ' \
-          'max(case when pid = "ff1257" then value else null end) as `CO2 Instantaneous`, ' \
           'max(case when pid = "ff1001" then value else null end) as `GPS Speed`, ' \
           'max(case when pid = "0d" then value else null end) as `OBD Speed`, ' \
-          'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference` ' \
+          'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference`, ' \
+          'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
+          'max(case when pid = "ff129a" then value else null end) as `Android device Battery level` ' \
           'from ' \
           ' ( ' \
           '     select distinct ' \
@@ -246,8 +248,8 @@ def session_in_map(request, session_id):
         date = field_names[2]
         prop_dict[date] = crs[2]
 
-        record_time = field_names[8]
-        prop_dict[record_time] = crs[8]
+        time_now = field_names[8]
+        prop_dict[time_now] = crs[8]
 
         trip_time = field_names[11]
         prop_dict[trip_time] = crs[11]
@@ -255,23 +257,23 @@ def session_in_map(request, session_id):
         trip_distance = field_names[12]
         prop_dict[trip_distance] = crs[12]
 
-        co2_average = field_names[13]
-        prop_dict[co2_average] = crs[13]
+        trip_fuel_used = field_names[13]
+        prop_dict[trip_fuel_used] = crs[13]
 
-        speed_only_mov_average = field_names[14]
-        prop_dict[speed_only_mov_average] = crs[14]
+        c02_instantaneous = field_names[14]
+        prop_dict[c02_instantaneous] = crs[14]
 
-        trip_fuel_used = field_names[15]
-        prop_dict[trip_fuel_used] = crs[15]
+        co2_average = field_names[15]
+        prop_dict[co2_average] = crs[15]
 
-        liters_per_km = field_names[16]
-        prop_dict[liters_per_km] = crs[16]
+        engine_coolant = field_names[16]
+        prop_dict[engine_coolant] = crs[16]
 
-        gps_accuracy = field_names[17]
-        prop_dict[gps_accuracy] = crs[17]
+        liters_per_km = field_names[17]
+        prop_dict[liters_per_km] = crs[17]
 
-        c02_instantaneous = field_names[18]
-        prop_dict[c02_instantaneous] = crs[18]
+        gps_accuracy = field_names[18]
+        prop_dict[gps_accuracy] = crs[18]
 
         gps_speed = field_names[19]
         prop_dict[gps_speed] = crs[19]
@@ -281,6 +283,12 @@ def session_in_map(request, session_id):
 
         speed_diff = field_names[21]
         prop_dict[speed_diff] = crs[21]
+
+        speed_only_mov_average = field_names[22]
+        prop_dict[speed_only_mov_average] = crs[22]
+
+        android_battery_lvl = field_names[23]
+        prop_dict[android_battery_lvl] = crs[23]
 
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
