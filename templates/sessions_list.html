@@ -1,25 +1,33 @@
 {% extends 'main.html' %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/datatables.min.js"></script>
+
+        <link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/css/dataTables.bootstrap4.min.css' %}"/>
+        <link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/css/responsive.bootstrap4.min.css' %}"/>
+        <script src="{% static 'lib/datatables-1.10.20/js/jquery.dataTables.js' %}"></script>
+        <script src="{% static 'lib/datatables-1.10.20/js/dataTables.bootstrap4.min.js' %}"></script>
+        <script src="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/js/dataTables.responsive.min.js' %}"></script>
+        <script src="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/js/responsive.bootstrap4.min.js' %}"></script>
+{% endblock head %}
 
 {% block list %}
     <div class="container-fluid text-center" style="width: 80%; margin-left: 10px">
 
         {% csrf_token %}
 
-        <h3>Session list</h3>
+        <h3>Lista de sesiones</h3>
         <hr/>
 
         {% if sessions %}
-            <label for="myInput">
-
-            </label>
-
-            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for anything...">
 
             <table id="myTable" class="table table-striped">
                 <thead>
                     <tr>
-                        <th style="text-align: center">Name</th>
-                        <th style="text-align: center">Date Session</th>
+                        <th style="text-align: center">Nombre</th>
+                        <th style="text-align: center">Fecha</th>
                         <th style="text-align: center">Id</th>
                         <th style="text-align: center">Map</th>
                         <th style="text-align: center">CSV</th>
@@ -31,41 +39,26 @@
                             <td>{{ session.email }}</td>
                             <td>{{ session.session }}</td>
                             <td>{{ session.id }}</td>
-                            <td><a href="{% url 'session_map' session.id %}">View</a></td>
-                            <td><a href="{% url 'download' session.id %}">Download</a></td>
+                            <td><a href="{% url 'session_map' session.id %}">Ver en el mapa</a></td>
+                            <td><a href="{% url 'download' session.id %}">Descargar</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
         {% endif %}
 
     </div>
 
-    <script>
-        function myFunction() {
-                // Declare variables
-                var input, filter, table, tr, td, i, j, visible;
-                input = document.getElementById("myInput");
-                filter = input.value.toUpperCase();
-                table = document.getElementById("myTable");
-                tr = table.getElementsByTagName("tr");
-
-                // Loop through all table rows, and hide those who don't match the search query
-                for (i = 0; i < tr.length; i++) {
-                    visible = false;
-                    /* Obtenemos todas las celdas de la fila, no sólo la primera */
-                    td = tr[i].getElementsByTagName("td");
-                    for (j = 0; j < td.length; j++) {
-                        if (td[j] && td[j].innerHTML.toUpperCase().indexOf(filter) > -1) {
-                            visible = true;
-                        }
-                    }
-                    if (visible === true) {
-                        tr[i].style.display = "";
-                    } else {
-                        tr[i].style.display = "none";
-                    }
+    <script type="application/javascript">
+        $(function() {
+           $('#myTable').DataTable({
+               responsive: true,
+               autoWidth: false,
+               language: {
+                    url : '{% static 'lib/datatables-1.10.20/spanish.txt' %}'
                 }
-            }
+           });
+        } );
     </script>
 {% endblock list%}
