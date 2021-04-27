@@ -2,17 +2,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
     <title>AI4Drive</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.png' %}"/>
-    <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+    <link rel="stylesheet" href="http://unpkg.com/leaflet@1.4.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
-    <script src="{% static 'L.KML.js'%}"></script>
+    <script src="{% static 'L.KML.js' %}"></script>
 
     {% block head %}
 
@@ -26,13 +27,15 @@
             padding: 0;
         }
 
-        .navbar-brand{
+        .navbar-brand {
             padding-top: 0;
             padding-left: 10px;
         }
 
         /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
-        .row.content {height: 450px}
+        .row.content {
+            height: 450px
+        }
 
         /* Set gray background color and 100% height */
         .sidenav {
@@ -60,52 +63,58 @@
                 height: auto;
                 padding: 15px;
             }
-            .row.content {height:auto;}
+
+            .row.content {
+                height: auto;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
 
-            <div class="navbar-header">
-                <!--
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                -->
-                <a class="navbar-brand" href="https://neo.lcc.uma.es/new/"><img src="{% static 'neo.png' %}" height="50px" /></a>
-            </div>
-
-            <div class="collapse navbar-collapse" id="myNavbar">
-                <ul class="nav navbar-nav">
-                    <li class="active"><a href="{% url 'session_list' %}">Home</a></li>
-                    <!-- <li><a href="{% url 'session_list' %}">Session List</a></li> -->
-                </ul>
-                <!--
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
-                </ul>
-                -->
-            </div>
+        <div class="navbar-header">
+            <!--
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            -->
+            <a class="navbar-brand" href="https://neo.lcc.uma.es/new/"><img src="{% static 'neo.png' %}" height="50px"/></a>
         </div>
-    </nav>
 
-    {% block map %}
+        <div class="collapse navbar-collapse" id="myNavbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="{% url 'session_list' %}">Home</a></li>
+                <!-- <li><a href="{% url 'session_list' %}">Session List</a></li> -->
+            </ul>
+            <!--
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+            </ul>
+            -->
+        </div>
+    </div>
+</nav>
 
-    {% endblock map %}
+{% block map %}
+
+{% endblock map %}
 
 
-    {% block list %}
+{% block list %}
 
-    {% endblock list%}
-    <!--
-    <footer class="container-fluid text-center">
-        <p>Footer Text</p>
-    </footer>
-    -->
+{% endblock list %}
+<!--
+<footer class="container-fluid text-center">
+    <p>Footer Text</p>
+</footer>
+-->
 </body>
+{% block scripts %}
+
+{% endblock scripts %}
 
 </html>

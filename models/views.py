@@ -1,7 +1,10 @@
 import csv
 import json
 import re
+from operator import concat
 
+from django.core import serializers
+from django.core.serializers import serialize
 from django.utils.timezone import make_aware
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
@@ -19,7 +22,6 @@ from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Address
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
-
 
 geolocator = Nominatim(user_agent="http")
 rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
@@ -207,9 +209,41 @@ def query(session_id):
     return data
 
 
+def using_orm(request, session_id):
+    sessions = Log.objects.all()
+    session = Log.objects.get(id=session_id)
+
+    # SUMMARY
+    ###############################################################################################################
+    co2_avg_unit = Sensor.objects.get(pid='ff1258').user_unit
+    co2_avg = str(round(session.record_set.filter(sensor__pid='ff1258').last().value, 2)) + ' ' + co2_avg_unit
+
+    speed_avg_mov_only_unit = Sensor.objects.get(pid='ff1263').user_unit
+    speed_avg_mov_only = str(round(session.record_set.filter(sensor__pid='ff1263').last().value, 2)) + ' ' + \
+                         speed_avg_mov_only_unit
+
+    distance_unit = Sensor.objects.get(pid='ff1204').user_unit
+    distance = str(round(session.record_set.filter(sensor__pid='ff1204').last().value, 2)) + ' ' + distance_unit
+
+    fuel_used_unit = Sensor.objects.get(pid='ff1271').user_unit
+    fuel_used = str(round(session.record_set.filter(sensor__pid='ff1271').last().value, 2)) + ' ' + fuel_used_unit
+
+    duration_unit = Sensor.objects.get(pid='ff1266').user_unit
+    duration = str(round(session.record_set.filter(sensor__pid='ff1266').last().value, 2)) + ' ' + duration_unit
+    ###############################################################################################################
+    # data = session.record_set.values_list().exclude(sensor__record__log_id=1).exclude(sensor__record__log_id=2)
+    # print(data)
+    # DATA
+    # print(serializers.serialize('json', session.record_set.filter(sensor__pid='ff1001').order_by('-time')))
+
+
 def session_in_map(request, session_id):
     sessions = Log.objects.all()
+    session = Log.objects.get(id=session_id)
     res = query(session_id)
+    # print(res)
+    # using_orm(request, session_id)
+
     crs_list = res[0]
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
@@ -217,21 +251,29 @@ def session_in_map(request, session_id):
     field_names = res[1]
     # track = []
     values = {}
+    dic_obd_speeds = []
+    dic_co2_inst = []
+    times = []
 
     for crs in crs_list:
         type_dict = {}
         pt_dict = {}
         prop_dict = {}
 
-        total_trip_time = field_names[3]
+        # total_trip_time = field_names[3]
+        total_trip_time = 'Duracion'
         values[total_trip_time] = crs[3]
-        total_trip_fuel_used = field_names[4]
+        # total_trip_fuel_used = field_names[4]
+        total_trip_fuel_used = 'Combustible utilizado'
         values[total_trip_fuel_used] = crs[4]
-        total_trip_distance = field_names[5]
+        # total_trip_distance = field_names[5]
+        total_trip_distance = 'Distancia recorrida'
         values[total_trip_distance] = crs[5]
-        trip_co2_average = field_names[6]
+        # trip_co2_average = field_names[6]
+        trip_co2_average = 'C0₂ medio emitido'
         values[trip_co2_average] = crs[6]
-        trip_speed_only_mov_average = field_names[7]
+        # trip_speed_only_mov_average = field_names[7]
+        trip_speed_only_mov_average = 'Velocidad media solo en movimiento'
         values[trip_speed_only_mov_average] = crs[7]
 
         type_dict["type"] = "Feature"
@@ -250,6 +292,7 @@ def session_in_map(request, session_id):
 
         time_now = field_names[8]
         prop_dict[time_now] = crs[8]
+        times.append(prop_dict[time_now])
 
         trip_time = field_names[11]
         prop_dict[trip_time] = crs[11]
@@ -262,6 +305,8 @@ def session_in_map(request, session_id):
 
         c02_instantaneous = field_names[14]
         prop_dict[c02_instantaneous] = crs[14]
+        if crs[14]:
+            dic_co2_inst.append(crs[14][0:-5])
 
         co2_average = field_names[15]
         prop_dict[co2_average] = crs[15]
@@ -280,6 +325,8 @@ def session_in_map(request, session_id):
 
         obd_speed = field_names[20]
         prop_dict[obd_speed] = crs[20]
+        if crs[20]:
+            dic_obd_speeds.append(crs[20][0:-5])
 
         speed_diff = field_names[21]
         prop_dict[speed_diff] = crs[21]
@@ -317,7 +364,22 @@ def session_in_map(request, session_id):
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
-    return render(request, 'map.html', context={'data': data, 'sessions': sessions, 'summary': values})
+    # print(obd_speeds)
+    # print(times)
+    # print(feat_list[2].get('properties')['OBD Speed'])
+    context = {
+        'data': data,
+        'session': session,
+        'sessions': sessions,
+        'summary': values,
+        'obd_speeds': dic_obd_speeds,
+        'dic_co2_inst': dic_co2_inst,
+        'times': times
+    }
+
+    # print(dic_obd_speeds)
+    # print(len(dic_obd_speeds))
+    return render(request, 'map.html', context=context)
 
 
 def viewMap(request):

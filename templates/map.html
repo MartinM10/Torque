@@ -1,33 +1,69 @@
-{% extends 'sessions_list.html' %}
+{% extends 'main.html' %}
 {% load static %}
+{% block head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+
+
+{% endblock head %}
 {% block map %}
 
-    <div class="container-fluid text-center" style="height: max-content">
-        <div class="col-sm-8 text-left" style="width: 60%; margin-left: 10px; height: 60vh; margin-top: 10px" id="map">
+    {% if summary %}
 
+        <div class="container-fluid text-center" style="height: max-content">
+
+            <h4><b>Sesión {{ session.session }} de {{ session.email }}</b></h4>
+            <table class="table table-striped text-center">
+                <thead>
+                <tr>
+                    {% for key, values in summary.items %}
+                        {% if values %}
+                            <th style="text-align: center">{{ key }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    {% for value in summary.values %}
+                        {% if value %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
         </div>
 
-        {% if summary %}
+    {% endif %}
 
-            <div class="col-sm-2 sidenav">
-                <h4><b>Resumen de la sesión</b></h4>
-                <hr/>
-                {% for key, value in summary.items %}
-                    {% if value %}
-                        <p>{{ key }}: {{ value }}</p>
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-        {% endif %}
-
+    <div class="container-fluid" style="width: 90%; margin-left: auto; height: 60vh; margin-top: 10px"
+         id="map">
     </div>
 
     <hr/>
 
+    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="col-sm-6">
+                    <canvas id="obdSpeed_CO2_Chart"></canvas>
+                </div>
+                <div class="col-sm-6">
+                    <canvas id="obdSpeed_Chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock map %}
+
+{% block scripts %}
     <script type="text/javascript">
         // Make basemap
-        const map = new L.Map('map', { center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
+        const map = new L.Map('map', {center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
         const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
         map.addLayer(osm);
@@ -37,62 +73,62 @@
                 var popupContent = '<div style=text-align:center><strong>';
 
                 if (feature.properties.email) {
-                    popupContent+= feature.properties.email + '<br/>'
+                    popupContent += feature.properties.email + '<br/>'
                     //popupContent+= feature.properties.date + '<br/>'
                 }
 
                 if (feature.properties.date) {
-                    popupContent+= feature.properties.date + '<br/>'
+                    popupContent += feature.properties.date + '<br/>'
                 }
-                popupContent+='</strong></div><hr>';
+                popupContent += '</strong></div><hr>';
 
                 for (var p in feature.properties) {
                     if ((
-                        feature.properties[p] != feature.properties.email  &&
-                        feature.properties[p] != feature.properties.date
-                        // feature.properties[p] == feature.properties.CO2_Average ||
-                        // feature.properties[p] === feature.properties.CO2_Instantaneous ||
-                        // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
+                            feature.properties[p] != feature.properties.email &&
+                            feature.properties[p] != feature.properties.date
+                            // feature.properties[p] == feature.properties.CO2_Average ||
+                            // feature.properties[p] === feature.properties.CO2_Instantaneous ||
+                            // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
                         ) &&
                         feature.properties[p] != null
-                        ) {
-                            popupContent += '<tr><td>' + p + '</td><td>: '+ feature.properties[p] + '</td></tr><br/>';
-                        }
+                    ) {
+                        popupContent += '<tr><td>' + p + '</td><td>: ' + feature.properties[p] + '</td></tr><br/>';
+                    }
                 }
                 popupContent += '</table>';
                 layer.bindPopup(popupContent);
-                    /*
-                    if(feature.properties.gps_accuracy) {
-                        layer.bindPopup.append("<tr><td>Speed (GPS): " + feature.properties.speed_GPS);
-                    }
+                /*
+                if(feature.properties.gps_accuracy) {
+                    layer.bindPopup.append("<tr><td>Speed (GPS): " + feature.properties.speed_GPS);
+                }
 
-                    if(feature.properties.CO2_Average) {
-                        layer.bindPopup.append("<tr><td>CO₂ in g/km (Average):: " + feature.properties.CO2_Average);
-                    }
+                if(feature.properties.CO2_Average) {
+                    layer.bindPopup.append("<tr><td>CO₂ in g/km (Average):: " + feature.properties.CO2_Average);
+                }
 
-                    if(feature.properties.CO2_Instantaneous) {
-                        layer.bindPopup.append("<tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous);
-                    }
+                if(feature.properties.CO2_Instantaneous) {
+                    layer.bindPopup.append("<tr><td>CO₂ in g/km (Instantaneous): " + feature.properties.CO2_Instantaneous);
+                }
 
-                    if(feature.properties.Litres_Per_100_Kilometer) {
-                        layer.bindPopup.append("<hr><table><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer + "</td></tr>");
-                    }
-                    */
+                if(feature.properties.Litres_Per_100_Kilometer) {
+                    layer.bindPopup.append("<hr><table><tr><td>Litres Per 100 Kilometer: " + feature.properties.Litres_Per_100_Kilometer + "</td></tr>");
+                }
+                */
             }
         }
 
-        function createCustomIcon (feature, latlng) {
+        function createCustomIcon(feature, latlng) {
             var myIcon = L.icon({
                 iconUrl: 'https://cdn.icon-icons.com/icons2/1102/PNG/128/1485969928-17-location_78896.png',
                 //shadowUrl: 'my-icon.png',
-                iconSize:     [25, 25], // width and height of the image in pixels
-                shadowSize:   [35, 20], // width, height of optional shadow image
-                iconAnchor:   [12, 12], // point of the icon which will correspond to marker's location
+                iconSize: [25, 25], // width and height of the image in pixels
+                shadowSize: [35, 20], // width, height of optional shadow image
+                iconAnchor: [12, 12], // point of the icon which will correspond to marker's location
                 shadowAnchor: [12, 6],  // anchor point of the shadow. should be offset
-                popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-              })
-              return L.marker(latlng, { icon: myIcon })
-            }
+                popupAnchor: [0, 0] // point from which the popup should open relative to the iconAnchor
+            })
+            return L.marker(latlng, {icon: myIcon})
+        }
 
         var myLayerOptions = {
             onEachFeature: onEachFeature,
@@ -101,11 +137,93 @@
 
         L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
 
+
+        // console.log({{ obd_speeds|safe }})
+
+
         // var sessions = L.layerGroup([]);
         // sessions.addTo(map)
         // map.addLayer(sessions)
+
+    </script>
+    <script>
+        const obd_speed = {{ obd_speeds | safe }};
+        const co2_inst = {{ dic_co2_inst | safe }};
+        const times = {{ times | safe }};
+
+        // console.log(co2_inst);
+
+        let ctx = document.getElementById('obdSpeed_CO2_Chart').getContext('2d');
+        let ctx2 = document.getElementById('obdSpeed_Chart').getContext('2d');
+
+        let config = {
+            type: 'bar',
+            data: {
+                labels: times,
+                datasets:
+                    [
+                        {
+                            label: 'OBD Speed (km/h)',
+                            data: obd_speed,
+                            backgroundColor:
+                                'rgba(255, 99, 132, 0.2)',
+                            borderColor:
+                                'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'CO2 Instantaneous (g/km)',
+                            data: co2_inst,
+                            backgroundColor:
+                                'rgba(54, 162, 235, 1)',
+                            borderColor:
+                                'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                    ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+
+        let config2 = {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets:
+                    [
+                        {
+                            showLine: true,
+                            pointRadius: 2,
+                            fill: false,
+                            label: 'OBD Speed (km/h)',
+                            data: obd_speed,
+                            backgroundColor:
+                                'rgba(54, 162, 235, 1)',
+                            borderColor:
+                                'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                    ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+
+        let myChart = new Chart(ctx, config);
+        let myChart2 = new Chart(ctx2, config2);
+
+
     </script>
 
-{% endblock map %}
-
-{% include 'sessions_list.html' %}
+{% endblock %}
