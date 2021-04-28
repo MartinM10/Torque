@@ -251,8 +251,11 @@ def session_in_map(request, session_id):
     field_names = res[1]
     # track = []
     values = {}
-    dic_obd_speeds = []
-    dic_co2_inst = []
+    dict_obd_speeds = []
+    dict_co2_inst = []
+    dict_lit_per_km = []
+    dict_temps = []
+    dict_gps_speeds = []
     times = []
 
     for crs in crs_list:
@@ -306,27 +309,33 @@ def session_in_map(request, session_id):
         c02_instantaneous = field_names[14]
         prop_dict[c02_instantaneous] = crs[14]
         if crs[14]:
-            dic_co2_inst.append(crs[14][0:-5])
+            dict_co2_inst.append(crs[14][0:-5])
 
         co2_average = field_names[15]
         prop_dict[co2_average] = crs[15]
 
         engine_coolant = field_names[16]
         prop_dict[engine_coolant] = crs[16]
+        if crs[16]:
+            dict_temps.append(crs[16][0:-3])
 
         liters_per_km = field_names[17]
         prop_dict[liters_per_km] = crs[17]
+        if crs[17]:
+            dict_lit_per_km.append(crs[17][0:-8])
 
         gps_accuracy = field_names[18]
         prop_dict[gps_accuracy] = crs[18]
 
         gps_speed = field_names[19]
         prop_dict[gps_speed] = crs[19]
+        if crs[19]:
+            dict_gps_speeds.append(crs[19][0:-5])
 
         obd_speed = field_names[20]
         prop_dict[obd_speed] = crs[20]
         if crs[20]:
-            dic_obd_speeds.append(crs[20][0:-5])
+            dict_obd_speeds.append(crs[20][0:-5])
 
         speed_diff = field_names[21]
         prop_dict[speed_diff] = crs[21]
@@ -372,13 +381,16 @@ def session_in_map(request, session_id):
         'session': session,
         'sessions': sessions,
         'summary': values,
-        'obd_speeds': dic_obd_speeds,
-        'dic_co2_inst': dic_co2_inst,
+        'dict_gps_speeds': dict_gps_speeds,
+        'dict_obd_speeds': dict_obd_speeds,
+        'dict_co2_inst': dict_co2_inst,
+        'dict_lit_per_km': dict_lit_per_km,
+        'dict_temps': dict_temps,
         'times': times
     }
 
-    # print(dic_obd_speeds)
-    # print(len(dic_obd_speeds))
+    # print(dict_gps_speeds)
+    # print(len(dict_gps_speeds))
     return render(request, 'map.html', context=context)
 
 

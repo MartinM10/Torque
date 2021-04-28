@@ -1,10 +1,11 @@
 {% extends 'main.html' %}
 {% load static %}
+
 {% block head %}
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
-
 
 {% endblock head %}
 {% block map %}
@@ -13,8 +14,8 @@
 
         <div class="container-fluid text-center" style="height: max-content">
 
-            <h4><b>Sesión {{ session.session }} de {{ session.email }}</b></h4>
-            <table class="table table-striped text-center">
+            <h4><b>{{ session.session }} de {{ session.email }}</b></h4>
+            <table class="table-responsive table-striped text-center" style="margin: auto">
                 <thead>
                 <tr>
                     {% for key, values in summary.items %}
@@ -46,22 +47,38 @@
 
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <div class="row">
-            <div class="col-sm-12">
-                <div class="col-sm-6">
-                    <canvas id="obdSpeed_CO2_Chart"></canvas>
-                </div>
-                <div class="col-sm-6">
-                    <canvas id="obdSpeed_Chart"></canvas>
-                </div>
+            <div class="col-sm-6">
+                <canvas id="obdSpeed_CO2_Chart"
+                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+            </div>
+            <div class="col-sm-6">
+                <canvas id="obdSpeed_Chart"
+                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
             </div>
         </div>
-    </div>
+        <div class="row">
+            <div class="col-sm-6">
 
+                <canvas id="temp_CO2_Chart"
+                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+            </div>
+            <div class="col-sm-6">
+
+                <canvas id="obd_speed_vs_gps_speed"
+                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+            </div>
+        </div>
+        <!--
+        <button onclick="stilo()">Pantalla completa</button>
+        -->
+    </div>
 
 {% endblock map %}
 
 {% block scripts %}
+
     <script type="text/javascript">
+        /* MAP */
         // Make basemap
         const map = new L.Map('map', {center: new L.LatLng(36.6301208, -4.497461), zoom: 11});
         const osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -147,14 +164,28 @@
 
     </script>
     <script>
-        const obd_speed = {{ obd_speeds | safe }};
-        const co2_inst = {{ dic_co2_inst | safe }};
+        /*
+        function stilo() {
+            var el = document.getElementById("obdSpeed_CO2_Chart");
+            el.setAttribute("style", "position: absolute; top: 0; left: 0; z-index: 99999; " +
+                "background-color: white; " +
+                "display: block; width: 720px; height: 720px;");
+        }
+        */
+        const obd_speed = {{ dict_obd_speeds | safe }};
+        const co2_inst = {{ dict_co2_inst | safe }};
+        const lit_per_km = {{ dict_lit_per_km | safe }};
+        const temperatures = {{ dict_temps | safe }};
+        const gps_speed = {{ dict_gps_speeds | safe }};
         const times = {{ times | safe }};
 
         // console.log(co2_inst);
 
         let ctx = document.getElementById('obdSpeed_CO2_Chart').getContext('2d');
         let ctx2 = document.getElementById('obdSpeed_Chart').getContext('2d');
+        let ctx3 = document.getElementById('temp_CO2_Chart').getContext('2d');
+        let ctx4 = document.getElementById('obd_speed_vs_gps_speed').getContext('2d');
+
 
         let config = {
             type: 'bar',
@@ -166,9 +197,9 @@
                             label: 'OBD Speed (km/h)',
                             data: obd_speed,
                             backgroundColor:
-                                'rgba(255, 99, 132, 0.2)',
+                                '#FF5733',
                             borderColor:
-                                'rgba(255, 99, 132, 0.2)',
+                                '#FF5733',
                             borderWidth: 1
                         },
                         {
@@ -180,12 +211,52 @@
                                 'rgba(54, 162, 235, 1)',
                             borderWidth: 1
                         },
+                        {
+                            label: 'Liters per kilometer Average (l/100km)',
+                            data: lit_per_km,
+                            backgroundColor:
+                                '#8E44AD',
+                            borderColor:
+                                '#8E44AD',
+                            borderWidth: 1
+                        },
                     ]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    text: "Grafica 1",
+                    display: true,
+                    fontSize: 20,
+                    padding: 10,
+                    fontColor: '#12619c'
+                },
+                tooltips: {
+                    titleFontSize: 20,
+                    xPadding: 20,
+                    yPadding: 20,
+                    bodyFontSize: 15,
+                    bodySpacing: 10,
+                    mode: 'x',
+                },
                 scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                        }
+                    }],
                     y: {
                         beginAtZero: true
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 15,
+                        fontFamily: 'system-ui',
+                        fontColor: 'black'
                     }
                 }
             }
@@ -199,22 +270,203 @@
                     [
                         {
                             showLine: true,
-                            pointRadius: 2,
                             fill: false,
                             label: 'OBD Speed (km/h)',
                             data: obd_speed,
-                            backgroundColor:
-                                'rgba(54, 162, 235, 1)',
-                            borderColor:
-                                'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
+                            backgroundColor: 'rgba(54, 162, 235, 1)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            pointRadius: 2,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
                         },
                     ]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    text: "Grafica 2",
+                    display: true,
+                    fontSize: 20,
+                    padding: 10,
+                    fontColor: '#12619c'
+                },
+                tooltips: {
+                    titleFontSize: 20,
+                    xPadding: 20,
+                    yPadding: 20,
+                    bodyFontSize: 15,
+                    bodySpacing: 10,
+                    mode: 'x',
+                },
                 scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                        }
+                    }],
                     y: {
                         beginAtZero: true
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 15,
+                        fontFamily: 'system-ui',
+                        fontColor: 'black'
+                    }
+                }
+            }
+        };
+
+        let config3 = {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets:
+                    [
+                        {
+                            showLine: true,
+                            fill: false,
+                            label: 'CO2 Instantaneous (g/km)',
+                            data: co2_inst,
+                            backgroundColor: 'pink',
+                            borderColor: 'pink',
+                            borderWidth: 1,
+                            pointRadius: 2,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
+                        },
+                        {
+                            showLine: true,
+                            fill: false,
+                            label: 'Temperature (ºC)',
+                            data: temperatures,
+                            backgroundColor: 'purple',
+                            borderColor: 'purple',
+                            borderWidth: 1,
+                            pointRadius: 2,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
+                        },
+                    ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    text: "Grafica 3",
+                    display: true,
+                    fontSize: 20,
+                    padding: 10,
+                    fontColor: '#12619c'
+                },
+                tooltips: {
+                    titleFontSize: 20,
+                    xPadding: 20,
+                    yPadding: 20,
+                    bodyFontSize: 15,
+                    bodySpacing: 10,
+                    mode: 'x',
+                },
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                        }
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 15,
+                        fontFamily: 'system-ui',
+                        fontColor: 'black'
+                    }
+                }
+            }
+        };
+
+
+        let config4 = {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets:
+                    [
+                        {
+                            showLine: true,
+                            fill: false,
+                            label: 'GPS Speed (km/h)',
+                            data: gps_speed,
+                            backgroundColor: 'red',
+                            borderColor: 'red',
+                            borderWidth: 1,
+                            pointRadius: 2,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
+                        },
+                        {
+                            showLine: true,
+                            fill: false,
+                            label: 'OBD Speed (km/h)',
+                            data: obd_speed,
+                            backgroundColor: 'blue',
+                            borderColor: 'blue',
+                            borderWidth: 1,
+                            pointRadius: 2,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
+                        },
+                    ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    text: "Grafica 4",
+                    display: true,
+                    fontSize: 20,
+                    padding: 10,
+                    fontColor: '#12619c'
+                },
+                tooltips: {
+                    titleFontSize: 20,
+                    xPadding: 20,
+                    yPadding: 20,
+                    bodyFontSize: 15,
+                    bodySpacing: 10,
+                    mode: 'x',
+                },
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                        }
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 20,
+                        boxWidth: 15,
+                        fontFamily: 'system-ui',
+                        fontColor: 'black'
                     }
                 }
             }
@@ -222,6 +474,8 @@
 
         let myChart = new Chart(ctx, config);
         let myChart2 = new Chart(ctx2, config2);
+        let myChart3 = new Chart(ctx3, config3);
+        let myChart4 = new Chart(ctx4, config4);
 
 
     </script>
