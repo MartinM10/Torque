@@ -4,9 +4,31 @@
 {% block head %}
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7"></script>
 
+
+    <style>
+
+        canvas {
+            position: relative;
+            height: 50vh;
+            width: 70vw;
+            display: block;
+        }
+
+        td {
+            padding: 5px;
+            margin: auto;
+        }
+
+        th {
+            padding: 5px;
+            margin: auto;
+        }
+
+    </style>
 {% endblock head %}
 {% block map %}
 
@@ -48,24 +70,18 @@
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <div class="row">
             <div class="col-sm-6">
-                <canvas id="obdSpeed_CO2_Chart"
-                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+                <canvas id="obdSpeed_CO2_Chart"></canvas>
             </div>
             <div class="col-sm-6">
-                <canvas id="obdSpeed_Chart"
-                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+                <canvas id="obdSpeed_Chart"></canvas>
             </div>
         </div>
         <div class="row">
             <div class="col-sm-6">
-
-                <canvas id="temp_CO2_Chart"
-                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+                <canvas id="temp_CO2_Chart"></canvas>
             </div>
             <div class="col-sm-6">
-
-                <canvas id="obd_speed_vs_gps_speed"
-                        style="position: relative; height:40vh; width:80vw; display: block"></canvas>
+                <canvas id="obd_speed_vs_gps_speed"></canvas>
             </div>
         </div>
         <!--
@@ -186,6 +202,9 @@
         let ctx3 = document.getElementById('temp_CO2_Chart').getContext('2d');
         let ctx4 = document.getElementById('obd_speed_vs_gps_speed').getContext('2d');
 
+        var dragOptions = {
+            animationDuration: 1000
+        };
 
         let config = {
             type: 'bar',
@@ -244,6 +263,11 @@
                     xAxes: [{
                         gridLines: {
                             display: false,
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 15,
+                            beginAtZero: true
                         }
                     }],
                     y: {
@@ -258,6 +282,16 @@
                         fontFamily: 'system-ui',
                         fontColor: 'black'
                     }
+                },
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                },
+                zoom: {
+                    enabled: true,
+                    // Enable drag-to-zoom behavior
+                    //drag: false,
+                    mode: "xy"
                 }
             }
         };
@@ -276,7 +310,7 @@
                             backgroundColor: 'rgba(54, 162, 235, 1)',
                             borderColor: 'rgba(54, 162, 235, 1)',
                             borderWidth: 1,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             hoverRadius: 8,
                             hoverBorderWidth: 2,
                             pointBorderWidth: 2,
@@ -305,6 +339,11 @@
                     xAxes: [{
                         gridLines: {
                             display: false,
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 15,
+                            beginAtZero: true
                         }
                     }],
                     y: {
@@ -319,6 +358,16 @@
                         fontFamily: 'system-ui',
                         fontColor: 'black'
                     }
+                },
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                },
+                zoom: {
+                    enabled: true,
+                    // Enable drag-to-zoom behavior
+                    //drag: false,
+                    mode: "xy"
                 }
             }
         };
@@ -334,10 +383,10 @@
                             fill: false,
                             label: 'CO2 Instantaneous (g/km)',
                             data: co2_inst,
-                            backgroundColor: 'pink',
-                            borderColor: 'pink',
+                            backgroundColor: 'blue',
+                            borderColor: 'blue',
                             borderWidth: 1,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             hoverRadius: 8,
                             hoverBorderWidth: 2,
                             pointBorderWidth: 2,
@@ -350,7 +399,7 @@
                             backgroundColor: 'purple',
                             borderColor: 'purple',
                             borderWidth: 1,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             hoverRadius: 8,
                             hoverBorderWidth: 2,
                             pointBorderWidth: 2,
@@ -379,6 +428,11 @@
                     xAxes: [{
                         gridLines: {
                             display: false,
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 15,
+                            beginAtZero: true
                         }
                     }],
                     y: {
@@ -393,6 +447,16 @@
                         fontFamily: 'system-ui',
                         fontColor: 'black'
                     }
+                },
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                },
+                zoom: {
+                    enabled: true,
+                    // Enable drag-to-zoom behavior
+                    //drag: false,
+                    mode: "xy"
                 }
             }
         };
@@ -412,7 +476,7 @@
                             backgroundColor: 'red',
                             borderColor: 'red',
                             borderWidth: 1,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             hoverRadius: 8,
                             hoverBorderWidth: 2,
                             pointBorderWidth: 2,
@@ -425,7 +489,7 @@
                             backgroundColor: 'blue',
                             borderColor: 'blue',
                             borderWidth: 1,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             hoverRadius: 8,
                             hoverBorderWidth: 2,
                             pointBorderWidth: 2,
@@ -454,6 +518,11 @@
                     xAxes: [{
                         gridLines: {
                             display: false,
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 15,
+                            beginAtZero: true
                         }
                     }],
                     y: {
@@ -468,6 +537,16 @@
                         fontFamily: 'system-ui',
                         fontColor: 'black'
                     }
+                },
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                },
+                zoom: {
+                    enabled: true,
+                    // Enable drag-to-zoom behavior
+                    //drag: false,
+                    mode: "xy"
                 }
             }
         };

@@ -295,7 +295,9 @@ def session_in_map(request, session_id):
 
         time_now = field_names[8]
         prop_dict[time_now] = crs[8]
-        times.append(prop_dict[time_now])
+        if crs[8]:
+            times.append(crs[8])
+            # times.append(datetime.datetime.strptime(crs[8], '%H:%M:%S').time())
 
         trip_time = field_names[11]
         prop_dict[trip_time] = crs[11]
@@ -389,6 +391,7 @@ def session_in_map(request, session_id):
         'times': times
     }
 
+    # print(type(datetime.datetime.strptime(times[1], '%H:%M:%S').time()))
     # print(dict_gps_speeds)
     # print(len(dict_gps_speeds))
     return render(request, 'map.html', context=context)
