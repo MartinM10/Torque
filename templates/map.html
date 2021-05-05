@@ -191,6 +191,7 @@
         const obd_speed = {{ dict_obd_speeds | safe }};
         const co2_inst = {{ dict_co2_inst | safe }};
         const lit_per_km = {{ dict_lit_per_km | safe }};
+        const lit_per_km_inst = {{ dict_lit_per_km_inst | safe }};
         const temperatures = {{ dict_temps | safe }};
         const gps_speed = {{ dict_gps_speeds | safe }};
         const times = {{ times | safe }};
@@ -307,10 +308,23 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'OBD Speed (km/h)',
-                            data: obd_speed,
+                            label: 'Consumption (L/100Km)',
+                            data: lit_per_km_inst,
                             backgroundColor: 'rgba(54, 162, 235, 1)',
                             borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            hoverRadius: 8,
+                            hoverBorderWidth: 2,
+                            pointBorderWidth: 2,
+                        },
+                        {
+                            showLine: true,
+                            fill: false,
+                            label: 'CO₂ Instantaneous (g/km)',
+                            data: co2_inst,
+                            backgroundColor: '#DF36EBFF',
+                            borderColor: '#DF36EBFF',
                             borderWidth: 1,
                             pointRadius: 0,
                             hoverRadius: 8,
@@ -323,7 +337,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 title: {
-                    text: "OBD Speed",
+                    text: "Instant Consumption-CO₂",
                     display: true,
                     fontSize: 20,
                     padding: 10,
@@ -383,7 +397,7 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'CO2 Instantaneous (g/km)',
+                            label: 'CO₂ Instantaneous (g/km)',
                             data: co2_inst,
                             backgroundColor: 'blue',
                             borderColor: 'blue',

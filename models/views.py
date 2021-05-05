@@ -124,7 +124,8 @@ def query(session_id):
           'max(case when pid = "0d" then value else null end) as `OBD Speed`, ' \
           'max(case when pid = "ff1237" then value else null end) as `GPS vs OBD Speed difference`, ' \
           'max(case when pid = "ff1263" then value else null end) as `Speed Average Only Moving`, ' \
-          'max(case when pid = "ff129a" then value else null end) as `Android device Battery level` ' \
+          'max(case when pid = "ff129a" then value else null end) as `Android device Battery level`, ' \
+          'max(case when pid = "ff1207" then value else null end) as `Litres per kilometer Instantaneous` ' \
           'from ' \
           ' ( ' \
           '     select distinct ' \
@@ -254,6 +255,7 @@ def session_in_map(request, session_id):
     dict_obd_speeds = []
     dict_co2_inst = []
     dict_lit_per_km = []
+    dict_lit_per_km_inst = []
     dict_temps = []
     dict_gps_speeds = []
     times = []
@@ -348,6 +350,11 @@ def session_in_map(request, session_id):
         android_battery_lvl = field_names[23]
         prop_dict[android_battery_lvl] = crs[23]
 
+        liters_per_km_inst = field_names[24]
+        prop_dict[liters_per_km_inst] = crs[24]
+        if crs[24]:
+            dict_lit_per_km_inst.append(crs[24][0:-8])
+
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
@@ -387,6 +394,7 @@ def session_in_map(request, session_id):
         'dict_obd_speeds': dict_obd_speeds,
         'dict_co2_inst': dict_co2_inst,
         'dict_lit_per_km': dict_lit_per_km,
+        'dict_lit_per_km_inst': dict_lit_per_km_inst,
         'dict_temps': dict_temps,
         'times': times
     }
