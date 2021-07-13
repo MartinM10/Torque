@@ -19,7 +19,7 @@ from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
 from models import views
-from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map, download_csv
+from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map, download_csv, track
 
 router = DefaultRouter()
 router_api = 'api/'
@@ -40,6 +40,7 @@ urlpatterns = [
     path('map2/', viewMap, name='map2'),  # Need to generate geojson/kml and csv files (using 'map/session_id)'
     path('', sessions_by_id_list, name='session_list'),
     path('map/<int:session_id>/', session_in_map, name='session_map'),
-    path('download/<int:session_id>/', download_csv, name='download')
+    path('download/<int:session_id>/', download_csv, name='download'),
+    path('track/<int:session_id>/', track, name='track')
 
 ]

@@ -19,11 +19,11 @@ import os
 from rest_framework import viewsets
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
-from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Address
+from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Track, TrackLog
 from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
-geolocator = Nominatim(user_agent="http")
+geolocator = Nominatim(user_agent="Torque")
 rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 
@@ -75,6 +75,93 @@ def sessions_by_id_list(request):
 def myconverter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
+
+
+def track(session_id):
+    log = Log.objects.get(id=session_id)
+    addresses = log.track_set.all()
+    address_list = []
+    last_address = ''
+
+    if not addresses:
+
+        records = Log.objects.get(id=session_id).record_set.all()
+        last_time = None
+        i = 0
+        for obj in records:
+            newest_time = obj.time.second
+
+            if i == 0:
+                last_time = (newest_time - newest_time) + 15
+
+            interval = (newest_time - last_time) % 60
+
+            if interval >= 8:
+                coordinates = (obj.latitude, obj.longitude)
+
+                location = geolocator.reverse(coordinates, zoom=17)
+                addresses = location.raw['address']
+                # print(addresses)
+                simple_address = ''
+
+                try:
+                    road = addresses['road']
+                    simple_address += road
+                except KeyError:
+                    road = None
+
+                if road:
+                    '''
+                    try:
+                        neighbourhood = addresses['neighbourhood']
+                        simple_address += ', ' + neighbourhood
+                    except KeyError:
+                        neighbourhood = None
+                    try:
+                        town = addresses['town']
+                        simple_address += ', ' + town
+                    except KeyError:
+                        town = None
+                    try:
+                        city = addresses['city']
+                        simple_address += ', ' + city
+                    except KeyError:
+                        city = None
+                    '''
+
+                    with transaction.atomic():
+                        trck, created = Track.objects.get_or_create(address=simple_address)
+                        if created:
+                            TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
+
+                        else:
+                            trck = Track.objects.get(address=simple_address)
+                            TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
+
+                    if trck.address != last_address:
+                        address_list.append(trck.address)
+                        last_address = trck.address
+
+                last_time = obj.time.second
+                i += 1
+    else:
+
+        for obj in addresses.order_by('tracklog__time'):
+            if obj.address != last_address:
+                address_list.append(obj.address)
+                last_address = obj.address
+
+    # Si quiero obtener el timestamp de cada calle por la que se pasó (codigo de abajo)
+    '''
+    lista = TrackLog.objects.filter(log_id=session_id).order_by('time')
+    print(lista)
+    
+    for obj in lista:
+        if obj.address != last_address:
+            address_list.append(obj.address)
+            last_address = obj.address   
+    '''
+    return address_list
 
 
 def download_csv(request, session_id):
@@ -385,6 +472,9 @@ def session_in_map(request, session_id):
     # print(obd_speeds)
     # print(times)
     # print(feat_list[2].get('properties')['OBD Speed'])
+
+    address_list = track(session_id)
+
     context = {
         'data': data,
         'session': session,
@@ -396,7 +486,8 @@ def session_in_map(request, session_id):
         'dict_lit_per_km': dict_lit_per_km,
         'dict_lit_per_km_inst': dict_lit_per_km_inst,
         'dict_temps': dict_temps,
-        'times': times
+        'times': times,
+        'address_list': address_list
     }
 
     # print(type(datetime.datetime.strptime(times[1], '%H:%M:%S').time()))
@@ -541,6 +632,9 @@ def upload_data(request):
                 dt = date_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
                 dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
                 date_time = dt
+
+                if 'E' in value:
+                    value = None
 
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                        longitude=longitude).save()

@@ -69,6 +69,26 @@
 
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <div class="row">
+            {% if address_list %}
+
+                <h3 style="text-align: center">Recorrido</h3>
+                <ul>
+                    {% for address in address_list %}
+                        <li style="display: inline;padding-right: 3px">
+                            {{ address }}
+                            <span> - </span>
+                        </li>
+
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <hr/>
+
+    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+        <div class="row">
             <div class="col-sm-6">
                 <canvas id="obdSpeed_CO2_Chart"></canvas>
             </div>
@@ -117,8 +137,8 @@
 
                 for (var p in feature.properties) {
                     if ((
-                            feature.properties[p] != feature.properties.email &&
-                            feature.properties[p] != feature.properties.date
+                            feature.properties[p] !== feature.properties.email &&
+                            feature.properties[p] !== feature.properties.date
                             // feature.properties[p] == feature.properties.CO2_Average ||
                             // feature.properties[p] === feature.properties.CO2_Instantaneous ||
                             // feature.properties[p] === feature.properties.Litres_Per_100_Kilometer
@@ -214,16 +234,7 @@
                 datasets:
                     [
                         {
-                            label: 'OBD Speed (km/h)',
-                            data: obd_speed,
-                            backgroundColor:
-                                '#FF5733',
-                            borderColor:
-                                '#FF5733',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'CO2 Instantaneous (g/km)',
+                            label: 'CO2 Instantáneo (g/km)',
                             data: co2_inst,
                             backgroundColor:
                                 'rgba(54, 162, 235, 1)',
@@ -232,7 +243,16 @@
                             borderWidth: 1
                         },
                         {
-                            label: 'Liters per kilometer Average (l/100km)',
+                            label: 'Velocidad OBD (km/h)',
+                            data: obd_speed,
+                            backgroundColor:
+                                '#FF5733',
+                            borderColor:
+                                '#FF5733',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Consumo Medio (l/100km)',
                             data: lit_per_km,
                             backgroundColor:
                                 '#8E44AD',
@@ -246,7 +266,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 title: {
-                    text: "CO₂-Speed-Consumption",
+                    text: "CO₂ - Velocidad - Consumo",
                     display: true,
                     fontSize: 20,
                     padding: 10,
@@ -308,10 +328,10 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'Consumption (L/100Km)',
-                            data: lit_per_km_inst,
-                            backgroundColor: 'rgba(54, 162, 235, 1)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            label: 'CO₂ Instantáneo (g/km)',
+                            data: co2_inst,
+                            backgroundColor: '#DF36EBFF',
+                            borderColor: '#DF36EBFF',
                             borderWidth: 1,
                             pointRadius: 0,
                             hoverRadius: 8,
@@ -321,10 +341,10 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'CO₂ Instantaneous (g/km)',
-                            data: co2_inst,
-                            backgroundColor: '#DF36EBFF',
-                            borderColor: '#DF36EBFF',
+                            label: 'Consumo Instantáneo (L/100Km)',
+                            data: lit_per_km_inst,
+                            backgroundColor: 'rgba(54, 162, 235, 1)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
                             borderWidth: 1,
                             pointRadius: 0,
                             hoverRadius: 8,
@@ -337,7 +357,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 title: {
-                    text: "Instant Consumption-CO₂",
+                    text: "CO₂ - Consumo",
                     display: true,
                     fontSize: 20,
                     padding: 10,
@@ -397,7 +417,7 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'CO₂ Instantaneous (g/km)',
+                            label: 'CO₂ Instantáneo (g/km)',
                             data: co2_inst,
                             backgroundColor: 'blue',
                             borderColor: 'blue',
@@ -410,7 +430,7 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'Temperature (ºC)',
+                            label: 'Temperatura del motor (ºC)',
                             data: temperatures,
                             backgroundColor: 'purple',
                             borderColor: 'purple',
@@ -426,7 +446,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 title: {
-                    text: "CO₂-Temperature",
+                    text: "CO₂ - Temperatura",
                     display: true,
                     fontSize: 20,
                     padding: 10,
@@ -487,7 +507,7 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'GPS Speed (km/h)',
+                            label: 'Velocidad GPS (km/h)',
                             data: gps_speed,
                             backgroundColor: 'red',
                             borderColor: 'red',
@@ -500,7 +520,7 @@
                         {
                             showLine: true,
                             fill: false,
-                            label: 'OBD Speed (km/h)',
+                            label: 'Velocidad OBD (km/h)',
                             data: obd_speed,
                             backgroundColor: 'blue',
                             borderColor: 'blue',
@@ -516,7 +536,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 title: {
-                    text: "GPS Speed vs OBD Speed",
+                    text: "Velocidad GPS - Velocidad OBD",
                     display: true,
                     fontSize: 20,
                     padding: 10,

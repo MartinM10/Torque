@@ -66,21 +66,15 @@ class Log(models.Model):
         unique_together = ('email', 'session')
 
 
-class Address(models.Model):
-    house_number = models.CharField(null=True, max_length=255)
-    road = models.CharField(null=True, max_length=255)
-    neighbourhood = models.CharField(null=True, max_length=255)
-    borough = models.CharField(null=True, max_length=255)
-    city = models.CharField(null=True, max_length=255)
-    county = models.CharField(null=True, max_length=255)
-    state = models.CharField(null=True, max_length=255)
-    postcode = models.CharField(null=True, max_length=255)
-    country = models.CharField(null=True, max_length=255)
-    country_code = models.CharField(null=True, max_length=255)
-    log = models.ManyToManyField(Log)
+class Track(models.Model):
+    address = models.CharField(null=True, max_length=255, unique=True)
+    logs = models.ManyToManyField(Log, through='TrackLog')
 
-    class Meta:
-        unique_together = ('road', 'city', 'postcode', 'country')
+
+class TrackLog(models.Model):
+    log = models.ForeignKey(Log, null=True, on_delete=models.CASCADE)
+    track = models.ForeignKey(Track, null=True, on_delete=models.CASCADE)
+    time = models.DateTimeField(null=True)
 
 
 class Profile(models.Model):
