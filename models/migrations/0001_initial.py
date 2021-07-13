@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
                 ('track', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='models.track')),
             ],
             options={
-                'unique_together': {('log_id', 'track_id')},
+                'unique_together': {('log', 'track')},
             },
         ),
         migrations.AddField(
