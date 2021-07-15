@@ -19,7 +19,7 @@ from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
 from models import views
-from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map, download_csv, track
+from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map, download_csv, tracking
 
 router = DefaultRouter()
 router_api = 'api/'
@@ -41,6 +41,6 @@ urlpatterns = [
     path('', sessions_by_id_list, name='session_list'),
     path('map/<int:session_id>/', session_in_map, name='session_map'),
     path('download/<int:session_id>/', download_csv, name='download'),
-    path('track/<int:session_id>/', track, name='track')
+    path('track/<int:session_id>/', tracking, name='tracking')
 
 ]

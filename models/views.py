@@ -12,7 +12,7 @@ from shapely.geometry import Point, mapping
 from django.db import connection, transaction
 from django.http import HttpResponse
 import datetime
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 import os
 
 # Create your views here.
@@ -77,79 +77,84 @@ def myconverter(o):
         return o.__str__()
 
 
-def track(session_id):
+def tracking(request, session_id):
+    log = Log.objects.get(id=session_id)
+    address_list = []
+    last_address = ''
+
+    records = Log.objects.get(id=session_id).record_set.all()
+    last_time = None
+    i = 0
+    for obj in records:
+        newest_time = obj.time.second
+
+        if i == 0:
+            last_time = (newest_time - newest_time) + 15
+
+        interval = (newest_time - last_time) % 60
+
+        if interval >= 8:
+            coordinates = (obj.latitude, obj.longitude)
+
+            location = geolocator.reverse(coordinates, zoom=17)
+            addresses = location.raw['address']
+            # print(addresses)
+            simple_address = ''
+
+            try:
+                road = addresses['road']
+                simple_address += road
+            except KeyError:
+                road = None
+
+            if road:
+                '''
+                try:
+                    neighbourhood = addresses['neighbourhood']
+                    simple_address += ', ' + neighbourhood
+                except KeyError:
+                    neighbourhood = None
+                try:
+                    town = addresses['town']
+                    simple_address += ', ' + town
+                except KeyError:
+                    town = None
+                try:
+                    city = addresses['city']
+                    simple_address += ', ' + city
+                except KeyError:
+                    city = None
+                '''
+
+                with transaction.atomic():
+                    trck, created = Track.objects.get_or_create(address=simple_address)
+                    if created:
+                        TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
+
+                    else:
+                        trck = Track.objects.get(address=simple_address)
+                        TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
+
+                if trck.address != last_address:
+                    address_list.append(trck.address)
+                    last_address = trck.address
+
+            last_time = obj.time.second
+            i += 1
+
+    return redirect('session_map', session_id=log.id)
+
+
+def print_track(session_id):
     log = Log.objects.get(id=session_id)
     addresses = log.track_set.all()
     address_list = []
     last_address = ''
 
-    if not addresses:
-
-        records = Log.objects.get(id=session_id).record_set.all()
-        last_time = None
-        i = 0
-        for obj in records:
-            newest_time = obj.time.second
-
-            if i == 0:
-                last_time = (newest_time - newest_time) + 15
-
-            interval = (newest_time - last_time) % 60
-
-            if interval >= 8:
-                coordinates = (obj.latitude, obj.longitude)
-
-                location = geolocator.reverse(coordinates, zoom=17)
-                addresses = location.raw['address']
-                # print(addresses)
-                simple_address = ''
-
-                try:
-                    road = addresses['road']
-                    simple_address += road
-                except KeyError:
-                    road = None
-
-                if road:
-                    '''
-                    try:
-                        neighbourhood = addresses['neighbourhood']
-                        simple_address += ', ' + neighbourhood
-                    except KeyError:
-                        neighbourhood = None
-                    try:
-                        town = addresses['town']
-                        simple_address += ', ' + town
-                    except KeyError:
-                        town = None
-                    try:
-                        city = addresses['city']
-                        simple_address += ', ' + city
-                    except KeyError:
-                        city = None
-                    '''
-
-                    with transaction.atomic():
-                        trck, created = Track.objects.get_or_create(address=simple_address)
-                        if created:
-                            TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
-
-                        else:
-                            trck = Track.objects.get(address=simple_address)
-                            TrackLog.objects.create(track=trck, log=log, time=obj.time).save()
-
-                    if trck.address != last_address:
-                        address_list.append(trck.address)
-                        last_address = trck.address
-
-                last_time = obj.time.second
-                i += 1
-    else:
-
-        for obj in addresses.order_by('tracklog__time'):
-            if obj.address != last_address:
-                address_list.append(obj.address)
-                last_address = obj.address
+    for obj in addresses.order_by('tracklog__time'):
+        if obj.address != last_address:
+            address_list.append(obj.address)
+            last_address = obj.address
 
     # Si quiero obtener el timestamp de cada calle por la que se pasó (codigo de abajo)
     '''
@@ -473,7 +478,12 @@ def session_in_map(request, session_id):
     # print(times)
     # print(feat_list[2].get('properties')['OBD Speed'])
 
-    address_list = track(session_id)
+    addresses = session.track_set.all()
+    address_list = []
+    last_address = ''
+
+    if addresses:
+        address_list = print_track(session_id)
 
     context = {
         'data': data,
@@ -567,21 +577,21 @@ def upload_data(request):
         Log(session=session_time, email=email, id_app=id_app, dataset_id=None).save()
     '''
     for key, value in request.GET.items():
-        # print(key, " -> ", value)
 
-        # TABLE DATA_TORQUE
+        # TABLE DATA_TORQUE (unneeded)
+        '''
         try:
             with transaction.atomic():
                 DataTorque(key=key, value=value, session=session_time, email=email, id_app=id_app, time=time_app,
                            latitude=latitude, longitude=longitude).save()
         except:
             pass
+        '''
 
-        # print(key)
-        # print(value)
         # patron = "(kff)|(k[d|5])"
         # patron_OK = "(kff[0-9]{1,4}|k[0-9a-z]{0,3})"
         # print(patron)
+
         # TABLE SENSOR AND TABLE RECORD
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
                 'defaultUnit' in key or 'kff' in key or 'kd' in key or 'k5' in key:
@@ -633,7 +643,7 @@ def upload_data(request):
                 dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
                 date_time = dt
 
-                if 'E' in value:
+                if 'E' in value or 'inf' in value or 'Inf' in value:
                     value = None
 
                 Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,

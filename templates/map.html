@@ -69,8 +69,11 @@
 
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <div class="row">
-            {% if address_list %}
+            <div class="col text-center">
+                <a class="btn btn-primary" href="{% url 'download' session.id %}" role="button">Descargar Datos CSV</a>
+            </div>
 
+            {% if address_list %}
                 <h3 style="text-align: center">Recorrido</h3>
                 <ul>
                     {% for address in address_list %}
@@ -81,6 +84,11 @@
 
                     {% endfor %}
                 </ul>
+            {% else %}
+                <div class="col text-center">
+                    <a class="btn btn-primary" href="{% url 'tracking' session.id %}" role="button">Obtener
+                        Recorrido</a>
+                </div>
             {% endif %}
         </div>
     </div>
