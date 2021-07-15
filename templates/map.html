@@ -72,25 +72,33 @@
             <div class="col text-center">
                 <a class="btn btn-primary" href="{% url 'download' session.id %}" role="button">Descargar Datos CSV</a>
             </div>
+        </div>
+    </div>
 
-            {% if address_list %}
-                <h3 style="text-align: center">Recorrido</h3>
-                <ul>
-                    {% for address in address_list %}
-                        <li style="display: inline;padding-right: 3px">
-                            {{ address }}
-                            <span> - </span>
-                        </li>
+    <hr/>
 
-                    {% endfor %}
-                </ul>
-            {% else %}
+    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+        {% if address_list %}
+            <h3 style="text-align: center">Trayecto</h3>
+            <ul>
+                {% for address in address_list %}
+                    <li style="display: inline;padding-right: 3px">
+                        {{ address }}
+                        <span> - </span>
+                    </li>
+
+                {% endfor %}
+            </ul>
+        {% else %}
+
+            <div class="row">
                 <div class="col text-center">
                     <a class="btn btn-primary" href="{% url 'tracking' session.id %}" role="button">Obtener
-                        Recorrido</a>
+                        Trayecto</a>
                 </div>
-            {% endif %}
-        </div>
+            </div>
+
+        {% endif %}
     </div>
 
     <hr/>
