@@ -1,6 +1,7 @@
 import csv
 import json
 import re
+from fileinput import filename
 from operator import concat
 
 from django.core import serializers
@@ -14,7 +15,7 @@ from django.http import HttpResponse
 import datetime
 from django.shortcuts import render, redirect
 import os
-
+import logging
 # Create your views here.
 from rest_framework import viewsets
 
@@ -26,6 +27,8 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
 geolocator = Nominatim(user_agent="Torque")
 rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
+
+logging.basicConfig(filename='./logs/InfoLog.log', encoding='utf-8', level=logging.INFO)
 
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
@@ -537,6 +540,7 @@ def upload_data(request):
     session_time = None
     log = None
 
+    logging.info(request)
     # print("TIMESTAMP---------------------------------- ")
     # ts = int(time_app)
     # print(ts, '\n')
