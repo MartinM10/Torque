@@ -25,8 +25,7 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
 geolocator = Nominatim(user_agent="Torque")
-rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
-
+# rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 logging.basicConfig(filename='./logs/InfoLog.log', encoding='utf-8', level=logging.INFO)
 
@@ -99,7 +98,7 @@ def tracking(request, session_id):
         if interval >= 8:
             coordinates = (obj.latitude, obj.longitude)
 
-            location = geolocator.reverse(coordinates, zoom=17)
+            location = geolocator.reverse(coordinates, zoom=17, timeout=3)
             addresses = location.raw['address']
             # print(addresses)
             simple_address = ''
