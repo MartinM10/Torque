@@ -3,22 +3,37 @@
 
 {% block routes %}
 
-    {% if not similar_routes %}
-        <h3>No se han encontrado rutas similares</h3>
-    {% else %}
-        <h3>Rutas similares</h3>
+    {% if route %}
+        <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+            <div class="row">
+                <h3>Ruta</h3>
+                {{ route }}
+            </div>
+        </div>
 
-        {% for key, value in similar_routes.items %}
-            <ul>
-                <li>
-                    <a href="{% url 'session_map' session_id=key.id %}">Ruta {{ key.id }}</a> - Similitud: {{ value.1 }}
-                    % - {{ value.0 }}
-                </li>
-            </ul>
-        {% endfor %}
+        <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+            <div class="row">
+                {% if not similar_routes %}
+
+                    <h3>No se han encontrado rutas similares</h3>
+
+                {% else %}
+
+                    <h3>Rutas similares</h3>
+
+                    {% for key, value in similar_routes.items %}
+                        <ul>
+                            <li>
+                                <a href="{% url 'session_map' session_id=key.id %}">Ruta {{ key.id }}</a> -
+                                Similitud: <b> {{ value.1 }} % </b> - Coinciden <b> {{ value.2 }}
+                                calles </b>- {{ value.0 }}
+                            </li>
+                        </ul>
+                    {% endfor %}
+
+                {% endif %}
+            </div>
+        </div>
 
     {% endif %}
-
 {% endblock %}
-
-</html>

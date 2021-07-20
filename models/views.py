@@ -202,13 +202,16 @@ def compare_all_routes(request, session_id, percentage=60):
             last_street_to_compare = obj.address
 
     for session in all_sessions:
-        addresses = session_to_compare.track_set.all()
+        addresses = session.track_set.all()
+        streets = []
+        last_street = ''
+
         if not session.track_set:
             tracking(request, session.id)
 
         for obj in addresses.order_by('tracklog__time'):
-            streets = []
-            last_street = ''
+            # streets = []
+            # last_street = ''
 
             if obj.address != last_street:
                 streets.append(obj.address)
@@ -219,13 +222,20 @@ def compare_all_routes(request, session_id, percentage=60):
         # al hacer la intersección entre conjuntos no se considera el orden...
         intersection = set(streets_to_compare).intersection(streets)
 
-        umbral = trunc(len(streets_to_compare) * (percentage / 100))
-        match_percentage = round((len(streets) / len(streets_to_compare)) * 100, 1)
+        # umbral = trunc(len(streets_to_compare) * (percentage / 100))
+        umbral = percentage
+        try:
+            match_percentage = round(len(intersection) / (len(streets_to_compare)) * 100, 1)
+        except:
+            match_percentage = 0
 
-        if len(intersection) >= umbral:
-            similar_routes[session] = [streets, match_percentage]
+        if match_percentage >= umbral:
+            similar_routes[session] = [intersection, match_percentage, len(intersection)]
+
+    # print(similar_routes)
 
     context = {
+        'route': streets_to_compare,
         'similar_routes': similar_routes
     }
 
