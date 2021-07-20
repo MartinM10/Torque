@@ -79,7 +79,7 @@
 
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         {% if address_list %}
-            <h3 style="text-align: center">Trayecto</h3>
+            <h3 style="text-align: center; margin-top: 0">Ruta</h3>
             <ul>
                 {% for address in address_list %}
                     <li style="display: inline;padding-right: 3px">
@@ -89,12 +89,22 @@
 
                 {% endfor %}
             </ul>
+
+                <hr/>
+            <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+                <div class="row">
+                    <div class="col text-center">
+                        <a class="btn btn-primary" href="{% url 'routes' session.id %}" role="button">Comparar
+                            Rutas</a>
+                    </div>
+                </div>
+            </div>
         {% else %}
 
             <div class="row">
                 <div class="col text-center">
                     <a class="btn btn-primary" href="{% url 'tracking' session.id %}" role="button">Obtener
-                        Trayecto</a>
+                        Ruta</a>
                 </div>
             </div>
 

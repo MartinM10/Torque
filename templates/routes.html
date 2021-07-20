@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block routes %}
+
+    {% if not similar_routes %}
+        <h3>No se han encontrado rutas similares</h3>
+    {% else %}
+        <h3>Rutas similares</h3>
+
+        {% for key, value in similar_routes.items %}
+            <ul>
+                <li>
+                    <a href="{% url 'session_map' session_id=key.id %}">Ruta {{ key.id }}</a> - Similitud: {{ value.1 }}
+                    % - {{ value.0 }}
+                </li>
+            </ul>
+        {% endfor %}
+
+    {% endif %}
+
+{% endblock %}
+
+</html>

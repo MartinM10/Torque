@@ -2,6 +2,7 @@ import csv
 import json
 import re
 from fileinput import filename
+from math import trunc
 from operator import concat
 
 from django.core import serializers
@@ -25,9 +26,12 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
     PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
 
 geolocator = Nominatim(user_agent="Torque")
+
+
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
-logging.basicConfig(filename='./logs/InfoLog.log', encoding='utf-8', level=logging.INFO)
+# logging.basicConfig(filename='./logs/InfoLog.log', encoding='utf-8', level=logging.INFO)
+
 
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
@@ -169,6 +173,63 @@ def print_track(session_id):
             last_address = obj.address   
     '''
     return address_list
+
+
+# Comparar dos rutas en concreto?
+# o comparar una ruta con todas indicando un indice de coincidencia?
+def compare_two_routes(streets_to_compare, streets, percentage):
+    intersection = set(streets_to_compare).intersection(streets)
+
+    if not percentage:
+        percentage = len(streets_to_compare) * 0.7
+
+    if len(intersection) < len(streets) * (percentage / 100):
+        print('si')
+        print(intersection)
+
+
+def compare_all_routes(request, session_id, percentage=60):
+    all_sessions = Log.objects.all().exclude(id=session_id)
+    session_to_compare = Log.objects.get(id=session_id)
+    addresses_to_compare = session_to_compare.track_set.all()
+    streets_to_compare = []
+    last_street_to_compare = ''
+    similar_routes = {}
+
+    for obj in addresses_to_compare.order_by('tracklog__time'):
+        if obj.address != last_street_to_compare:
+            streets_to_compare.append(obj.address)
+            last_street_to_compare = obj.address
+
+    for session in all_sessions:
+        addresses = session_to_compare.track_set.all()
+        if not session.track_set:
+            tracking(request, session.id)
+
+        for obj in addresses.order_by('tracklog__time'):
+            streets = []
+            last_street = ''
+
+            if obj.address != last_street:
+                streets.append(obj.address)
+                last_street = obj.address
+
+        # Compare 2 Routes
+        # compare_two_routes(streets_to_compare, streets)
+        # al hacer la intersección entre conjuntos no se considera el orden...
+        intersection = set(streets_to_compare).intersection(streets)
+
+        umbral = trunc(len(streets_to_compare) * (percentage / 100))
+        match_percentage = round((len(streets) / len(streets_to_compare)) * 100, 1)
+
+        if len(intersection) >= umbral:
+            similar_routes[session] = [streets, match_percentage]
+
+    context = {
+        'similar_routes': similar_routes
+    }
+
+    return render(request, 'routes.html', context=context)
 
 
 def download_csv(request, session_id):
