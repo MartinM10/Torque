@@ -27,7 +27,6 @@ from models.serializers import LogSerializer, RecordSerializer, DatasetSerialize
 
 geolocator = Nominatim(user_agent="Torque")
 
-
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 logging.basicConfig(filename='./logs/InfoLog.log', level=logging.INFO)
@@ -104,7 +103,6 @@ def tracking(request, session_id):
 
             location = geolocator.reverse(coordinates, zoom=17, timeout=3)
             addresses = location.raw['address']
-            # print(addresses)
             simple_address = ''
 
             try:
@@ -175,6 +173,7 @@ def print_track(session_id):
     return address_list
 
 
+'''
 # Comparar dos rutas en concreto?
 # o comparar una ruta con todas indicando un indice de coincidencia?
 def compare_two_routes(streets_to_compare, streets, percentage):
@@ -185,7 +184,7 @@ def compare_two_routes(streets_to_compare, streets, percentage):
 
     if len(intersection) < len(streets) * (percentage / 100):
         print('si')
-        print(intersection)
+'''
 
 
 def compare_all_routes(request, session_id, percentage=60):
@@ -231,9 +230,6 @@ def compare_all_routes(request, session_id, percentage=60):
 
         if match_percentage >= umbral:
             similar_routes[session] = [intersection, match_percentage, len(intersection)]
-
-        print('session ', session.id, ' comparada')
-    # print(similar_routes)
 
     context = {
         'route': streets_to_compare,
@@ -399,16 +395,13 @@ def using_orm(request, session_id):
     duration = str(round(session.record_set.filter(sensor__pid='ff1266').last().value, 2)) + ' ' + duration_unit
     ###############################################################################################################
     # data = session.record_set.values_list().exclude(sensor__record__log_id=1).exclude(sensor__record__log_id=2)
-    # print(data)
     # DATA
-    # print(serializers.serialize('json', session.record_set.filter(sensor__pid='ff1001').order_by('-time')))
 
 
 def session_in_map(request, session_id):
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
     res = query(session_id)
-    # print(res)
     # using_orm(request, session_id)
 
     crs_list = res[0]
@@ -528,28 +521,23 @@ def session_in_map(request, session_id):
         # coordenates = (crs[9], crs[10])
         # location = rev(coordenates)
         # address = location.raw['address']
-        # print(road)
-        # print(location.raw['address'])
+
         '''
         if address:
             for key in address:
                 if 'road' in key:
                     road = location.raw['address']['road']
                     if road not in track:
-                        print('added: ', road)
+                        # print('added: ', road)
                         track.append(road)
                 else:
-                    print('NO HAY NOMBRE DE CALLE --------------------- ')
-                    print(address)
+                    # print('NO HAY NOMBRE DE CALLE --------------------- ')
+                    # print(address)
         '''
-        # print(location.raw)
 
-    # print(track)
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
-    # print(obd_speeds)
-    # print(times)
     # print(feat_list[2].get('properties')['OBD Speed'])
 
     addresses = session.track_set.all()
@@ -600,8 +588,6 @@ def sql_query_longs_lats(sql_query):
 
 @transaction.atomic
 def upload_data(request):
-    # print(request.query_params)
-    # print(request.GET)
     session_app = request.GET.get('session')
     id_app = request.GET.get('id')
     email = request.GET.get('eml')
@@ -612,29 +598,18 @@ def upload_data(request):
     log = None
 
     logging.info(request)
-    # print("TIMESTAMP---------------------------------- ")
-    # ts = int(time_app)
-    # print(ts, '\n')
-    # from django.utils.datetime_safe import datetime
-    # print(datetime.utcfromtimestamp(ts/1000).strftime('%Y-%m-%d %H:%M:%S' '.' '%f'))
 
     # TABLE LOG
-
     # session_time = datetime.fromtimestamp(session_app/1000) + timedelta(hours=1)\
     #                   .strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
     if session_app:
         session_time = make_aware(datetime.datetime.fromtimestamp(int(session_app) / 1000))
-        # print(session_time)
         st = session_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
         st = session_time.strptime(st, '%Y-%m-%d %H:%M:%S' '.' '%f')
-        # print(type(s))
-        # print(s)
         session_time = st
 
     # session_time += datetime.timedelta(hours=1)
     # aware_datetime = make_aware(session_time)
-    # print(type(session_time))
-    # print(session_time, '%Y-%m-%d %H:%M:%S' '.' '%f')
 
     if session_time and email and id_app:
         try:
@@ -685,7 +660,6 @@ def upload_data(request):
         '''
 
         if 'Name' in key or 'Unit' in key:
-            # print('entran nombres')
 
             if 'ff' in key:
                 pid = key[-6:]
@@ -718,7 +692,6 @@ def upload_data(request):
 
         # TABLE RECORD
         elif 'kff' in key or 'kd' in key or 'k5' in key or 'kc' in key:
-            #print('entran valores')
 
             if 'kff1006' in key:
                 latitude = value
@@ -742,7 +715,6 @@ def upload_data(request):
             if 'E' in value or 'inf' in value or 'Inf' in value:
                 value = 0
 
-            # print('se almacena en record')
             Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
                    longitude=longitude).save()
 
