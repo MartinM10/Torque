@@ -30,7 +30,7 @@ geolocator = Nominatim(user_agent="Torque")
 
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
-# logging.basicConfig(filename='./logs/InfoLog.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='./logs/InfoLog.log', level=logging.INFO)
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -206,7 +206,7 @@ def compare_all_routes(request, session_id, percentage=60):
         streets = []
         last_street = ''
 
-        if not session.track_set:
+        if not session.tracklog_set.all():
             tracking(request, session.id)
 
         for obj in addresses.order_by('tracklog__time'):
@@ -232,6 +232,7 @@ def compare_all_routes(request, session_id, percentage=60):
         if match_percentage >= umbral:
             similar_routes[session] = [intersection, match_percentage, len(intersection)]
 
+        print('session ', session.id, ' comparada')
     # print(similar_routes)
 
     context = {
@@ -650,6 +651,7 @@ def upload_data(request):
     if created:
         Log(session=session_time, email=email, id_app=id_app, dataset_id=None).save()
     '''
+
     for key, value in request.GET.items():
 
         # TABLE DATA_TORQUE (unneeded)
@@ -667,60 +669,81 @@ def upload_data(request):
         # print(patron)
 
         # TABLE SENSOR AND TABLE RECORD
+        '''
         if 'FullName' in key or 'ShortName' in key or 'userUnit' in key or \
                 'defaultUnit' in key or 'kff' in key or 'kd' in key or 'k5' in key:
+        '''
+        # if 'Name' in key or 'Unit' in key or 'k' in key:  # 'kff' in key or 'kd' in key or 'k5' in key:
 
-            pid = ''
+        pid = ''
 
-            if 'Name05' in key or 'Unit05' in key or '0d' in key or '0c' in key:
-                pid = key[-2:]
-            else:
+        '''
+        if 'Name05' in key or 'Unit05' in key or '0d' in key or '0c' in key:
+            pid = key[-2:]
+        else:
+            pid = key[-6:]
+        '''
+
+        if 'Name' in key or 'Unit' in key:
+            # print('entran nombres')
+
+            if 'ff' in key:
                 pid = key[-6:]
 
-            # print(pid)
-            # print(value)
+            if '0d' in key or '0c' in key or '05' in key or '83' in key:
+                pid = key[-2:]
 
-            if 'kff' not in key and 'kd' not in key and 'k5' not in key and 'kc' not in key:
-                sensor = Sensor.objects.get_or_create(pid=pid)
+            '''
+            other_options = ['0d', '0c', '05', '83']
+            # Same as check if ('0d' in key OR '0c' in key OR ...)
+            for option in other_options:
+                if option in key:
+                    # pid = key[-2:]
+                    pid = key[key.find(option):] # .find no funciona porque key no es un string parece...
+            '''
 
-                if 'FullName' in key and Sensor.objects.get(pid=pid).user_full_name != value:
-                    Sensor.objects.filter(pid=pid).update(user_full_name=value)
+            sensor = Sensor.objects.get_or_create(pid=pid)
 
-                if 'ShortName' in key and Sensor.objects.get(pid=pid).user_short_name != value:
-                    Sensor.objects.filter(pid=pid).update(user_short_name=value)
+            if 'FullName' in key and Sensor.objects.get(pid=pid).user_full_name != value:
+                Sensor.objects.filter(pid=pid).update(user_full_name=value)
 
-                if 'userUnit' in key and Sensor.objects.get(pid=pid).user_unit != value:
-                    Sensor.objects.filter(pid=pid).update(user_unit=value)
+            if 'ShortName' in key and Sensor.objects.get(pid=pid).user_short_name != value:
+                Sensor.objects.filter(pid=pid).update(user_short_name=value)
 
-                if 'defaultUnit' in key and Sensor.objects.get(pid=pid).default_unit != value:
-                    Sensor.objects.filter(pid=pid).update(default_unit=value)
+            if 'userUnit' in key and Sensor.objects.get(pid=pid).user_unit != value:
+                Sensor.objects.filter(pid=pid).update(user_unit=value)
 
-            # TABLE RECORD
-            else:  # if 'kff' in key or 'kd' in key or 'k5' in key:
+            if 'defaultUnit' in key and Sensor.objects.get(pid=pid).default_unit != value:
+                Sensor.objects.filter(pid=pid).update(default_unit=value)
 
-                if 'kff1006' in key:
-                    latitude = value
-                if 'kff1005' in key:
-                    longitude = value
-                if 'kd' in key:
-                    pid = '0d'
-                if 'k5' in key:
-                    pid = '05'
-                if 'kc' in key:
-                    pid = '0c'
+        # TABLE RECORD
+        elif 'kff' in key or 'kd' in key or 'k5' in key or 'kc' in key:
+            #print('entran valores')
 
-                sensor_id = Sensor.objects.get(pid=pid).id
-                log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
+            if 'kff1006' in key:
+                latitude = value
+            if 'kff1005' in key:
+                longitude = value
+            if 'kd' in key:
+                pid = '0d'
+            if 'k5' in key:
+                pid = '05'
+            if 'kc' in key:
+                pid = '0c'
 
-                date_time = make_aware(datetime.datetime.fromtimestamp(int(time_app) / 1000))
-                dt = date_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
-                dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
-                date_time = dt
+            sensor_id = Sensor.objects.get(pid=pid).id
+            log_id = Log.objects.filter(id_app=id_app, email=email, session=session_time).first().id
 
-                if 'E' in value or 'inf' in value or 'Inf' in value:
-                    value = None
+            date_time = make_aware(datetime.datetime.fromtimestamp(int(time_app) / 1000))
+            dt = date_time.strftime('%Y-%m-%d %H:%M:%S' '.' '%f')
+            dt = date_time.strptime(dt, '%Y-%m-%d %H:%M:%S' '.' '%f')
+            date_time = dt
 
-                Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
-                       longitude=longitude).save()
+            if 'E' in value or 'inf' in value or 'Inf' in value:
+                value = 0
+
+            # print('se almacena en record')
+            Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
+                   longitude=longitude).save()
 
     return HttpResponse('OK!')
