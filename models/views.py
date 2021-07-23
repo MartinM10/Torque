@@ -7,6 +7,7 @@ from operator import concat
 
 from django.core import serializers
 from django.core.serializers import serialize
+from django.utils.datetime_safe import datetime
 from django.utils.timezone import make_aware
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
@@ -16,9 +17,12 @@ from django.http import HttpResponse
 import datetime
 from django.shortcuts import render, redirect
 import os
+import numpy
+import pandas
 import logging
 # Create your views here.
 from rest_framework import viewsets
+from statsmodels.genmod.families.links import probit
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Track, TrackLog
@@ -30,6 +34,9 @@ geolocator = Nominatim(user_agent="Torque")
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 logging.basicConfig(filename='./logs/InfoLog.log', level=logging.INFO)
+
+TIME_LAST_HTTP_REQUEST = datetime.datetime.now()
+TIME_TO_CONSIDER_NEW_SESSION = datetime.timedelta(minutes=1)
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -398,12 +405,51 @@ def using_orm(request, session_id):
     # DATA
 
 
+def separe_sessions(request):
+    sessions = Log.objects.all()
+
+    for session in sessions:
+
+        records = session.record_set.all()
+        separated = False
+        log = None
+        print('NUEVA SESSION ', session.id)
+        print('-------------------------------------------------------------------------------------------------------')
+        i = 0
+
+        for record in records:
+
+            if i == 0:
+                last_time = record.time
+
+            interval = record.time - last_time
+
+            # print('now ', record.time)
+            # print('last time', last_time)
+
+            # print('interval', interval)
+
+            if interval > datetime.timedelta(minutes=1):
+                print('interval', interval)
+                print('session_id', session.id)
+                # print('entra en el intervalo')
+                # log = Log.objects.create(session=now, email=session.email, id_app=session.id_app).save()
+                separated = True
+
+            if separated:
+                pass
+                # print('actualiza la tabla')
+                # Record.objects.update(log_id=log.id).save()
+
+            last_time = record.time
+            i = i + 1
+
+
 def session_in_map(request, session_id):
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
     res = query(session_id)
     # using_orm(request, session_id)
-
     crs_list = res[0]
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
@@ -411,12 +457,12 @@ def session_in_map(request, session_id):
     field_names = res[1]
     # track = []
     values = {}
-    dict_obd_speeds = []
-    dict_co2_inst = []
-    dict_lit_per_km = []
-    dict_lit_per_km_inst = []
-    dict_temps = []
-    dict_gps_speeds = []
+    obd_speeds = []
+    co2_inst = []
+    lit_per_km = []
+    lit_per_km_inst = []
+    temps = []
+    gps_speeds = []
     times = []
 
     for crs in crs_list:
@@ -472,7 +518,7 @@ def session_in_map(request, session_id):
         c02_instantaneous = field_names[14]
         prop_dict[c02_instantaneous] = crs[14]
         if crs[14]:
-            dict_co2_inst.append(crs[14][0:-5])
+            co2_inst.append(crs[14][0:-5])
 
         co2_average = field_names[15]
         prop_dict[co2_average] = crs[15]
@@ -480,12 +526,12 @@ def session_in_map(request, session_id):
         engine_coolant = field_names[16]
         prop_dict[engine_coolant] = crs[16]
         if crs[16]:
-            dict_temps.append(crs[16][0:-3])
+            temps.append(crs[16][0:-3])
 
         liters_per_km = field_names[17]
         prop_dict[liters_per_km] = crs[17]
         if crs[17]:
-            dict_lit_per_km.append(crs[17][0:-8])
+            lit_per_km.append(crs[17][0:-8])
 
         gps_accuracy = field_names[18]
         prop_dict[gps_accuracy] = crs[18]
@@ -493,12 +539,12 @@ def session_in_map(request, session_id):
         gps_speed = field_names[19]
         prop_dict[gps_speed] = crs[19]
         if crs[19]:
-            dict_gps_speeds.append(crs[19][0:-5])
+            gps_speeds.append(crs[19][0:-5])
 
         obd_speed = field_names[20]
         prop_dict[obd_speed] = crs[20]
         if crs[20]:
-            dict_obd_speeds.append(crs[20][0:-5])
+            obd_speeds.append(crs[20][0:-5])
 
         speed_diff = field_names[21]
         prop_dict[speed_diff] = crs[21]
@@ -512,7 +558,7 @@ def session_in_map(request, session_id):
         liters_per_km_inst = field_names[24]
         prop_dict[liters_per_km_inst] = crs[24]
         if crs[24]:
-            dict_lit_per_km_inst.append(crs[24][0:-8])
+            lit_per_km_inst.append(crs[24][0:-8])
 
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
@@ -534,6 +580,8 @@ def session_in_map(request, session_id):
                     # print('NO HAY NOMBRE DE CALLE --------------------- ')
                     # print(address)
         '''
+    dict_dataframe = {'velocidad_gps': gps_speeds, 'co2': co2_inst, 'consumo': lit_per_km}
+    # print(dict_dataframe)
 
     gjson_dict["features"] = feat_list
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
@@ -547,17 +595,110 @@ def session_in_map(request, session_id):
     if addresses:
         address_list = print_track(session_id)
 
+    gps_speed_df = pandas.DataFrame(session.record_set.filter(sensor__pid='ff1001').values_list('value'),
+                                    columns=['Velocidad GPS']).astype(float)
+    # print(gps_speed_df.max())
+
+    CO2_df = pandas.DataFrame(session.record_set.filter(sensor__pid='ff1257').values_list('value'),
+                              columns=['CO2']).astype(float)
+
+    temp_df = pandas.DataFrame(session.record_set.filter(sensor__pid='05').values_list('value'),
+                               columns=['Temperatura del motor']).astype(float)
+
+    # print(gps_speed_df.describe())
+
+    # gps_speed_query = session.record_set.filter(sensor__pid='ff1001').values_list('value', flat=True)
+    # co2_query = session.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True)
+    print('----------------------------------------------------------------------------------------')
+    # print(gps_speed_query)
+    # mydict = {'gps_speed': gps_speed_query, 'co2': co2_query}
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()})
+
+    print(dict_df)
+    print(dict_df.describe())
+
+    gps_speed_max = None
+    gps_speed_mean = None
+    gps_speed_min = None
+    gps_speed_q1 = None
+    gps_speed_q2 = None
+    gps_speed_q3 = None
+
+    CO2_mean = None
+    CO2_max = None
+    CO2_min = None
+    CO2_q1 = None
+    CO2_q2 = None
+    CO2_q3 = None
+
+    temp_mean = None
+    temp_max = None
+    temp_min = None
+    temp_q1 = None
+    temp_q2 = None
+    temp_q3 = None
+
+    if gps_speed_df.empty:
+        gps_speed_df = None
+    elif not gps_speed_df.empty:
+        gps_speed_mean = gps_speed_df.mean().values[0]
+        gps_speed_max = gps_speed_df.max().values[0]
+        gps_speed_min = gps_speed_df.min().values[0]
+        gps_speed_q1 = gps_speed_df.quantile(.25).values[0]
+        gps_speed_q2 = gps_speed_df.quantile(.5).values[0]
+        gps_speed_q3 = gps_speed_df.quantile(.75).values[0]
+
+    if CO2_df.empty:
+        CO2_df = None
+    elif not CO2_df.empty:
+        CO2_mean = CO2_df.mean().values[0]
+        CO2_max = CO2_df.max().values[0]
+        CO2_min = CO2_df.min().values[0]
+        CO2_q1 = CO2_df.quantile(.25).values[0]
+        CO2_q2 = CO2_df.quantile(.5).values[0]
+        CO2_q3 = CO2_df.quantile(.75).values[0]
+
+    if temp_df.empty:
+        temp_df = None
+    elif not temp_df.empty:
+        temp_mean = temp_df.mean().values[0]
+        temp_max = temp_df.max().values[0]
+        temp_min = temp_df.min().values[0]
+        temp_q1 = temp_df.quantile(.25).values[0]
+        temp_q2 = temp_df.quantile(.5).values[0]
+        temp_q3 = temp_df.quantile(.75).values[0]
+
     context = {
         'data': data,
         'session': session,
         'sessions': sessions,
         'summary': values,
-        'dict_gps_speeds': dict_gps_speeds,
-        'dict_obd_speeds': dict_obd_speeds,
-        'dict_co2_inst': dict_co2_inst,
-        'dict_lit_per_km': dict_lit_per_km,
-        'dict_lit_per_km_inst': dict_lit_per_km_inst,
-        'dict_temps': dict_temps,
+        'dict_gps_speeds': gps_speeds,
+        'gps_speed_mean': gps_speed_mean,
+        'gps_speed_max': gps_speed_max,
+        'gps_speed_min': gps_speed_min,
+        'gps_speed_q1': gps_speed_q1,
+        'gps_speed_q2': gps_speed_q2,
+        'gps_speed_q3': gps_speed_q3,
+        'CO2_mean': CO2_mean,
+        'CO2_max': CO2_max,
+        'CO2_min': CO2_min,
+        'CO2_q1': CO2_q1,
+        'CO2_q2': CO2_q2,
+        'CO2_q3': CO2_q3,
+        'temp_mean': temp_mean,
+        'temp_max': temp_max,
+        'temp_min': temp_min,
+        'temp_q1': temp_q1,
+        'temp_q2': temp_q2,
+        'temp_q3': temp_q3,
+        'dict_obd_speeds': obd_speeds,
+        'dict_co2_inst': co2_inst,
+        'dict_lit_per_km': lit_per_km,
+        'dict_lit_per_km_inst': lit_per_km_inst,
+        'dict_temps': temps,
+        # 'temperature_df_describe': temp_df,
+        # 'CO2_df_describe': CO2_df,
         'times': times,
         'address_list': address_list
     }
@@ -596,6 +737,13 @@ def upload_data(request):
     longitude = request.GET.get('kff1005')
     session_time = None
     log = None
+    '''
+    now = datetime.datetime.now()
+    interval_time = now - TIME_LAST_HTTP_REQUEST
+
+    if interval_time < TIME_TO_CONSIDER_NEW_SESSION:
+        print('¿Almacenar nueva sesion, con que HORA?)
+    '''
 
     logging.info(request)
 
@@ -613,12 +761,10 @@ def upload_data(request):
 
     if session_time and email and id_app:
         try:
-            with transaction.atomic():
-                log = Log.objects.get(session=session_time, email=email, id_app=id_app)
+            log = Log.objects.get(session=session_time, email=email, id_app=id_app)
         except Log.DoesNotExist:
             try:
-                with transaction.atomic():
-                    Log(session=session_time, email=email, id_app=id_app).save()
+                Log(session=session_time, email=email, id_app=id_app).save()
             except:
                 pass
     ''' 
@@ -693,6 +839,8 @@ def upload_data(request):
         # TABLE RECORD
         elif 'kff' in key or 'kd' in key or 'k5' in key or 'kc' in key:
 
+            if 'ff' in key:
+                pid = key[-6:]
             if 'kff1006' in key:
                 latitude = value
             if 'kff1005' in key:

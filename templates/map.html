@@ -61,7 +61,7 @@
 
     {% endif %}
 
-    <div class="container-fluid" style="width: 90%; margin-left: auto; height: 60vh; margin-top: 10px"
+    <div class="container-fluid" style="width: 60vw;margin-left: auto; height: 60vh; margin-top: 10px"
          id="map">
     </div>
 
@@ -90,7 +90,7 @@
                 {% endfor %}
             </ul>
 
-                <hr/>
+            <hr/>
             <div class="container-fluid" style="width: 90%; margin-top: 10px;">
                 <div class="row">
                     <div class="col text-center">
@@ -133,6 +133,53 @@
         <!--
         <button onclick="stilo()">Pantalla completa</button>
         -->
+    </div>
+
+    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+        <h3 style="text-align: center"><b>Resumen</b></h3>
+        <table class="table-responsive table-striped  text-center" style="margin: auto">
+            <thead>
+            <tr>
+                <th>Sensor</th>
+                <th>Min/Max</th>
+                <th>25%</th>
+                <th>75%</th>
+                <th>Media</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <tr>
+                <td><b>Temperatura</b></td>
+                <td>{{ temp_min }}/{{ temp_max }}</td>
+                <td>{{ temp_q1 }}</td>
+                <td>{{ temp_q2 }}</td>
+                <td>{{ temp_q3 }}</td>
+
+            </tr>
+
+
+            <tr>
+                <td><b>GPS Speed</b></td>
+                <td>{{ gps_speed_min }}/{{ gps_speed_max }}</td>
+                <td>{{ gps_speed_q1 }}</td>
+                <td>{{ gps_speed_q3 }}</td>
+                <td>{{ gps_speed_mean }}</td>
+
+            </tr>
+
+
+            <tr>
+                <td><b>CO2</b></td>
+                <td>{{ CO2_min }}/{{ CO2_max }}</td>
+                <td>{{ CO2_q1 }}</td>
+                <td>{{ CO2_q3 }}</td>
+                <td>{{ CO2_mean }}</td>
+
+            </tr>
+
+            </tbody>
+        </table>
     </div>
 
 {% endblock map %}
