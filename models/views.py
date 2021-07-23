@@ -17,7 +17,6 @@ from django.http import HttpResponse
 import datetime
 from django.shortcuts import render, redirect
 import os
-import numpy
 import pandas
 import logging
 # Create your views here.
