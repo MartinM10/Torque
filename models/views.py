@@ -429,6 +429,8 @@ def separe_sessions(request):
             # print('interval', interval)
 
             if interval > datetime.timedelta(minutes=1):
+                print('time ', record.time)
+                print('last time', last_time)
                 print('interval', interval)
                 print('session_id', session.id)
                 # print('entra en el intervalo')
@@ -608,14 +610,14 @@ def session_in_map(request, session_id):
 
     # gps_speed_query = session.record_set.filter(sensor__pid='ff1001').values_list('value', flat=True)
     # co2_query = session.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True)
-    print('----------------------------------------------------------------------------------------')
+    # print('----------------------------------------------------------------------------------------')
     # print(gps_speed_query)
     # mydict = {'gps_speed': gps_speed_query, 'co2': co2_query}
-    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()})
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
 
-    print(dict_df)
-    print(dict_df.describe())
-
+    # print(dict_df)
+    # print(dict_df.describe())
+    '''
     gps_speed_max = None
     gps_speed_mean = None
     gps_speed_min = None
@@ -666,6 +668,7 @@ def session_in_map(request, session_id):
         temp_q1 = temp_df.quantile(.25).values[0]
         temp_q2 = temp_df.quantile(.5).values[0]
         temp_q3 = temp_df.quantile(.75).values[0]
+    '''
 
     context = {
         'data': data,
@@ -673,33 +676,34 @@ def session_in_map(request, session_id):
         'sessions': sessions,
         'summary': values,
         'dict_gps_speeds': gps_speeds,
-        'gps_speed_mean': gps_speed_mean,
-        'gps_speed_max': gps_speed_max,
-        'gps_speed_min': gps_speed_min,
-        'gps_speed_q1': gps_speed_q1,
-        'gps_speed_q2': gps_speed_q2,
-        'gps_speed_q3': gps_speed_q3,
-        'CO2_mean': CO2_mean,
-        'CO2_max': CO2_max,
-        'CO2_min': CO2_min,
-        'CO2_q1': CO2_q1,
-        'CO2_q2': CO2_q2,
-        'CO2_q3': CO2_q3,
-        'temp_mean': temp_mean,
-        'temp_max': temp_max,
-        'temp_min': temp_min,
-        'temp_q1': temp_q1,
-        'temp_q2': temp_q2,
-        'temp_q3': temp_q3,
         'dict_obd_speeds': obd_speeds,
         'dict_co2_inst': co2_inst,
         'dict_lit_per_km': lit_per_km,
         'dict_lit_per_km_inst': lit_per_km_inst,
         'dict_temps': temps,
-        # 'temperature_df_describe': temp_df,
-        # 'CO2_df_describe': CO2_df,
+        'dataframe_describe': dict_df.describe().to_html,
         'times': times,
         'address_list': address_list
+        # 'gps_speed_mean': gps_speed_mean,
+        # 'gps_speed_max': gps_speed_max,
+        # 'gps_speed_min': gps_speed_min,
+        # 'gps_speed_q1': gps_speed_q1,
+        # 'gps_speed_q2': gps_speed_q2,
+        # 'gps_speed_q3': gps_speed_q3,
+        # 'CO2_mean': CO2_mean,
+        # 'CO2_max': CO2_max,
+        # 'CO2_min': CO2_min,
+        # 'CO2_q1': CO2_q1,
+        # 'CO2_q2': CO2_q2,
+        # 'CO2_q3': CO2_q3,
+        # 'temp_mean': temp_mean,
+        # 'temp_max': temp_max,
+        # 'temp_min': temp_min,
+        # 'temp_q1': temp_q1,
+        # 'temp_q2': temp_q2,
+        # 'temp_q3': temp_q3,
+        # 'temperature_df_describe': temp_df,
+        # 'CO2_df_describe': CO2_df,
     }
 
     # print(type(datetime.datetime.strptime(times[1], '%H:%M:%S').time()))

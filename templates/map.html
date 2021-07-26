@@ -110,6 +110,14 @@
 
         {% endif %}
     </div>
+    <hr/>
+
+    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+        <div class="row" style="text-align: center">
+            <h3 style="text-align: center"><b>Resumen datos</b></h3>
+            <div style="text-align: -webkit-center">{{ dataframe_describe | safe }}</div>
+        </div>
+    </div>
 
     <hr/>
 
@@ -135,6 +143,7 @@
         -->
     </div>
 
+    <!--
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <h3 style="text-align: center"><b>Resumen</b></h3>
         <table class="table-responsive table-striped  text-center" style="margin: auto">
@@ -181,7 +190,7 @@
             </tbody>
         </table>
     </div>
-
+    -->
 {% endblock map %}
 
 {% block scripts %}
