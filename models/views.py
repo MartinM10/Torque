@@ -18,10 +18,10 @@ import datetime
 from django.shortcuts import render, redirect
 import os
 import pandas
+import geopandas
 import logging
 # Create your views here.
 from rest_framework import viewsets
-from statsmodels.genmod.families.links import probit
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
 from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Track, TrackLog
@@ -454,9 +454,11 @@ def session_in_map(request, session_id):
     crs_list = res[0]
     gjson_dict = {}
     gjson_dict["type"] = "FeatureCollection"
+    points = []
     feat_list = []
+    feat_list_track = []
+
     field_names = res[1]
-    # track = []
     values = {}
     obd_speeds = []
     co2_inst = []
@@ -493,6 +495,9 @@ def session_in_map(request, session_id):
 
         # GEOJSON looks for long,lat so reverse order
         type_dict["geometry"] = mapping(Point(crs[10], crs[9]))
+        points.append([crs[10], crs[9]])
+
+        # line_string_type_dict["geometry"] = mapping()
         # id_session = field_names[0]
         # prop_dict[id_session] = crs[0]
         email = field_names[1]
@@ -581,12 +586,38 @@ def session_in_map(request, session_id):
                     # print('NO HAY NOMBRE DE CALLE --------------------- ')
                     # print(address)
         '''
+    # print(points)
+    # print(line_string_dict)
+    # print(line_string_type_dict)
+    geojson_line_track = '{\n' \
+                         '    "features": [\n' \
+                         '        {\n' \
+                         '            "geometry": {\n' \
+                         '                "coordinates":' + str(points) + ',\n' \
+                                                                          '                "type": "LineString"\n' \
+                                                                          '            },\n' \
+                                                                          '            "properties":{},\n' \
+                                                                          '            "type": "Feature"\n' \
+                                                                          '        }\n' \
+                                                                          '   ],\n' \
+                                                                          '    "type":"FeatureCollection"\n' \
+                                                                          '}'
+
     dict_dataframe = {'velocidad_gps': gps_speeds, 'co2': co2_inst, 'consumo': lit_per_km}
     # print(dict_dataframe)
 
     gjson_dict["features"] = feat_list
-    data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
 
+    # gjson_dict_track["features"] =
+    data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
+    # print(data)
+
+    gdf = geopandas.GeoDataFrame.from_features(gjson_dict['features'])
+    # print(gdf)
+
+    # traj = movingpandas.Trajectory(gdf, 1)
+    # print(traj)
+    # traj.plot()
     # print(feat_list[2].get('properties')['OBD Speed'])
 
     addresses = session.track_set.all()
@@ -614,7 +645,6 @@ def session_in_map(request, session_id):
     # print(gps_speed_query)
     # mydict = {'gps_speed': gps_speed_query, 'co2': co2_query}
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
-
     # print(dict_df)
     # print(dict_df.describe())
     '''
@@ -672,6 +702,7 @@ def session_in_map(request, session_id):
 
     context = {
         'data': data,
+        'geojson_track': geojson_line_track,
         'session': session,
         'sessions': sessions,
         'summary': values,
@@ -681,7 +712,7 @@ def session_in_map(request, session_id):
         'dict_lit_per_km': lit_per_km,
         'dict_lit_per_km_inst': lit_per_km_inst,
         'dict_temps': temps,
-        'dataframe_describe': dict_df.describe().to_html,
+        'dataframe_describe': dict_df.describe().round(2).to_html,
         'times': times,
         'address_list': address_list
         # 'gps_speed_mean': gps_speed_mean,

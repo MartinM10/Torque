@@ -270,15 +270,22 @@
             pointToLayer: createCustomIcon
         }
 
-        L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
+        var track = L.geoJSON({{ geojson_track|safe }}).addTo(map);
+        var data_points = L.geoJSON({{ data|safe }}, myLayerOptions).addTo(map);
 
+        data_points.addTo(map);
+        map.addLayer(data_points);
 
-        // console.log({{ obd_speeds|safe }})
+        track.addTo(map);
+        map.addLayer(track);
 
+        var overlayMaps = {
+            "Track": track,
+            "Points": data_points
+        };
+        L.control.layers(null, overlayMaps, {collapsed: false}).addTo(map);
+        // L.control.layers(null, overlayMaps, {collapsed: false}).addTo(map);
 
-        // var sessions = L.layerGroup([]);
-        // sessions.addTo(map)
-        // map.addLayer(sessions)
 
     </script>
     <script>
