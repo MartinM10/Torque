@@ -825,7 +825,7 @@ def upload_data(request):
                 date_time = dt
 
                 if 'E' in value or 'inf' in value or 'Inf' in value:
-                    value = 0
+                    value = None
 
                 Record(sensor_id=sensor_id, log_id=log_id, value=float(value), time=date_time, latitude=latitude,
                        longitude=longitude).save()
