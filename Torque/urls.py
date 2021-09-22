@@ -20,7 +20,7 @@ from rest_framework.routers import DefaultRouter
 # Creating Router Object
 from models import views
 from models.views import upload_data, viewMap, sessions_by_id_list, session_in_map, download_csv, tracking, \
-    compare_all_routes, separe_sessions, tracking_all_sessions
+    compare_all_routes, separe_sessions, tracking_all_sessions, download_csv_all_sessions
 
 router = DefaultRouter()
 router_api = 'api/'
@@ -42,10 +42,12 @@ urlpatterns = [
     path('', sessions_by_id_list, name='session_list'),
     path('map/<int:session_id>/', session_in_map, name='session_map'),
     path('download/<int:session_id>/', download_csv, name='download'),
+    path('download_all_csv/', download_csv_all_sessions, name='download_all_csv'),
     path('track/<int:session_id>/', tracking, name='tracking'),
     path('route/<int:session_id>/', compare_all_routes, name='routes'),
     path('route/<int:session_id>/<int:percentage>/', compare_all_routes, name='routes'),
     path('separe_sessions', separe_sessions, name='separe_sessions'),
-    path('track_all_sessions', tracking_all_sessions, name='tracking_all_sessions')
-
+    path('track_all_sessions', tracking_all_sessions, name='tracking_all_sessions'),
+    # path('PCA/', pca_request, name='pca'),
+    # path('SVM/', svm_classification_request, name='svm'),
 ]

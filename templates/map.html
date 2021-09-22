@@ -98,6 +98,13 @@
                             Rutas</a>
                     </div>
                 </div>
+
+                <div class="row" style="margin-top: 10px">
+                    <div class="col text-center">
+                        <a class="btn btn-primary" href="{% url 'tracking' session.id %}" role="button">
+                            Volver a obtener ruta</a>
+                    </div>
+                </div>
             </div>
         {% else %}
 
@@ -285,6 +292,28 @@
         };
         L.control.layers(null, overlayMaps, {collapsed: false}).addTo(map);
         // L.control.layers(null, overlayMaps, {collapsed: false}).addTo(map);
+
+        var startIcon = L.icon({
+            iconUrl: 'https://cdn.icon-icons.com/icons2/402/PNG/32/trafficlight-green_40427.png',
+            //iconUrl: 'https://cdn.icon-icons.com/icons2/368/PNG/256/Flag1-green_37143.png',
+            iconSize: [20, 20], // size of the icon
+            iconAnchor: [5, 5], // point of the icon which will correspond to marker's location
+            shadowAnchor: [4, 4],  // anchor point of the shadow. should be offset
+            popupAnchor: [0, 0] // point from which the popup should open relative to the iconAnchor
+        });
+
+        var finishIcon = L.icon({
+            iconUrl: 'https://cdn.icon-icons.com/icons2/402/PNG/32/trafficlight-red_40428.png',
+            // iconUrl: 'https://cdn.icon-icons.com/icons2/212/PNG/256/Flag-red256_25052.png',
+            iconSize: [20, 20], // size of the icon
+            iconAnchor: [5, 5], // point of the icon which will correspond to marker's location
+            shadowAnchor: [4, 4],  // anchor point of the shadow. should be offset
+            popupAnchor: [0, 0] // point from which the popup should open relative to the iconAnchor
+        });
+
+
+        L.marker({{ start_coordinates }}, {icon: startIcon}).addTo(map);
+        L.marker({{ finish_coordinates }}, {icon: finishIcon}).addTo(map);
 
 
     </script>

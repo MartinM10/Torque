@@ -1,14 +1,16 @@
 import csv
 import json
+from array import array
 
 import numpy as np
 import pandas as pd
+from django.db.models import Sum, Max
 from django.utils.datetime_safe import datetime
 from django.utils.timezone import make_aware
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import datetime
 from django.shortcuts import render, redirect
 import os
@@ -28,6 +30,8 @@ geolocator = Nominatim(user_agent="Torque")
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 logging.basicConfig(filename='./logs/InfoLog.log', level=logging.INFO)
+logging.basicConfig(filename='./logs/WarningLog.log', level=logging.WARNING)
+logging.basicConfig(filename='./logs/ErrorLog.log', level=logging.ERROR)
 
 TIME_LAST_HTTP_REQUEST = datetime.datetime.now()
 TIME_TO_CONSIDER_NEW_SESSION = datetime.timedelta(minutes=1)
@@ -89,10 +93,11 @@ def tracking_all_sessions(request):
     last_address = ''
 
     with transaction.atomic():
+        logging.info('TRACKING_ALL_SESSIONS STARTED')
         # Vaciamos la tabla primero
         TrackLog.objects.all().delete()
-        print('borrado todo')
-        print(TrackLog.objects.all())
+        logging.info('Se vacia la tabla TrackLog para volver a obtener los nombres de las calles de todas las sesiones')
+        # print(TrackLog.objects.all())
 
         for session in sessions:
 
@@ -137,7 +142,8 @@ def tracking_all_sessions(request):
 
                     last_time = obj.time.second
                     i += 1
-            print('session acabada ', session.id)
+            # print('session acabada ', session.id)
+            # logging.info('TRACKING_ALL_SESSIONS FINISHED')
     return HttpResponse('Se han obtenido todos los nombres de las calles de todos los recorridos')
 
 
@@ -298,20 +304,161 @@ def compare_all_routes(request, session_id, percentage=60):
     return render(request, 'routes.html', context=context)
 
 
-def download_csv(request, session_id):
-    # filename = 'session' + str(session_id) + '.csv'
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="session.csv"'
-
+def obtain_dataframe(session_id):
     result = query(session_id=session_id)
     crs_list = result[0]
-    field_names = result[1]
+    # field_names = result[1]
+    sessions_id = []
+    total_consuption = []
+    total_distance = []
+    obd_speeds = []
+    co2_inst = []
+    co2_avg = []
+    lit_per_km = []
+    lit_per_km_inst = []
+    engine_revs = []
+    temps = []
+    gps_speeds = []
 
-    writer = csv.writer(response)
-    writer.writerow(field_names)
+    # print(crs_list)
 
     for crs in crs_list:
-        writer.writerow(crs)
+
+        if crs[0]:
+            sessions_id.append(crs[0])
+
+        if crs[4]:
+            total_consuption.append(crs[4])
+
+        if crs[5]:
+            total_distance.append(crs[5])
+
+        if crs[14]:
+            co2_inst.append(crs[14])
+
+        if crs[15]:
+            co2_avg.append(crs[15])
+
+        if crs[16]:
+            temps.append(crs[16])
+
+        if crs[17]:
+            lit_per_km.append(crs[17])
+
+        if crs[19]:
+            gps_speeds.append(crs[19])
+
+        if crs[20]:
+            obd_speeds.append(crs[20])
+
+        if crs[24]:
+            lit_per_km_inst.append(crs[24])
+
+        if crs[25]:
+            engine_revs.append(crs[25])
+
+    sess_id = 'SESSION_ID'
+    total_fuel = 'TOTAL_CONSUPTION'
+    total_dist = 'TOTAL_DISTANCE'
+    velocidad_obd = 'OBD_SPEED'
+    velocidad_gps = 'GPS_SPEED'
+    co2_insantaneo = 'INSTANTANEOUS_CO2'
+    co2_medio = 'AVERAGE_CO2'
+    consumo_instantaneo = 'INSTANTANEOUS_FUEL_CONSUPTION'
+    consumo_medio = 'AVERAGE_FUEL_CONSUPTION'
+    temperatura_motor = 'COOLANT_TEMPERATURE'
+    revoluciones_motor = 'ENGINE_RPM'
+
+    dict_dataframe = {
+        sess_id: sessions_id,
+        total_fuel: total_consuption,
+        total_dist: total_distance,
+        velocidad_obd: obd_speeds,
+        velocidad_gps: gps_speeds,
+        co2_insantaneo: co2_inst,
+        co2_medio: co2_avg,
+        consumo_instantaneo: lit_per_km_inst,
+        consumo_medio: lit_per_km,
+        temperatura_motor: temps,
+        revoluciones_motor: engine_revs
+    }
+
+    for key in list(dict_dataframe):
+        if dict_dataframe[key].__len__() == 0:
+            dict_dataframe.pop(key)
+
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
+    clean_dataset(dict_df)
+    # print(dict_df)
+
+    return dict_df
+
+
+def download_csv_all_sessions(request):
+    sessions = Log.objects.all()
+    columns = \
+        [
+            'SESSION_ID',  # no se si deberia usarlo o no
+            'TOTAL_DISTANCE',
+            'TOTAL_CONSUPTION',
+            'OBD_SPEED',
+            'GPS_SPEED',
+            'INSTANTANEOUS_CO2',
+            'AVERAGE_CO2',
+            'INSTANTANEOUS_FUEL_CONSUPTION',
+            'AVERAGE_FUEL_CONSUPTION',
+            'COOLANT_TEMPERATURE',
+            'ENGINE_RPM'
+        ]
+
+    final_df = pandas.DataFrame(columns=columns)
+    first_time = True
+
+    for session in sessions:
+        dataframe = obtain_dataframe(session_id=session.id)
+
+        if len(dataframe.columns) >= 6:
+            if first_time:
+                first_time = False
+                final_df = dataframe.copy()
+            else:
+                final_df = final_df.append(dataframe, ignore_index=True)
+
+    # print('--------------------------------------------------------------\n')
+    # print('DATAFRAME FINAL')
+    # final_dataframe = pandas.DataFrame(final_df, columns=columns)
+    # print(final_dataframe)
+    clean_dataset(final_df)
+    # print(final_df)
+    # print(all_data.values)
+
+    filename = 'all_sessions'
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + ' %s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    final_df.to_csv(path_or_buf=response)
+
+    return response
+
+
+def download_csv(request, session_id):
+    dataframe = obtain_dataframe(session_id=session_id)
+
+    '''
+    for key in dict_dataframe.keys():
+        writer.writerow(dict_dataframe.get(key))
+        print(dict_dataframe.get(key))
+    '''
+
+    filename = 'session' + str(session_id)
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + ' %s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    dataframe.to_csv(path_or_buf=response)
 
     return response
 
@@ -458,7 +605,10 @@ def using_orm(request, session_id):
     # DATA
 
 
+@transaction.atomic
 def separe_sessions(request):
+    logging.info('SEPARE_SESSIONS STARTED ')
+
     sessions = Log.objects.all()
     time_for_new_session = datetime.timedelta(hours=0, minutes=1, seconds=30)
 
@@ -492,11 +642,13 @@ def separe_sessions(request):
                         if timekeeper > time_for_new_session:
                             # timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
                             separated = True
+
                             try:
                                 # print('se crea nueva SESION\n')
                                 l = Log(session=record.time, email=session.email,
                                         id_app=session.id_app)
                                 l.save()
+                                logging.info('Se crea una nueva sesion ' + str(l.id))
 
                                 update_records = Record.objects.filter(log_id=record.log_id, time__gte=record.time)
 
@@ -508,10 +660,14 @@ def separe_sessions(request):
                                 break
 
                             except Exception as e:
-                                print('No se ha podido crear la sesion ', l.id, ' - ', record.time, ' por: ', e.args)
+                                logging.error('No se ha podido crear la sesion ', l.id, ' - ', record.time, ' por: ',
+                                              e.args)
+                                # print('No se ha podido crear la sesion ', l.id, ' - ', record.time, ' por: ', e.args)
                                 # raise e
 
-                            print('deberia entrar')
+                            # print('deberia entrar')
+                            # print('La sesion ', session.id, ' deberia dividirse en la sesion ', record.time)
+                            # print('acumulados: ', timekeeper)
 
                         last_time_speed = record.time
 
@@ -519,24 +675,62 @@ def separe_sessions(request):
                         first_time_speed = True
                         # print('reiniciar contador')
                         timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
-                '''
-                else:
-                    # if log:
-                    contador += 1
-                    r = Record.objects.get(id=record.id)
-                    r.log_id = log.id
-                    r.save()
-                    # pass
-                    # print('Separado')
-                    # Record.objects.update(log_id=log.id, time__gt=record.time).save()
-                    # session.record_set.filter(time__gte=record.time).update(log_id=log.id) REVISAR EL LOG.ID
-                '''
+
+                # else:
+                # if log:
+                # contador += 1
+                # r = Record.objects.get(id=record.id)
+                # r.log_id = log.id
+                # r.save()
+                # pass
+                # print('Separado')
+                # Record.objects.update(log_id=log.id, time__gt=record.time).save()
+                # session.record_set.filter(time__gte=record.time).update(log_id=log.id) REVISAR EL LOG.ID
+
             last_time = record.time
             i = i + 1
 
-        print('De la sesion ', session.id, ' se actualizaran ', contador, ' registros')
+        logging.info('De la sesion ' + str(session.id) + ' se actualizaron ' + str(contador) + ' registros')
+        # print('De la sesion ', session.id, ' se actualizaran ', contador, ' registros')
 
-    return HttpResponse('FIN')
+    # Session with not enought info --> DELETE
+    for session in sessions:
+        records = session.record_set.all().order_by('time')
+        distance = records.filter(sensor__pid='ff1204').aggregate(Max('value'))
+        duration = records.filter(sensor__pid='ff1266').aggregate(Max('value'))
+        delete = False
+        # print(time)
+        # Check number of records
+
+        if records.count() < 300:
+            delete = True
+            # print('DELETED SESION ', session.id, 'POCOS REGISTROS')
+            logging.info('DELETED SESION ' + str(session.id) + ' POCOS REGISTROS')
+        else:
+            if not distance['value__max'] and not duration['value__max']:
+                delete = True
+                # print('DELETED SESION ', session.id, 'NI RECORRIDO NI DURACION')
+                logging.info('DELETED SESION ' + str(session.id) + ' NI RECORRIDO NI DURACION')
+            if distance['value__max'] and distance['value__max'] < 2:
+                delete = True
+                # print('DELETED SESION ', session.id, ' POR CORTO RECORRIDO')
+                logging.info('DELETED SESION ' + str(session.id) + ' POR CORTO RECORRIDO')
+
+            if duration['value__max']:
+                duration = duration['value__max']
+                duration_session = datetime.timedelta(seconds=duration)
+                if duration_session < datetime.timedelta(minutes=15):
+                    delete = True
+                    # print('DELETED SESION ', session.id, ' POR CORTA DURACION')
+                    logging.info('DELETED SESION ' + str(session.id) + ' POR CORTA DURACION')
+
+        if delete:
+            session.delete()
+            logging.info('Se han eliminado sesiones')
+        if not delete:
+            logging.info('No se han eliminado sesiones')
+
+    return HttpResponse('Se han separado las sesiones')
 
 
 def session_in_map(request, session_id):
@@ -554,11 +748,18 @@ def session_in_map(request, session_id):
     values = {}
     obd_speeds = []
     co2_inst = []
+    co2_avg = []
     lit_per_km = []
     lit_per_km_inst = []
+    engine_revs = []
     temps = []
     gps_speeds = []
     times = []
+
+    # print(crs_list)
+
+    start_coordinates = [crs_list[0][9], crs_list[0][10]]
+    finish_coordinates = [crs_list[len(crs_list) - 1][9], crs_list[len(crs_list) - 1][10]]
 
     for crs in crs_list:
         type_dict = {}
@@ -616,6 +817,8 @@ def session_in_map(request, session_id):
 
         co2_average = field_names[15]
         prop_dict[co2_average] = crs[15]
+        if crs[15]:
+            co2_avg.append(crs[15])
 
         engine_coolant = field_names[16]
         prop_dict[engine_coolant] = crs[16]
@@ -654,6 +857,11 @@ def session_in_map(request, session_id):
         if crs[24]:
             lit_per_km_inst.append(crs[24])
 
+        engine_rpm = field_names[25]
+        prop_dict[engine_rpm] = crs[25]
+        if crs[25]:
+            engine_revs.append(crs[25])
+
         type_dict["properties"] = prop_dict
         feat_list.append(type_dict)
 
@@ -670,10 +878,24 @@ def session_in_map(request, session_id):
                                                                           '   ],\n' \
                                                                           '    "type":"FeatureCollection"\n' \
                                                                           '}'
+    # print(co2_avg)
 
-    dict_dataframe = {'velocidad_gps': gps_speeds, 'co2': co2_inst, 'consumo': lit_per_km}
+    dict_dataframe = {
+        'Velocidad_OBD': obd_speeds,
+        'Velocidad_GPS': gps_speeds,
+        'CO2_Instantáneo': co2_inst,
+        'CO2_Medio': co2_avg,
+        'Consumo_Instantáneo': lit_per_km_inst,
+        'Consumo_Medio': lit_per_km,
+        'Temperatura_Motor': temps,
+        'Revoluciones_Motor': engine_revs
+    }
+
+    for key in list(dict_dataframe):
+        if dict_dataframe[key].__len__() == 0:
+            dict_dataframe.pop(key)
+
     # print(dict_dataframe)
-
     gjson_dict["features"] = feat_list
 
     data = json.dumps(gjson_dict, default=myconverter, sort_keys=True, indent=4, ensure_ascii=False)
@@ -686,11 +908,16 @@ def session_in_map(request, session_id):
     if addresses:
         address_list = print_track(session_id)
 
+    # print(dict_dataframe)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
+    # print(dict_df)
+    # clean_dataset(dict_df)
+    # print(dict_df)
+    dataframe_describe = None
 
-    clean_dataset(dict_df)
+    if not dict_df.empty:
+        dataframe_describe = dict_df.describe(include='all').round(2).to_html
 
-    # print(data)
     context = {
         'data': data,
         'geojson_track': geojson_line_track,
@@ -703,9 +930,11 @@ def session_in_map(request, session_id):
         'dict_lit_per_km': lit_per_km,
         'dict_lit_per_km_inst': lit_per_km_inst,
         'dict_temps': temps,
-        'dataframe_describe': dict_df.describe().round(2).to_html,
+        'dataframe_describe': dataframe_describe,
         'times': times,
-        'address_list': address_list
+        'address_list': address_list,
+        'start_coordinates': start_coordinates,
+        'finish_coordinates': finish_coordinates
     }
 
     return render(request, 'map.html', context=context)
@@ -747,7 +976,7 @@ def upload_data(request):
     session_time = None
     log = None
 
-    logging.info(request)
+    # logging.info(request)
 
     # TABLE LOG
 
