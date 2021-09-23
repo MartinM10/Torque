@@ -308,9 +308,9 @@ def obtain_dataframe(session_id):
     result = query(session_id=session_id)
     crs_list = result[0]
     # field_names = result[1]
-    sessions_id = []
-    total_consuption = []
-    total_distance = []
+    # sessions_id = []
+    # total_consuption = []
+    # total_distance = []
     obd_speeds = []
     co2_inst = []
     co2_avg = []
@@ -323,16 +323,16 @@ def obtain_dataframe(session_id):
     # print(crs_list)
 
     for crs in crs_list:
-
+        '''
         if crs[0]:
             sessions_id.append(crs[0])
-
+        
         if crs[4]:
             total_consuption.append(crs[4])
 
         if crs[5]:
             total_distance.append(crs[5])
-
+        '''
         if crs[14]:
             co2_inst.append(crs[14])
 
@@ -357,22 +357,22 @@ def obtain_dataframe(session_id):
         if crs[25]:
             engine_revs.append(crs[25])
 
-    sess_id = 'SESSION_ID'
-    total_fuel = 'TOTAL_CONSUPTION'
-    total_dist = 'TOTAL_DISTANCE'
+    # sess_id = 'SESSION_ID'
+    # total_fuel = 'TOTAL_CONSUPTION'
+    # total_dist = 'TOTAL_DISTANCE'
     velocidad_obd = 'OBD_SPEED'
     velocidad_gps = 'GPS_SPEED'
-    co2_insantaneo = 'INSTANTANEOUS_CO2'
+    revoluciones_motor = 'ENGINE_RPM'
+    co2_insantaneo = 'INSTANT_CO2'
     co2_medio = 'AVERAGE_CO2'
-    consumo_instantaneo = 'INSTANTANEOUS_FUEL_CONSUPTION'
+    consumo_instantaneo = 'INSTANT_FUEL_CONSUPTION'
     consumo_medio = 'AVERAGE_FUEL_CONSUPTION'
     temperatura_motor = 'COOLANT_TEMPERATURE'
-    revoluciones_motor = 'ENGINE_RPM'
 
     dict_dataframe = {
-        sess_id: sessions_id,
-        total_fuel: total_consuption,
-        total_dist: total_distance,
+        # sess_id: sessions_id,
+        # total_fuel: total_consuption,
+        # total_dist: total_distance,
         velocidad_obd: obd_speeds,
         velocidad_gps: gps_speeds,
         co2_insantaneo: co2_inst,
@@ -398,17 +398,17 @@ def download_csv_all_sessions(request):
     sessions = Log.objects.all()
     columns = \
         [
-            'SESSION_ID',  # no se si deberia usarlo o no
-            'TOTAL_DISTANCE',
-            'TOTAL_CONSUPTION',
+            # 'SESSION_ID',  # no se si deberia usarlo o no
+            # 'TOTAL_DISTANCE',
+            # 'TOTAL_CONSUPTION',
             'OBD_SPEED',
             'GPS_SPEED',
-            'INSTANTANEOUS_CO2',
+            'ENGINE_RPM',
+            'INSTANT_CO2',
             'AVERAGE_CO2',
-            'INSTANTANEOUS_FUEL_CONSUPTION',
+            'INSTANT_FUEL_CONSUPTION',
             'AVERAGE_FUEL_CONSUPTION',
             'COOLANT_TEMPERATURE',
-            'ENGINE_RPM'
         ]
 
     final_df = pandas.DataFrame(columns=columns)
@@ -435,7 +435,7 @@ def download_csv_all_sessions(request):
     filename = 'all_sessions'
     time_now = datetime.datetime.now()
 
-    content = 'attachment; filename=' + filename + ' %s.csv' % time_now.isoformat()
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
     final_df.to_csv(path_or_buf=response)
@@ -455,7 +455,7 @@ def download_csv(request, session_id):
     filename = 'session' + str(session_id)
     time_now = datetime.datetime.now()
 
-    content = 'attachment; filename=' + filename + ' %s.csv' % time_now.isoformat()
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
     dataframe.to_csv(path_or_buf=response)
