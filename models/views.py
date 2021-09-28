@@ -308,9 +308,9 @@ def obtain_dataframe(session_id):
     result = query(session_id=session_id)
     crs_list = result[0]
     # field_names = result[1]
-    # sessions_id = []
-    # total_consuption = []
-    # total_distance = []
+    sessions_id = []
+    total_consuption = []
+    total_distance = []
     obd_speeds = []
     co2_inst = []
     co2_avg = []
@@ -323,7 +323,7 @@ def obtain_dataframe(session_id):
     # print(crs_list)
 
     for crs in crs_list:
-        '''
+
         if crs[0]:
             sessions_id.append(crs[0])
         
@@ -332,7 +332,7 @@ def obtain_dataframe(session_id):
 
         if crs[5]:
             total_distance.append(crs[5])
-        '''
+
         if crs[14]:
             co2_inst.append(crs[14])
 
@@ -357,9 +357,9 @@ def obtain_dataframe(session_id):
         if crs[25]:
             engine_revs.append(crs[25])
 
-    # sess_id = 'SESSION_ID'
-    # total_fuel = 'TOTAL_CONSUPTION'
-    # total_dist = 'TOTAL_DISTANCE'
+    sess_id = 'SESSION_ID'
+    total_fuel = 'TOTAL_CONSUPTION'
+    total_dist = 'TOTAL_DISTANCE'
     velocidad_obd = 'OBD_SPEED'
     velocidad_gps = 'GPS_SPEED'
     revoluciones_motor = 'ENGINE_RPM'
@@ -370,9 +370,9 @@ def obtain_dataframe(session_id):
     temperatura_motor = 'COOLANT_TEMPERATURE'
 
     dict_dataframe = {
-        # sess_id: sessions_id,
-        # total_fuel: total_consuption,
-        # total_dist: total_distance,
+        sess_id: sessions_id,
+        total_fuel: total_consuption,
+        total_dist: total_distance,
         velocidad_obd: obd_speeds,
         velocidad_gps: gps_speeds,
         co2_insantaneo: co2_inst,
@@ -398,9 +398,9 @@ def download_csv_all_sessions(request):
     sessions = Log.objects.all()
     columns = \
         [
-            # 'SESSION_ID',  # no se si deberia usarlo o no
-            # 'TOTAL_DISTANCE',
-            # 'TOTAL_CONSUPTION',
+            'SESSION_ID',  # no se si deberia usarlo o no
+            'TOTAL_DISTANCE',
+            'TOTAL_CONSUPTION',
             'OBD_SPEED',
             'GPS_SPEED',
             'ENGINE_RPM',
@@ -428,9 +428,12 @@ def download_csv_all_sessions(request):
     # print('DATAFRAME FINAL')
     # final_dataframe = pandas.DataFrame(final_df, columns=columns)
     # print(final_dataframe)
+    # print(final_df)
     clean_dataset(final_df)
     # print(final_df)
     # print(all_data.values)
+    final_df.reset_index(drop=True,inplace=True)
+    #print(final_df)
 
     filename = 'all_sessions'
     time_now = datetime.datetime.now()
@@ -706,6 +709,8 @@ def separe_sessions(request):
             delete = True
             # print('DELETED SESION ', session.id, 'POCOS REGISTROS')
             logging.info('DELETED SESION ' + str(session.id) + ' POCOS REGISTROS')
+            logging.warning('DELETED SESION ' + str(session.id) + ' POCOS REGISTROS')
+
         else:
             if not distance['value__max'] and not duration['value__max']:
                 delete = True
@@ -715,6 +720,7 @@ def separe_sessions(request):
                 delete = True
                 # print('DELETED SESION ', session.id, ' POR CORTO RECORRIDO')
                 logging.info('DELETED SESION ' + str(session.id) + ' POR CORTO RECORRIDO')
+                logging.warning('DELETED SESSION ' + str(session.id) + ' POR CORTO RECORRIDO')
 
             if duration['value__max']:
                 duration = duration['value__max']
@@ -723,10 +729,13 @@ def separe_sessions(request):
                     delete = True
                     # print('DELETED SESION ', session.id, ' POR CORTA DURACION')
                     logging.info('DELETED SESION ' + str(session.id) + ' POR CORTA DURACION')
+                    logging.warning('DELETED SESION ' + str(session.id) + ' POR CORTA DURACION')
+
 
         if delete:
-            session.delete()
+            # session.delete()
             logging.info('Se han eliminado sesiones')
+            logging.warning('Se han eliminado sesiones')
         if not delete:
             logging.info('No se han eliminado sesiones')
 
