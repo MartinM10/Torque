@@ -326,7 +326,7 @@ def obtain_dataframe(session_id):
 
         if crs[0]:
             sessions_id.append(crs[0])
-        
+
         if crs[4]:
             total_consuption.append(crs[4])
 
@@ -427,13 +427,11 @@ def download_csv_all_sessions(request):
     # print('--------------------------------------------------------------\n')
     # print('DATAFRAME FINAL')
     # final_dataframe = pandas.DataFrame(final_df, columns=columns)
-    # print(final_dataframe)
+    # print(dataframe)
     # print(final_df)
     clean_dataset(final_df)
+    final_df.reset_index(drop=True, inplace=True)
     # print(final_df)
-    # print(all_data.values)
-    final_df.reset_index(drop=True,inplace=True)
-    #print(final_df)
 
     filename = 'all_sessions'
     time_now = datetime.datetime.now()
@@ -709,8 +707,6 @@ def separe_sessions(request):
             delete = True
             # print('DELETED SESION ', session.id, 'POCOS REGISTROS')
             logging.info('DELETED SESION ' + str(session.id) + ' POCOS REGISTROS')
-            logging.warning('DELETED SESION ' + str(session.id) + ' POCOS REGISTROS')
-
         else:
             if not distance['value__max'] and not duration['value__max']:
                 delete = True
@@ -720,7 +716,6 @@ def separe_sessions(request):
                 delete = True
                 # print('DELETED SESION ', session.id, ' POR CORTO RECORRIDO')
                 logging.info('DELETED SESION ' + str(session.id) + ' POR CORTO RECORRIDO')
-                logging.warning('DELETED SESSION ' + str(session.id) + ' POR CORTO RECORRIDO')
 
             if duration['value__max']:
                 duration = duration['value__max']
@@ -729,13 +724,10 @@ def separe_sessions(request):
                     delete = True
                     # print('DELETED SESION ', session.id, ' POR CORTA DURACION')
                     logging.info('DELETED SESION ' + str(session.id) + ' POR CORTA DURACION')
-                    logging.warning('DELETED SESION ' + str(session.id) + ' POR CORTA DURACION')
-
 
         if delete:
-            # session.delete()
+            session.delete()
             logging.info('Se han eliminado sesiones')
-            logging.warning('Se han eliminado sesiones')
         if not delete:
             logging.info('No se han eliminado sesiones')
 
