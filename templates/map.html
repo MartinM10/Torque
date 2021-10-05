@@ -18,7 +18,7 @@
             display: block;
         }
 
-        .dataframe{
+        .dataframe {
             margin: auto;
         }
 
@@ -98,8 +98,15 @@
             <div class="container-fluid" style="width: 90%; margin-top: 10px;">
                 <div class="row">
                     <div class="col text-center">
-                        <a class="btn btn-primary" href="{% url 'routes' session.id %}" role="button">Comparar
-                            Rutas</a>
+                        <form action="/route/{{ session.id }}" style="padding-right: 15px; padding-left: 15px;
+                            margin-right: auto; margin-left: auto;">
+
+                            <label for="routes" style="margin: 3px">Porcentaje de similitud (0-100): </label>
+                            <input id="routes" type="text" name="percentage" placeholder="60 por defecto"
+                                   style="margin: 3px">
+
+                            <input class="btn btn-primary" type="submit" value="Comparar Rutas" style="margin: 3px">
+                        </form>
                     </div>
                 </div>
 

@@ -7,7 +7,7 @@
     <div class="container text-center pt-5">
         <h3>Exportar Datos (CSV)</h3>
         <form action="generate_csv/" method="post" style="margin-top: 15px">
-            <select name="sesiones" id="sessionList">
+            <select name="sesiones" id="sessionList" style="text-align: center">
                 <option value="">Seleccione una sesión</option>
                 {% for session in sessions %}
                     <option value="{{ session.id }}">{{ session.id }}</option>
@@ -38,25 +38,33 @@
 
 {% block scripts %}
     <script>
+        $("#generarCSV").hide()
         var sessionSelected = ""
         $("#sessionList").change(function () {
             sessionSelected = this.value
-
-            $.ajax({
-                type: "get",
-                url: "/sensor_from_session/" + this.value,
-                dataType: "json",
-                success: function (data) {
-                    // console.info(data);
-                    let sensorOptions = ""
-                    data = data.sensors
-                    for (let i = 0; i < data.length; i++) {
-                        sensorOptions += "<label class='form-check-input' style='font-weight: normal'><input name='sensor_" + i + "' class='form-check-input' type='checkbox' value='" + data[i][0] + "'>  " + data[i][1] + "</label>";
+            if (sessionSelected === "") {
+                $("#sensorList").empty()
+                $("#generarCSV").hide()
+            } else {
+                $.ajax({
+                    type: "get",
+                    url: "/sensor_from_session/" + this.value,
+                    dataType: "json",
+                    success: function (data) {
+                        // console.info(data);
+                        let sensorOptions = ""
+                        data = data.sensors
+                        for (let i = 0; i < data.length; i++) {
+                            sensorOptions += "<label class='form-check-input' style='font-weight: normal'><input name='sensor_" + i + "' class='form-check-input' type='checkbox' value='" + data[i][0] + "'>  " + data[i][1] + "</label>";
+                        }
+                        // console.log(sensorOptions)
+                        $("#sensorList").html(sensorOptions)
                     }
-                    // console.log(sensorOptions)
-                    $("#sensorList").html(sensorOptions)
+                })
+                if ($("#generarCSV").is(":hidden")) {
+                    $("#generarCSV").show()
                 }
-            })
+            }
         })
         /*
         $("#generarCSV").click(function () {
