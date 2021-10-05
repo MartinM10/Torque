@@ -1,0 +1,94 @@
+{% extends 'main.html' %}
+
+{% load static %}
+
+{% block export_data %}
+
+    <div class="container text-center pt-5">
+        <h3>Exportar Datos (CSV)</h3>
+        <form action="generate_csv/" method="post" style="margin-top: 15px">
+            <select name="sesiones" id="sessionList">
+                <option value="">Seleccione una sesión</option>
+                {% for session in sessions %}
+                    <option value="{{ session.id }}">{{ session.id }}</option>
+                {% endfor %}
+            </select>
+
+            <br>
+            <div style="margin-top: 15px; text-decoration-line: underline">
+                La cantidad de sensores que aparezcan dependera de la sesión elegida
+            </div>
+
+            <div style="margin-top: 15px">
+                Una vez exportados los datos podrás analizarlos <a href="http://mallba3.lcc.uma.es:3701/">aquí</a>
+            </div>
+            <!-- style="display: flex; flex-direction: column; width: 40%; margin: auto; align-items: flex-start;"-->
+
+            <div class="form-check" id="sensorList"
+                 style="display: flex; flex-direction: column; width: 40%;
+                 margin: auto; margin-top: 20px; align-items: flex-start;">
+
+            </div>
+            <button type="submit" class="btn btn-primary" id="generarCSV" style="margin-top: 10px">
+                Generar CSV
+            </button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        var sessionSelected = ""
+        $("#sessionList").change(function () {
+            sessionSelected = this.value
+
+            $.ajax({
+                type: "get",
+                url: "/sensor_from_session/" + this.value,
+                dataType: "json",
+                success: function (data) {
+                    // console.info(data);
+                    let sensorOptions = ""
+                    data = data.sensors
+                    for (let i = 0; i < data.length; i++) {
+                        sensorOptions += "<label class='form-check-input' style='font-weight: normal'><input name='sensor_" + i + "' class='form-check-input' type='checkbox' value='" + data[i][0] + "'>  " + data[i][1] + "</label>";
+                    }
+                    // console.log(sensorOptions)
+                    $("#sensorList").html(sensorOptions)
+                }
+            })
+        })
+        /*
+        $("#generarCSV").click(function () {
+            let idsCheckeds = []
+            $("#sensorList input:checked").each(function () {
+                idsCheckeds.push(parseInt(this.defaultValue))
+                // console.log(this.defaultValue)
+            })
+
+            $.ajax({
+                type: 'post',
+                url: '/generate_csv/',
+                data: JSON.stringify({'idSession': sessionSelected, 'idSensors': idsCheckeds}),
+                dataType: "json",
+                contentType: "application/json, text/csv; charset=utf-8",
+                cache: false,
+                responseType: 'blob',
+                // crossDomain: true,
+
+                //contentType: false,
+                //processData: false,
+            }).done(function (response) {
+                console.log('SUCCESS')
+                console.log(response)
+                // df = new dfd.DataFrame(response)
+                //df.print()
+            });
+            // return false;
+        })
+        */
+
+    </script>
+
+{% endblock %}
+

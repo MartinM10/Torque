@@ -13,7 +13,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <script src="http://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
-    <script src="{% static 'L.KML.js' %}"></script>
 
     {% block head %}
 
@@ -30,6 +29,20 @@
         .navbar-brand {
             padding-top: 0;
             padding-left: 10px;
+        }
+
+        .navbar-inverse .navbar-nav > li > a {
+            color: white;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background-color: black;
+        }
+
+
+        a:hover {
+            background-color: gold;
         }
 
         /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
@@ -50,6 +63,12 @@
             width: auto;
         }
 
+        .graph-data {
+            width: 36vh;
+            height: 100vw;
+            padding-left: 0;
+        }
+
         /* Set black background color, white text and some padding */
         footer {
             background-color: #555;
@@ -64,14 +83,14 @@
                 padding: 15px;
             }
 
-            .row.content {
-                height: auto;
+            .dataframe {
+                font-size: 5px;
             }
         }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse" style="width: inherit">
     <div class="container-fluid">
 
         <div class="navbar-header">
@@ -87,8 +106,14 @@
 
         <div class="collapse navbar-collapse" id="myNavbar">
             <ul class="nav navbar-nav">
-                <li class="active"><a href="{% url 'session_list' %}">Home</a></li>
-                <!-- <li><a href="{% url 'session_list' %}">Session List</a></li> -->
+                <li class="nav-item"><a href="{% url 'session_list' %}">Inicio</a></li>
+                <li class="nav-item"><a href="{% url 'export_data' %}">Exportar Datos</a></li>
+                <li class="nav-item"><a href="http://mallba3.lcc.uma.es:3701/">Analizar Datos</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="nav-item disabled"><a href="{% url 'separe_sessions' %}">Separar Sesiones</a></li>
+                <li class="nav-item disabled"><a href="{% url 'tracking_all_sessions' %}">Obtener Nombre Calles</a>
+                </li>
             </ul>
             <!--
             <ul class="nav navbar-nav navbar-right">
@@ -98,6 +123,10 @@
         </div>
     </div>
 </nav>
+
+{% block success %}
+
+{% endblock %}
 
 {% block map %}
 
@@ -110,6 +139,10 @@
 {% block list %}
 
 {% endblock list %}
+
+{% block export_data %}
+
+{% endblock export_data %}
 <!--
 <footer class="container-fluid text-center">
     <p>Footer Text</p>

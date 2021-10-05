@@ -18,6 +18,10 @@
             display: block;
         }
 
+        .dataframe{
+            margin: auto;
+        }
+
         td {
             padding: 5px;
             margin: auto;
@@ -34,7 +38,7 @@
 
     {% if summary %}
 
-        <div class="container-fluid text-center" style="height: max-content">
+        <div class="container-fluid text-center">
 
             <h4><b>{{ session.session }} de {{ session.email }}</b></h4>
             <table class="table-responsive table-striped text-center" style="margin: auto">
@@ -61,8 +65,8 @@
 
     {% endif %}
 
-    <div class="container-fluid" style="width: 60vw;margin-left: auto; height: 60vh; margin-top: 10px"
-         id="map">
+    <div class="container-fluid" id="map"
+         style="width: 80%; margin-left: auto; height: 50vh; margin-top: 10px; position: relative;">
     </div>
 
     <hr/>
@@ -119,30 +123,28 @@
     </div>
     <hr/>
 
-    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
-        <div class="row" style="text-align: center">
-            <h3 style="text-align: center"><b>Resumen datos</b></h3>
-            <div style="text-align: -webkit-center">{{ dataframe_describe | safe }}</div>
-        </div>
+    <div class="container-fluid" style="width: 100%; margin-top: 10px; text-align: center">
+        <h3 style="text-align: center"><b>Resumen datos</b></h3>
+        <div style="text-align: -webkit-match-parent">{{ dataframe_describe | safe }}</div>
     </div>
 
     <hr/>
 
-    <div class="container-fluid" style="width: 90%; margin-top: 10px;">
+    <div class="container-fluid" style="width: 80%; margin-top: 10px;">
         <div class="row">
-            <div class="col-sm-6">
-                <canvas id="obdSpeed_CO2_Chart"></canvas>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <canvas id="obdSpeed_CO2_Chart" style="width: 70vw;"></canvas>
             </div>
-            <div class="col-sm-6">
-                <canvas id="obdSpeed_Chart"></canvas>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <canvas id="obdSpeed_Chart" style="width: 70vw;"></canvas>
             </div>
         </div>
         <div class="row">
-            <div class="col-sm-6">
-                <canvas id="temp_CO2_Chart"></canvas>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <canvas id="temp_CO2_Chart" style="width: 70vw;"></canvas>
             </div>
-            <div class="col-sm-6">
-                <canvas id="obd_speed_vs_gps_speed"></canvas>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <canvas id="obd_speed_vs_gps_speed" style="width: 70vw;"></canvas>
             </div>
         </div>
         <!--

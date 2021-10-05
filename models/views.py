@@ -7,10 +7,11 @@ import pandas as pd
 from django.db.models import Sum, Max
 from django.utils.datetime_safe import datetime
 from django.utils.timezone import make_aware
+from django.views.decorators.csrf import csrf_exempt
 from geopy.geocoders import Nominatim
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpRequest
 import datetime
 from django.shortcuts import render, redirect
 import os
@@ -21,9 +22,8 @@ import logging
 from rest_framework import viewsets
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
-from models.models import Log, Record, Dataset, Sensor, Prediction, KMeans, SVM, DataTorque, Track, TrackLog
-from models.serializers import LogSerializer, RecordSerializer, DatasetSerializer, SensorSerializer, \
-    PredictionSerializer, KMeansSerializer, SVMSerializer, DataTorqueSerializer
+from models.models import Log, Record, Sensor, Track, TrackLog
+from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
 
 geolocator = Nominatim(user_agent="Torque")
 
@@ -47,34 +47,9 @@ class RecordViewSet(viewsets.ModelViewSet):
     queryset = Record.objects.all()
 
 
-class DataTorqueViewSet(viewsets.ModelViewSet):
-    serializer_class = DataTorqueSerializer
-    queryset = DataTorque.objects.all()
-
-
-class DatasetViewSet(viewsets.ModelViewSet):
-    serializer_class = DatasetSerializer
-    queryset = Dataset.objects.all()
-
-
 class SensorViewSet(viewsets.ModelViewSet):
     serializer_class = SensorSerializer
     queryset = Sensor.objects.all()
-
-
-class PredictionViewSet(viewsets.ModelViewSet):
-    serializer_class = PredictionSerializer
-    queryset = Prediction.objects.all()
-
-
-class KMeansViewSet(viewsets.ModelViewSet):
-    serializer_class = KMeansSerializer
-    queryset = KMeans.objects.all()
-
-
-class SVMViewSet(viewsets.ModelViewSet):
-    serializer_class = SVMSerializer
-    queryset = SVM.objects.all()
 
 
 def sessions_by_id_list(request):
@@ -144,7 +119,11 @@ def tracking_all_sessions(request):
                     i += 1
             # print('session acabada ', session.id)
             # logging.info('TRACKING_ALL_SESSIONS FINISHED')
-    return HttpResponse('Se han obtenido todos los nombres de las calles de todos los recorridos')
+            context = {
+                'text': 'Se han obtenido todos los nombres de las calles de todos los recorridos'
+            }
+
+    return render(request, 'success.html', context=context)
 
 
 def tracking(request, session_id):
@@ -464,6 +443,66 @@ def download_csv(request, session_id):
     return response
 
 
+def export_data_to_csv(request):
+    session_queryset = Log.objects.all().order_by('-id')
+    # sensors_queryset = Sensor.objects.values_list('user_full_name', flat=True)
+    # print(session_queryset)
+    # print(sensors_queryset)
+    context = {
+        'sessions': session_queryset,
+    }
+
+    return render(request, 'export_csv.html', context=context)
+
+
+def obtain_sensors_from_session(request, session_id):
+    session = Log.objects.get(id=session_id)
+    records = session.record_set.all()
+    exclude_sensor_list = ['GPS Latitude', 'GPS Longitude', '']
+
+    sensors = records.values('sensor_id', 'sensor__user_full_name') \
+        .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('sensor_id')
+
+    sensors = sensors.values_list('sensor_id', 'sensor__user_full_name')
+    # print('numero de sensores: ' + str(len(sensors)))
+
+    return JsonResponse({"sensors": list(sensors)})
+
+
+@csrf_exempt
+def generate_custom_csv(request):
+    data = request.POST
+    id_session = request.POST['sesiones']
+    id_sensors = [value for key, value in request.POST.items() if 'sensor' in key]
+    log = Log.objects.get(id=id_session)
+    dictionary = {}
+
+    for id_sensor in id_sensors:
+        sensor_name = Sensor.objects.get(id=id_sensor).user_full_name. \
+            replace(' ', '_').replace('(', '_').replace(')', '').replace('__', '_').upper()
+
+        values = log.record_set.filter(sensor_id=id_sensor).values_list('value', flat=True)
+
+        list_values = list(values)
+        dictionary[sensor_name] = list_values
+
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+    clean_dataset(dict_df)
+    # print(dict_df)
+
+    # dict_df.reset_index(drop=True, inplace=True)
+    filename = 'session' + str(id_session)
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    dict_df.to_csv(path_or_buf=response)
+
+    return response
+
+
 def query(session_id):
     cursor = connection.cursor()
     # 'replace(left(session, 19), " ", "    ,    ") as date, ' \
@@ -731,7 +770,10 @@ def separe_sessions(request):
         if not delete:
             logging.info('No se han eliminado sesiones')
 
-    return HttpResponse('Se han separado las sesiones')
+    context = {
+        'text': 'Se han separado las sesiones correctamente'
+    }
+    return render(request, 'success.html', context=context)
 
 
 def session_in_map(request, session_id):
@@ -946,17 +988,6 @@ def clean_dataset(df):
     df.dropna(inplace=True)
     indices_to_keep = ~df.isin([np.nan, np.inf, -np.inf]).any(1)
     return df[indices_to_keep].astype(np.float64)
-
-
-def viewMap(request):
-    dir = os.path.join(str(BASE_DIR) + str(STATIC_URL) + 'data/')
-    files = [STATIC_URL + 'data/' + arch.name for arch in os.scandir(str(dir)) if
-             arch.is_file() and os.path.splitext(arch)[1] == ".kml"]
-
-    context = {
-        'files': files
-    }
-    return render(request, 'map.html', context=context)
 
 
 def sql_query_longs_lats(sql_query):

@@ -1,6 +1,6 @@
 from django.db import models
 
-
+'''
 # Create your models here.
 class Dataset(models.Model):
     date = models.BigIntegerField(null=True)
@@ -40,6 +40,7 @@ class KMeans(models.Model):
     cluster_list = models.TextField(null=True)
     more_important_features = models.TextField(null=True)
     dataset = models.OneToOneField(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
+'''
 
 
 class Sensor(models.Model):
@@ -58,9 +59,10 @@ class Log(models.Model):
     session = models.DateTimeField(null=True)
     email = models.CharField(null=True, max_length=255)
     id_app = models.CharField(null=True, max_length=255)
+
     # la session ya trae el tiempo en unix timestamp
     # time = models.DateTimeField(null=True, auto_now_add=True)
-    dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
+    # dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         unique_together = ('email', 'session')
@@ -77,12 +79,14 @@ class TrackLog(models.Model):
     time = models.DateTimeField(null=True)
 
 
+'''
 class Profile(models.Model):
     name = models.CharField(null=True, max_length=255)
     vehicle = models.CharField(null=True, max_length=255)
     weight = models.FloatField(null=True)
     fuel_type = models.CharField(null=True, max_length=50)
     fuel_cost = models.FloatField(null=True)
+'''
 
 
 class Record(models.Model):
@@ -94,6 +98,7 @@ class Record(models.Model):
     longitude = models.FloatField(null=True)
 
 
+'''
 class DataTorque(models.Model):
     key = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
@@ -103,3 +108,4 @@ class DataTorque(models.Model):
     time = models.BigIntegerField(null=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
+'''
