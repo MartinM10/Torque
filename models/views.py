@@ -1158,7 +1158,10 @@ def upload_data(request):
 
                 if 'E' in value or 'inf' in value or 'Inf' in value:
                     value = None
-                if not value:
+
+                if value is None:
+                    print('POSIBLE ERROR EN KEY: ', key)
+                    logging.info('POSIBLE ERROR EN KEY: ', key)
                     print('key: ', key, 'value: ', value)
                     if value:
                         Record(sensor_id=sensor_id, log_id=log_id, value=float(value), time=date_time,
