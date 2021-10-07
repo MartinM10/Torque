@@ -1158,8 +1158,11 @@ def upload_data(request):
 
                 if 'E' in value or 'inf' in value or 'Inf' in value:
                     value = None
+                if not value:
+                    print('key: ', key, 'value: ', value)
+                    if value:
+                        Record(sensor_id=sensor_id, log_id=log_id, value=float(value), time=date_time,
+                               latitude=latitude,
+                               longitude=longitude).save()
 
-                Record(sensor_id=sensor_id, log_id=log_id, value=float(value), time=date_time, latitude=latitude,
-                       longitude=longitude).save()
-
-    return HttpResponse('OK!')
+        return HttpResponse('OK!')
