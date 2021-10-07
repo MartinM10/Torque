@@ -52,7 +52,7 @@ class Sensor(models.Model):
     default_unit = models.CharField(null=True, max_length=50)
 
     def __str__(self):
-        return self.pid
+        return self.user_full_name
 
 
 class Log(models.Model):

@@ -1,6 +1,7 @@
 import csv
 import json
 from array import array
+from builtins import print
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ import logging
 
 # Create your views here.
 from rest_framework import viewsets
+from sqlalchemy.sql.functions import session_user
 
 from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
 from models.models import Log, Record, Sensor, Track, TrackLog
@@ -35,6 +37,8 @@ logging.basicConfig(filename='./logs/ErrorLog.log', level=logging.ERROR)
 
 TIME_LAST_HTTP_REQUEST = datetime.datetime.now()
 TIME_TO_CONSIDER_NEW_SESSION = datetime.timedelta(minutes=1)
+
+exclude_sensor_list = ['', 'GPS Latitude', 'GPS Longitude', 'Android device Battery Level']
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -368,49 +372,36 @@ def obtain_dataframe(session_id):
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
     clean_dataset(dict_df)
-    # print(dict_df)
 
     return dict_df
 
 
 def download_csv_all_sessions(request):
-    sessions = Log.objects.all()
-    columns = \
-        [
-            'SESSION_ID',  # no se si deberia usarlo o no
-            'TOTAL_DISTANCE',
-            'TOTAL_CONSUPTION',
-            'OBD_SPEED',
-            'GPS_SPEED',
-            'ENGINE_RPM',
-            'INSTANT_CO2',
-            'AVERAGE_CO2',
-            'INSTANT_FUEL_CONSUPTION',
-            'AVERAGE_FUEL_CONSUPTION',
-            'COOLANT_TEMPERATURE',
-        ]
+    logs = Log.objects.all().order_by('id')
+    final_df = pandas.DataFrame()
 
-    final_df = pandas.DataFrame(columns=columns)
-    first_time = True
+    for log in logs:
+        records = log.record_set.all()
+        dictionary = {}
+        sensors_id = records.values_list('sensor_id', flat=True) \
+            .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('sensor_id')
 
-    for session in sessions:
-        dataframe = obtain_dataframe(session_id=session.id)
+        for sensor_id in list(sensors_id):
+            sensor_name = Sensor.objects.get(id=sensor_id). \
+                user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+            values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
+            list_values = list(values)
 
-        if len(dataframe.columns) >= 6:
-            if first_time:
-                first_time = False
-                final_df = dataframe.copy()
-            else:
-                final_df = final_df.append(dataframe, ignore_index=True)
+            dictionary[sensor_name] = list_values
 
-    # print('--------------------------------------------------------------\n')
-    # print('DATAFRAME FINAL')
-    # final_dataframe = pandas.DataFrame(final_df, columns=columns)
-    # print(dataframe)
-    # print(final_df)
+        dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+        # dict_df = dict_df.assign(ID_SESSION=log.id)
+
+        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
+        final_df = final_df.append(dict_df)
+
     clean_dataset(final_df)
     final_df.reset_index(drop=True, inplace=True)
-    # print(final_df)
 
     filename = 'all_sessions'
     time_now = datetime.datetime.now()
@@ -424,13 +415,24 @@ def download_csv_all_sessions(request):
 
 
 def download_csv(request, session_id):
-    dataframe = obtain_dataframe(session_id=session_id)
+    log = Log.objects.get(id=session_id)
+    records = log.record_set.all()
+    dictionary = {}
+    sensors_id = records.values_list('sensor_id', flat=True) \
+        .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('sensor_id')
 
-    '''
-    for key in dict_dataframe.keys():
-        writer.writerow(dict_dataframe.get(key))
-        print(dict_dataframe.get(key))
-    '''
+    for sensor_id in list(sensors_id):
+        sensor_name = Sensor.objects.get(id=sensor_id). \
+            user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+        values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
+        list_values = list(values)
+        dictionary[sensor_name] = list_values
+
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+    clean_dataset(dict_df)
+
+    # hasta aca
+    # dataframe = obtain_dataframe(session_id=session_id)
 
     filename = 'session' + str(session_id)
     time_now = datetime.datetime.now()
@@ -438,18 +440,19 @@ def download_csv(request, session_id):
     content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-    dataframe.to_csv(path_or_buf=response)
+    dict_df.to_csv(path_or_buf=response)
+    # print(dataframe)
 
     return response
 
 
 def export_data_to_csv(request):
     session_queryset = Log.objects.all().order_by('-id')
-    # sensors_queryset = Sensor.objects.values_list('user_full_name', flat=True)
-    # print(session_queryset)
-    # print(sensors_queryset)
+    sensors = Sensor.objects.all().exclude(user_full_name__in=exclude_sensor_list).order_by('id')
+
     context = {
         'sessions': session_queryset,
+        'sensors': sensors,
     }
 
     return render(request, 'export_csv.html', context=context)
@@ -458,39 +461,48 @@ def export_data_to_csv(request):
 def obtain_sensors_from_session(request, session_id):
     session = Log.objects.get(id=session_id)
     records = session.record_set.all()
-    exclude_sensor_list = ['GPS Latitude', 'GPS Longitude', '']
 
-    sensors = records.values('sensor_id', 'sensor__user_full_name') \
+    sensors = records.values_list('sensor_id', 'sensor__user_full_name') \
         .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('sensor_id')
 
-    sensors = sensors.values_list('sensor_id', 'sensor__user_full_name')
-    # print('numero de sensores: ' + str(len(sensors)))
-
+    # sensors = sensors.values_list('sensor_id', 'sensor__user_full_name')
     return JsonResponse({"sensors": list(sensors)})
+
+
+def obtain_sessions_from_sensor(request, sensor_id):
+    sensor = Sensor.objects.get(id=sensor_id)
+    records = sensor.record_set.all()
+
+    sessions = records.values('log_id', 'log__email', 'log__session') \
+        .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('-log_id')
+
+    # print(sessions)
+    # sessions = sessions.values_list('sensor_id', 'log__email', 'log__session')
+    # print(sessions)
+    return JsonResponse({"sessions": list(sessions)})
 
 
 @csrf_exempt
 def generate_custom_csv(request):
-    data = request.POST
     id_session = request.POST['sesiones']
     id_sensors = [value for key, value in request.POST.items() if 'sensor' in key]
     log = Log.objects.get(id=id_session)
     dictionary = {}
 
     for id_sensor in id_sensors:
-        sensor_name = Sensor.objects.get(id=id_sensor).user_full_name. \
-            replace(' ', '_').replace('(', '_').replace(')', '').replace('__', '_').upper()
+        sensor_name = Sensor.objects.get(id=id_sensor).user_short_name. \
+            replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
 
         values = log.record_set.filter(sensor_id=id_sensor).values_list('value', flat=True)
-
+        # print(sensor_name)
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     clean_dataset(dict_df)
     # print(dict_df)
-
     # dict_df.reset_index(drop=True, inplace=True)
+
     filename = 'session' + str(id_session)
     time_now = datetime.datetime.now()
 
@@ -499,6 +511,65 @@ def generate_custom_csv(request):
 
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
     dict_df.to_csv(path_or_buf=response)
+
+    return response
+
+
+@csrf_exempt
+def generate_csv_multiple_sessions(request):
+    id_sensor = request.POST['sensores']
+    sensor = Sensor.objects.get(id=id_sensor)
+    id_sessiones = [value for key, value in request.POST.items() if 'session' in key]
+
+    # log = Log.objects.get(id=id_sensor)
+    dictionary = {}
+
+    for id_session in id_sessiones:
+        '''
+        sensor_name = Log.objects.get(id=id_session).user_short_name. \
+            replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+        '''
+        values = sensor.record_set.filter(log_id=id_session).values_list('value', flat=True)
+        # print(sensor_name)
+        dictionary[id_session] = list(values)
+
+    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+    clean_dataset(dict_df)
+    dict_df = dict_df.transpose()
+    # dict_df.reset_index(drop=True, inplace=True)
+
+    filename = sensor.user_short_name + '_all_sessions'
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    dict_df.to_csv(path_or_buf=response)
+
+    return response
+    # return HttpResponse('OK')
+
+
+def export_sensors_for_react_app(request):
+    sensors = Sensor.objects.all().exclude(user_full_name__in=exclude_sensor_list)
+    data = []
+    final_dict = {}
+    for sensor in sensors:
+        item = {
+            'pid': sensor.user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
+                                                                                                       '_').upper(),
+            'description': sensor.user_full_name,
+            'measurement_unit': sensor.user_unit
+        }
+        data.append(item)
+    final_dict['sensors'] = data
+    jsonData = json.dumps(final_dict, ensure_ascii=False, indent=2).encode('utf8')
+    # print(jsonData)
+    content = 'attachment; filename=sensors_information.json'
+    response = HttpResponse(jsonData, content_type='application/json')
+
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
 
     return response
 

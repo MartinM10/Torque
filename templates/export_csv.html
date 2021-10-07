@@ -5,7 +5,12 @@
 {% block export_data %}
 
     <div class="container text-center pt-5">
-        <h3>Exportar Datos (CSV)</h3>
+        <div style="margin-top: 15px">
+            <p>
+                Una vez exportados los datos podrás analizarlos <a href="http://mallba3.lcc.uma.es:3701/">aquí</a>
+            <p/>
+        </div>
+        <h3>Exportar datos de una sesión (CSV)</h3>
         <form action="generate_csv/" method="post" style="margin-top: 15px">
             <select name="sesiones" id="sessionList" style="text-align: center">
                 <option value="">Seleccione una sesión</option>
@@ -15,13 +20,13 @@
             </select>
 
             <br>
-            <div style="margin-top: 15px; text-decoration-line: underline">
-                La cantidad de sensores que aparezcan dependera de la sesión elegida
+            <div style="margin-top: 15px">
+                <p style="font-size: small">
+                    La cantidad de sensores que aparezcan dependera de la sesión elegida
+                </p>
             </div>
 
-            <div style="margin-top: 15px">
-                Una vez exportados los datos podrás analizarlos <a href="http://mallba3.lcc.uma.es:3701/">aquí</a>
-            </div>
+
             <!-- style="display: flex; flex-direction: column; width: 40%; margin: auto; align-items: flex-start;"-->
 
             <div class="form-check" id="sensorList"
@@ -33,12 +38,45 @@
                 Generar CSV
             </button>
         </form>
+        <hr>
+
+        <h3>Exportar datos de varias sesiones (CSV)</h3>
+        <form action="generate_csv_multiple_sessions/" method="post" style="margin-top: 15px">
+            <select name="sensores" id="sensorList2" style="text-align: center">
+                <option value="">Seleccione un sensor</option>
+                {% for sensor in sensors %}
+                    <option value="{{ sensor.id }}">{{ sensor.user_full_name }}</option>
+                {% endfor %}
+            </select>
+
+            <br>
+
+            <div style="margin-top: 15px">
+                <p style="font-size: small">
+                    Seleccione el sensor que desea obtener de varias sesiones distintas
+                </p>
+            </div>
+
+
+            <!-- style="display: flex; flex-direction: column; width: 40%; margin: auto; align-items: flex-start;"-->
+
+            <div class="form-check" id="sessionList2"
+                 style="display: flex; flex-direction: column; width: 40%;
+                 margin: auto; margin-top: 20px; align-items: flex-start;">
+
+            </div>
+            <button type="submit" class="btn btn-primary" id="generarCSV2" style="margin-top: 10px">
+                Generar CSV
+            </button>
+        </form>
     </div>
 {% endblock %}
 
 {% block scripts %}
     <script>
+
         $("#generarCSV").hide()
+        $("#generarCSV2").hide()
         var sessionSelected = ""
         $("#sessionList").change(function () {
             sessionSelected = this.value
@@ -95,7 +133,34 @@
             // return false;
         })
         */
-
+        $("#sensorList2").change(function () {
+            sensorSelected = this.value
+            if (sensorSelected === "") {
+                $("#sessionList2").empty()
+                $("#generarCSV2").hide()
+            } else {
+                $.ajax({
+                    type: "get",
+                    url: "/session_from_sensor/" + this.value,
+                    dataType: "json",
+                    success: function (data) {
+                        let sessionOptions = ""
+                        data = data.sessions
+                        for (let i = 0; i < data.length; i++) {
+                            sessionOptions +=
+                                "<label class='form-check-input' style='font-weight: normal'>" +
+                                "<input name='session_" + i + "' class='form-check-input' type='checkbox' value='" +
+                                data[i].log_id + "'>  Session " + data[i].log_id + ' | ' + data[i].log__email + ' | ' +
+                                data[i].log__session + "</label>";
+                        }
+                        $("#sessionList2").html(sessionOptions)
+                    }
+                })
+                if ($("#generarCSV2").is(":hidden")) {
+                    $("#generarCSV2").show()
+                }
+            }
+        })
     </script>
 
 {% endblock %}

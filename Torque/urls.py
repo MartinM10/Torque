@@ -21,7 +21,8 @@ from rest_framework.routers import DefaultRouter
 from models import views
 from models.views import upload_data, sessions_by_id_list, session_in_map, download_csv, tracking, \
     compare_all_routes, separe_sessions, tracking_all_sessions, download_csv_all_sessions, export_data_to_csv, \
-    obtain_sensors_from_session, generate_custom_csv
+    obtain_sensors_from_session, generate_custom_csv, export_sensors_for_react_app, generate_csv_multiple_sessions, \
+    obtain_sessions_from_sensor
 
 router = DefaultRouter()
 router_api = 'api/'
@@ -44,7 +45,10 @@ urlpatterns = [
     path('track_all_sessions', tracking_all_sessions, name='tracking_all_sessions'),
     path('export_data', export_data_to_csv, name='export_data'),
     path('sensor_from_session/<int:session_id>/', obtain_sensors_from_session, name='sensor_from_session'),
+    path('session_from_sensor/<int:sensor_id>/', obtain_sessions_from_sensor, name='session_from_sensor'),
     path('generate_csv/', generate_custom_csv, name='generate_csv'),
+    path('generate_csv_multiple_sessions/', generate_csv_multiple_sessions, name='generate_csv_multiple_sessions'),
+    path('export_sensors/', export_sensors_for_react_app, name='export_sensors'),
 
     # path('PCA/', pca_request, name='pca'),
     # path('SVM/', svm_classification_request, name='svm'),
