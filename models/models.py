@@ -92,7 +92,7 @@ class Profile(models.Model):
 class Record(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
     log = models.ForeignKey(Log, on_delete=models.CASCADE)
-    value = models.FloatField(null=True)
+    value = models.CharField(null=True)
     time = models.DateTimeField(null=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
