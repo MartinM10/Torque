@@ -822,14 +822,15 @@ def separe_sessions(request):
                 delete = True
                 # print('DELETED SESION ', session.id, 'NI RECORRIDO NI DURACION')
                 logging.info('DELETED SESION ' + str(session.id) + ' NI RECORRIDO NI DURACION')
-            if distance['value__max'] and distance['value__max'] < 2:
+            if distance['value__max'] and float(distance['value__max']) < 2:
                 delete = True
+                # print('entra')
                 # print('DELETED SESION ', session.id, ' POR CORTO RECORRIDO')
                 logging.info('DELETED SESION ' + str(session.id) + ' POR CORTO RECORRIDO')
 
             if duration['value__max']:
                 duration = duration['value__max']
-                duration_session = datetime.timedelta(seconds=duration)
+                duration_session = datetime.timedelta(seconds=float(duration))
                 if duration_session < datetime.timedelta(minutes=15):
                     delete = True
                     # print('DELETED SESION ', session.id, ' POR CORTA DURACION')
