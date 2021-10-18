@@ -2,28 +2,30 @@ import csv
 import json
 from array import array
 from builtins import print
+from wsgiref.util import FileWrapper
 
 import numpy as np
 import pandas as pd
-from django.db.models import Sum, Max
+from django.contrib import messages
+from django.db.models import Max
 from django.utils.datetime_safe import datetime
 from django.utils.timezone import make_aware
 from django.views.decorators.csrf import csrf_exempt
 from geopy.geocoders import Nominatim
+from matplotlib.backends.backend_pdf import PdfPages
+from requests import request
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
-from django.http import HttpResponse, JsonResponse, HttpRequest
+from django.http import HttpResponse, JsonResponse
 import datetime
 from django.shortcuts import render, redirect
-import os
 import pandas
 import logging
 
 # Create your views here.
 from rest_framework import viewsets
-from sqlalchemy.sql.functions import session_user
 
-from Torque.settings import DATA_URL, BASE_DIR, STATIC_URL
+from ai import k_means as km, svm
 from models.models import Log, Record, Sensor, Track, TrackLog
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
 
@@ -64,6 +66,64 @@ def sessions_by_id_list(request):
 def myconverter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
+
+
+def upload_csv(request):
+    if request.method == 'GET':
+        return render(request, 'upload_csv.html')
+
+    if not request.FILES:
+        messages.error(request, 'Seleccione un fichero con extensión .CSV')
+        return render(request, 'upload_csv.html')
+
+    csv_file = request.FILES['file']
+    if not csv_file.name.endswith('.csv'):
+        messages.error(request, 'El fichero no tiene extensión .CSV')
+
+    return pca_request(request)
+
+
+def download_pdf(request):
+    pass
+    # pdfFile = PdfPages('salida.pdf')
+    # pdfFile.savefig()
+
+
+def pca_request(request):
+    # Apply k-means to the CSV
+
+    two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
+    explained_variance_ratio, cluster_list, more_important_features, svm_params = \
+        km.start(request.FILES.get("file"))
+    # Apply SVM to the data labelled by k-means
+    svm_plot = svm.start(
+        svm_params['df'], svm_params['x_scaled_reduced'], 6)
+    print('CLUSTER_LIST: ', cluster_list)
+    print('explained_variance_ratio: ', explained_variance_ratio)
+    print('moreImportantFeatures', json.dumps(more_important_features))
+
+    explained_variance_ratio = [round(explained_variance_ratio[i] * 100, 2) for i in
+                                range(len(explained_variance_ratio))]
+
+    context = {
+        'twoFirstComponentsPlot': two_first_components_plot,
+        'componentsAndFeaturesPlot': components_and_features_plot,
+        'wcssPlot': wcss_plot,
+        'cumulativeExplainedVarianceRatioPlot': cumulative_explained_variance_ratio_plot,
+        'explainedVarianceRatio': explained_variance_ratio,
+        'clusterList': cluster_list,
+        'moreImportantFeatures': json.dumps(more_important_features),
+        'svmPlot': svm_plot
+    }
+    return render(request, 'classification_result .html', context)
+    # return JsonResponse(dictionary)
+
+
+def svm_classification_request(request):
+    classification_list = svm.classify_svm(request.FILES.get("file"), int(
+        request.args.get('dataset-rows-number')))
+
+    return JsonResponse({'classificationList': classification_list})
 
 
 def tracking_all_sessions(request):
@@ -287,95 +347,6 @@ def compare_all_routes(request, session_id, percentage=60):
     return render(request, 'routes.html', context=context)
 
 
-def obtain_dataframe(session_id):
-    result = query(session_id=session_id)
-    crs_list = result[0]
-    # field_names = result[1]
-    sessions_id = []
-    total_consuption = []
-    total_distance = []
-    obd_speeds = []
-    co2_inst = []
-    co2_avg = []
-    lit_per_km = []
-    lit_per_km_inst = []
-    engine_revs = []
-    temps = []
-    gps_speeds = []
-
-    # print(crs_list)
-
-    for crs in crs_list:
-
-        if crs[0]:
-            sessions_id.append(crs[0])
-
-        if crs[4]:
-            total_consuption.append(crs[4])
-
-        if crs[5]:
-            total_distance.append(crs[5])
-
-        if crs[14]:
-            co2_inst.append(crs[14])
-
-        if crs[15]:
-            co2_avg.append(crs[15])
-
-        if crs[16]:
-            temps.append(crs[16])
-
-        if crs[17]:
-            lit_per_km.append(crs[17])
-
-        if crs[19]:
-            gps_speeds.append(crs[19])
-
-        if crs[20]:
-            obd_speeds.append(crs[20])
-
-        if crs[24]:
-            lit_per_km_inst.append(crs[24])
-
-        if crs[25]:
-            engine_revs.append(crs[25])
-
-    sess_id = 'SESSION_ID'
-    total_fuel = 'TOTAL_CONSUPTION'
-    total_dist = 'TOTAL_DISTANCE'
-    velocidad_obd = 'OBD_SPEED'
-    velocidad_gps = 'GPS_SPEED'
-    revoluciones_motor = 'ENGINE_RPM'
-    co2_insantaneo = 'INSTANT_CO2'
-    co2_medio = 'AVERAGE_CO2'
-    consumo_instantaneo = 'INSTANT_FUEL_CONSUPTION'
-    consumo_medio = 'AVERAGE_FUEL_CONSUPTION'
-    temperatura_motor = 'COOLANT_TEMPERATURE'
-
-    dict_dataframe = {
-        sess_id: sessions_id,
-        total_fuel: total_consuption,
-        total_dist: total_distance,
-        velocidad_obd: obd_speeds,
-        velocidad_gps: gps_speeds,
-        co2_insantaneo: co2_inst,
-        co2_medio: co2_avg,
-        consumo_instantaneo: lit_per_km_inst,
-        consumo_medio: lit_per_km,
-        temperatura_motor: temps,
-        revoluciones_motor: engine_revs
-    }
-
-    for key in list(dict_dataframe):
-        if dict_dataframe[key].__len__() == 0:
-            dict_dataframe.pop(key)
-
-    dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
-    clean_dataset(dict_df)
-
-    return dict_df
-
-
 def download_csv_all_sessions(request):
     logs = Log.objects.all().order_by('id')
     final_df = pandas.DataFrame()
@@ -414,7 +385,7 @@ def download_csv_all_sessions(request):
     return response
 
 
-def download_csv(request, session_id):
+def obtain_dataframe(request, session_id):
     log = Log.objects.get(id=session_id)
     records = log.record_set.all()
     dictionary = {}
@@ -423,14 +394,18 @@ def download_csv(request, session_id):
 
     for sensor_id in list(sensors_id):
         sensor_name = Sensor.objects.get(id=sensor_id). \
-            user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+            user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
         values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     clean_dataset(dict_df)
+    return dict_df
 
+
+def download_csv(request, session_id):
+    dict_df = obtain_dataframe(request, session_id)
     # hasta aca
     # dataframe = obtain_dataframe(session_id=session_id)
 
@@ -557,7 +532,7 @@ def export_sensors_for_react_app(request):
     final_dict = {}
     for sensor in sensors:
         item = {
-            'pid': sensor.user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
+            'pid': sensor.user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
                                                                                                        '_').upper(),
             'description': sensor.user_full_name,
             'measurement_unit': sensor.user_unit

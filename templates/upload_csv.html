@@ -1,0 +1,32 @@
+{% extends 'main.html' %}
+
+{% load static %}
+
+{% block upload_csv %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="container-fluid text-center" style="display: flex; flex-direction: column;align-items: center;">
+
+                <div class="row" style="margin-top: 15px">
+                    <strong>{{ message|safe }}</strong>
+                </div>
+                <div class="row" style="margin-top: 15px">
+                    <a class="btn btn-primary" href="{% url 'upload_csv' %}" role="button">Reintentar</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="row" style="width: auto">
+            <form method="post" enctype="multipart/form-data" style="text-align: center">
+                {% csrf_token %}
+                <label>Aplicar clasificación</label>
+                <br>
+                <input type="file" name="file" style="display: inline">
+                <p>Solo ficheros con extension CSV</p>
+                <button class="btn btn-primary" type="submit">Aplicar</button>
+            </form>
+        </div>
+    {% endif %}
+
+{% endblock upload_csv %}

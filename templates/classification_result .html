@@ -1,0 +1,60 @@
+{% extends 'main.html' %}
+
+{% load static %}
+
+{% block html_to_pdf %}
+    <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
+
+        <h2>Explained variance ratio</h2>
+        <p>How much information (variance) corresponds to
+            each of the Principal Components</p>
+        {% for variance in explainedVarianceRatio %}
+            <strong>Principal Component {{ forloop.counter }}</strong>
+            <p>{{ variance }}%</p>
+        {% endfor %}
+
+    </div>
+    <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
+
+        <div class="card" style="width: 100%">
+            <img class="card-img" src="data:image/png;base64,{{ cumulativeExplainedVarianceRatioPlot }}" alt=""
+                 style="width: 60%; height: auto">
+            <div class="card-body">
+                <p class="card-text">Amount of variance (y axis) depending on the number of components</p>
+            </div>
+        </div>
+        <br>
+        <div class="card" style="width: 100%">
+            <img class="card-img-top" src="data:image/png;base64,{{ wcssPlot }}" alt=""
+                 style="width: 60%; height: auto">
+            <div class="card-body">
+                <p class="card-text"> Within Cluster Sum of Squares (WCSS) measures the squared average distance of all
+                    the points within a cluster to the cluster centroid</p>
+            </div>
+        </div>
+        <br>
+        <div class="card" style="width: 100%">
+            <img class="card-img" src="data:image/png;base64,{{ twoFirstComponentsPlot }}" alt=""
+                 style="width: 60%; height: auto">
+            <div class="card-body">
+                <p class="card-text">Two Principal Components plot by clusters</p>
+            </div>
+        </div>
+        <br>
+        <div class="card" style="width: 100%">
+            <img class="card-img-overlay" src="data:image/png;base64,{{ componentsAndFeaturesPlot }}" alt=""
+                 style="width: 60%; height: auto">
+            <div class="card-body">
+                <p class="card-text">Chart about how the features affect each component</p>
+            </div>
+        </div>
+        <br>
+        <div class="card" style="width: 100%">
+            <img class="card-img" src="data:image/png;base64,{{ svmPlot }}" alt="" style="width: 60%; height: auto">
+            <div class="card-body">
+                <p class="card-text">Two Principal Components plot by categories</p>
+            </div>
+        </div>
+        <br>
+    </div>
+{% endblock html_to_pdf %}

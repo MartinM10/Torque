@@ -19,10 +19,7 @@ from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
 from models import views
-from models.views import upload_data, sessions_by_id_list, session_in_map, download_csv, tracking, \
-    compare_all_routes, separe_sessions, tracking_all_sessions, download_csv_all_sessions, export_data_to_csv, \
-    obtain_sensors_from_session, generate_custom_csv, export_sensors_for_react_app, generate_csv_multiple_sessions, \
-    obtain_sessions_from_sensor
+from models.views import *
 
 router = DefaultRouter()
 router_api = 'api/'
@@ -49,7 +46,10 @@ urlpatterns = [
     path('generate_csv/', generate_custom_csv, name='generate_csv'),
     path('generate_csv_multiple_sessions/', generate_csv_multiple_sessions, name='generate_csv_multiple_sessions'),
     path('export_sensors/', export_sensors_for_react_app, name='export_sensors'),
+    # AI
+    path('upload_csv/', upload_csv, name='upload_csv'),
+    path('download_pdf/', download_pdf, name='download_pdf'),
 
-    # path('PCA/', pca_request, name='pca'),
-    # path('SVM/', svm_classification_request, name='svm'),
+    path('pca/', pca_request, name='pca'),
+    path('svm/', svm_classification_request, name='svm'),
 ]
