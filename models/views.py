@@ -31,7 +31,6 @@ import logging
 # Create your views here.
 from rest_framework import viewsets
 from weasyprint import HTML
-from weasyprint.text.fonts import FontConfiguration
 
 from Torque.settings import MEDIA_URL, MEDIA_ROOT
 from ai import k_means as km, svm
