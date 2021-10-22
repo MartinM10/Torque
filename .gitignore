@@ -2,5 +2,8 @@
 /venv/
 /logs/
 /cache/
+/reports/
 .log
 *.log
+*.pdf
+.pdf

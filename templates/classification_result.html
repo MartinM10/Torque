@@ -3,6 +3,12 @@
 {% load static %}
 
 {% block html_to_pdf %}
+    <div class="row" style="margin-top: 10px">
+        <div class="col text-center">
+            <a class="btn btn-primary" href="{% url 'export-pdf' filename %}" role="button">
+                Descargar PDF</a>
+        </div>
+    </div>
     <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
 
         <h2>Explained variance ratio</h2>

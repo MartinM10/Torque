@@ -1,22 +1,28 @@
 import csv
 import json
+import os
 from array import array
 from builtins import print
 from wsgiref.util import FileWrapper
 
 import numpy as np
 import pandas as pd
+
 from django.contrib import messages
 from django.db.models import Max
+from django.template.loader import render_to_string
 from django.utils.datetime_safe import datetime
+from django.utils.encoding import smart_str
 from django.utils.timezone import make_aware
 from django.views.decorators.csrf import csrf_exempt
 from geopy.geocoders import Nominatim
 from matplotlib.backends.backend_pdf import PdfPages
+from pandas._libs.parsers import k
+from reportlab.pdfgen import canvas
 from requests import request
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 import datetime
 from django.shortcuts import render, redirect
 import pandas
@@ -24,7 +30,10 @@ import logging
 
 # Create your views here.
 from rest_framework import viewsets
+from weasyprint import HTML
+from weasyprint.text.fonts import FontConfiguration
 
+from Torque.settings import MEDIA_URL, MEDIA_ROOT
 from ai import k_means as km, svm
 from models.models import Log, Record, Sensor, Track, TrackLog
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
@@ -83,40 +92,50 @@ def upload_csv(request):
     return pca_request(request)
 
 
-def download_pdf(request):
-    pass
-    # pdfFile = PdfPages('salida.pdf')
-    # pdfFile.savefig()
+def export_pdf(request, filename):
+    path_to_file = os.path.join(MEDIA_ROOT, 'reports', filename)
+    response = FileResponse(open(path_to_file, 'rb'), as_attachment=True)
+    return response
 
 
 def pca_request(request):
     # Apply k-means to the CSV
+    if request.method == 'POST':
+        two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
+        explained_variance_ratio, cluster_list, more_important_features, svm_params = \
+            km.start(request.FILES.get("file"))
+        # Apply SVM to the data labelled by k-means
+        svm_plot = svm.start(
+            svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
+        # print('CLUSTER_LIST: ', cluster_list)
+        # print('explained_variance_ratio: ', explained_variance_ratio)
+        # print('moreImportantFeatures', json.dumps(more_important_features))
 
-    two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
-    explained_variance_ratio, cluster_list, more_important_features, svm_params = \
-        km.start(request.FILES.get("file"))
-    # Apply SVM to the data labelled by k-means
-    svm_plot = svm.start(
-        svm_params['df'], svm_params['x_scaled_reduced'], 6)
-    print('CLUSTER_LIST: ', cluster_list)
-    print('explained_variance_ratio: ', explained_variance_ratio)
-    print('moreImportantFeatures', json.dumps(more_important_features))
+        explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
+                                    range(len(explained_variance_ratio))]
 
-    explained_variance_ratio = [round(explained_variance_ratio[i] * 100, 2) for i in
-                                range(len(explained_variance_ratio))]
+        filename = 'report.pdf'
+        if request.FILES:
+            filename = request.FILES['file'].name
+            filename = filename.replace('csv', 'pdf')
 
-    context = {
-        'twoFirstComponentsPlot': two_first_components_plot,
-        'componentsAndFeaturesPlot': components_and_features_plot,
-        'wcssPlot': wcss_plot,
-        'cumulativeExplainedVarianceRatioPlot': cumulative_explained_variance_ratio_plot,
-        'explainedVarianceRatio': explained_variance_ratio,
-        'clusterList': cluster_list,
-        'moreImportantFeatures': json.dumps(more_important_features),
-        'svmPlot': svm_plot
-    }
-    return render(request, 'classification_result .html', context)
-    # return JsonResponse(dictionary)
+        context = {
+            'twoFirstComponentsPlot': two_first_components_plot,
+            'componentsAndFeaturesPlot': components_and_features_plot,
+            'wcssPlot': wcss_plot,
+            'cumulativeExplainedVarianceRatioPlot': cumulative_explained_variance_ratio_plot,
+            'explainedVarianceRatio': explained_variance_ratio,
+            'clusterList': cluster_list,
+            'moreImportantFeatures': json.dumps(more_important_features),
+            'svmPlot': svm_plot,
+            'filename': filename
+        }
+
+        path_to_file = os.path.join(MEDIA_ROOT, 'reports', filename)
+        html = render_to_string("html_to_pdf.html", context)
+        HTML(string=html).write_pdf(path_to_file)
+        # result = html.write_pdf()
+        return render(request, 'classification_result.html', context=context)
 
 
 def svm_classification_request(request):
@@ -359,7 +378,8 @@ def download_csv_all_sessions(request):
 
         for sensor_id in list(sensors_id):
             sensor_name = Sensor.objects.get(id=sensor_id). \
-                user_short_name.replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+                user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
+                                                                                                               '_').upper()
             values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
             list_values = list(values)
 
@@ -380,7 +400,7 @@ def download_csv_all_sessions(request):
     content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-    final_df.to_csv(path_or_buf=response)
+    final_df.to_csv(path_or_buf=response, index=False)
 
     return response
 
@@ -394,7 +414,8 @@ def obtain_dataframe(request, session_id):
 
     for sensor_id in list(sensors_id):
         sensor_name = Sensor.objects.get(id=sensor_id). \
-            user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
+            user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
+                                                                                                           '_').upper()
         values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
         list_values = list(values)
         dictionary[sensor_name] = list_values
@@ -415,7 +436,7 @@ def download_csv(request, session_id):
     content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-    dict_df.to_csv(path_or_buf=response)
+    dict_df.to_csv(path_or_buf=response, index=False)
     # print(dataframe)
 
     return response
@@ -465,7 +486,7 @@ def generate_custom_csv(request):
     dictionary = {}
 
     for id_sensor in id_sensors:
-        sensor_name = Sensor.objects.get(id=id_sensor).user_short_name. \
+        sensor_name = Sensor.objects.get(id=id_sensor).user_short_name.replace('₂', '2'). \
             replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
 
         values = log.record_set.filter(sensor_id=id_sensor).values_list('value', flat=True)
@@ -485,7 +506,7 @@ def generate_custom_csv(request):
     response = HttpResponse(content_type='text/csv')
 
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-    dict_df.to_csv(path_or_buf=response)
+    dict_df.to_csv(path_or_buf=response, index=False)
 
     return response
 
@@ -501,7 +522,7 @@ def generate_csv_multiple_sessions(request):
 
     for id_session in id_sessiones:
         '''
-        sensor_name = Log.objects.get(id=id_session).user_short_name. \
+        sensor_name = Log.objects.get(id=id_session).user_short_name.replace('₂', '2'). \
             replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
         '''
         values = sensor.record_set.filter(log_id=id_session).values_list('value', flat=True)
@@ -520,7 +541,7 @@ def generate_csv_multiple_sessions(request):
     response = HttpResponse(content_type='text/csv')
 
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-    dict_df.to_csv(path_or_buf=response)
+    dict_df.to_csv(path_or_buf=response, index=False)
 
     return response
     # return HttpResponse('OK')
@@ -532,8 +553,9 @@ def export_sensors_for_react_app(request):
     final_dict = {}
     for sensor in sensors:
         item = {
-            'pid': sensor.user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
-                                                                                                       '_').upper(),
+            'pid': sensor.user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')',
+                                                                                                        '').replace('.',
+                                                                                                                    '_').upper(),
             'description': sensor.user_full_name,
             'measurement_unit': sensor.user_unit
         }

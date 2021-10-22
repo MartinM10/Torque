@@ -134,13 +134,18 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
-DATA_URL = (
-    os.path.join(BASE_DIR, "data"),
-)
+DATA_URL = (os.path.join(BASE_DIR, "data"),)
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media/')
+# MEDIA_URL = '/media/'
+# FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
+# FILE_UPLOAD_PERMISSIONS = 0o644

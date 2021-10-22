@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.0cm 1.5cm 3.5cm 1.5cm;
+        }
+
+        body {
+            width: 100% !important;
+            height: 100%;
+            background: #fff;
+            color: black;
+            font-size: 100%;
+            /*font-size: 14px;*/
+            /*font-weight: 200*/;
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
+        }
+
+        .header {
+            font-size: 20px;
+            font-weight: 100;
+            text-align: center;
+            color: #007cae;
+        }
+
+        .card {
+            font-size: 14px;
+            font-weight: 100;
+            text-align: center;
+            color: black;
+        }
+
+        .card-text {
+            margin-top: 0;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 100;
+            text-align: center;
+            padding: 10px 20px 0 20px;
+        }
+
+        .title span {
+            color: #007cae;
+        }
+
+        .details {
+            font-size: 12px;
+            padding: 10px 20px 0 20px;
+            text-align: left !important;
+            /*margin-left: 40%;*/
+        }
+
+        .hrItem {
+            border: none;
+            height: 1px;
+            /* Set the hr color */
+            color: #333; /* old IE */
+            background-color: #fff; /* Modern Browsers */
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+    <div class='header'>
+        <h1 class='title'>REPORT </h1>
+    </div>
+    <h2 class="title">Explained variance ratio</h2>
+    <div class="details">How much information (variance) corresponds to
+        each of the Principal Components
+    </div>
+    <div class="details">
+        {% for variance in explainedVarianceRatio %}
+            <strong>Principal Component {{ forloop.counter }}</strong>
+            <p>{{ variance }}%</p>
+        {% endfor %}
+    </div>
+</div>
+<br>
+
+<h2 class="title">Cumulative explained variance ratio plot</h2>
+<div class="card">
+    <img class="card-img" src="data:image/png;base64,{{ cumulativeExplainedVarianceRatioPlot }}" alt=""
+         style="width: 60%; height: auto">
+    <div class="card-body">
+        <p class="card-text">Amount of variance (y axis) depending on the number of components</p>
+    </div>
+</div>
+<br>
+<h2 class="title">WCSS plot</h2>
+<div class="card">
+    <img class="card-img" src="data:image/png;base64,{{ wcssPlot }}" alt=""
+         style="width: 60%; height: auto">
+    <div class="card-body">
+        <p class="card-text"> Within Cluster Sum of Squares (WCSS) measures the squared average distance of all
+            the points within a cluster to the cluster centroid</p>
+    </div>
+</div>
+<br>
+
+<h2 class="title">Two First Components plot</h2>
+<div class="card">
+    <img class="card-img" src="data:image/png;base64,{{ twoFirstComponentsPlot }}" alt=""
+         style="width: 60%; height: auto">
+    <div class="card-body">
+        <p class="card-text">Two Principal Components plot by clusters</p>
+    </div>
+</div>
+<br>
+
+<h2 class="title">Components and Features plot</h2>
+<div class="card">
+    <img class="card-img-overlay" src="data:image/png;base64,{{ componentsAndFeaturesPlot }}" alt=""
+         style="width: 90%; height: auto">
+    <div class="card-body">
+        <p class="card-text">Chart about how the features affect each component</p>
+    </div>
+</div>
+<br>
+
+<h2 class="title">SVM plot</h2>
+<div class="card">
+    <img class="card-img" src="data:image/png;base64,{{ svmPlot }}" alt="" style="width: 60%; height: auto">
+    <div class="card-body">
+        <p class="card-text">Two Principal Components plot by categories</p>
+    </div>
+</div>
+</body>
+</html>

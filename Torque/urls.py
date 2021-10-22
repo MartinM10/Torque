@@ -13,11 +13,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 # Creating Router Object
+from Torque import settings
 from models import views
 from models.views import *
 
@@ -46,10 +48,10 @@ urlpatterns = [
     path('generate_csv/', generate_custom_csv, name='generate_csv'),
     path('generate_csv_multiple_sessions/', generate_csv_multiple_sessions, name='generate_csv_multiple_sessions'),
     path('export_sensors/', export_sensors_for_react_app, name='export_sensors'),
+    path('export_pdf/<str:filename>/', export_pdf, name="export-pdf"),
+
     # AI
     path('upload_csv/', upload_csv, name='upload_csv'),
-    path('download_pdf/', download_pdf, name='download_pdf'),
-
     path('pca/', pca_request, name='pca'),
     path('svm/', svm_classification_request, name='svm'),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

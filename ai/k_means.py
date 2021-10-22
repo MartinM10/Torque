@@ -82,6 +82,7 @@ def start(csv_file):
 
     # Standardizing data (mean = 0 , variance = 1)
     x = StandardScaler().fit_transform(x)
+    # BORRAR INDICES, DE LA FUNCION EXPORTAR Y COMPROBAR EL NUMERO DE COMPONENTES
 
     # Generate cumulative explanined variance ratio plot
     plt.rc('axes', labelsize=16)  # Only needed first time
@@ -91,15 +92,17 @@ def start(csv_file):
     plt.xlabel('Components number', fontsize=14)
     plt.ylabel('Cumulative explained variance', fontsize=14)
     plt.title('Cumulative explained variance ratio', fontsize=16)
+    # print('VARIANZA ACUMULADA: ', np.cumsum(pca.explained_variance_ratio_))
+    components_number = np.argmax(np.cumsum(pca.explained_variance_ratio_) >= 0.9)
+    plt.vlines(components_number, plt.ylim()[0], plt.ylim()[
+        1], linestyles='dashed', colors='m', label='Cumulative explained variance >= 0.9')
+    plt.legend()
     cumulative_explained_variance_ratio_plot = get_base64(plt)
+
     plt.clf()
 
-    print('VARIANZA ACUMULADA: ', np.cumsum(pca.explained_variance_ratio_))
-
-    components_number = np.argmax(np.cumsum(pca.explained_variance_ratio_) >= 0.9)
-
-    print('la posicion del elemento es: ', components_number, 'su valor es: ',
-          np.cumsum(pca.explained_variance_ratio_)[components_number])
+    # print('la posicion del elemento es: ', components_number, 'su valor es: ',
+     #     np.cumsum(pca.explained_variance_ratio_)[components_number])
     # Create pca
     pca = PCA(n_components=components_number)
 
@@ -108,11 +111,11 @@ def start(csv_file):
 
     # Get PCA scores (create clusters based on the components scores)
     pca_scores = pca.transform(x)
-    print('pca_scores: ', pca_scores)
+    # print('pca_scores: ', pca_scores)
     # Get the principal features for each principal component
     more_important_features = get_pca_more_important_features(
         df, features, pca, components_number)
-    print('more_important_features: ', more_important_features)
+    # print('more_important_features: ', more_important_features)
     # Fit kmeans using the data from PCA
     wcss = []
     for i in range(1, 21):
@@ -122,7 +125,7 @@ def start(csv_file):
         wcss.append(kmeans_pca.inertia_)
 
     # Find elbow
-    print('wcs: ', wcss)
+    # print('wcs: ', wcss)
     kneedle = KneeLocator(range(1, 21), wcss, S=1.0,
                           curve='convex', direction='decreasing')
 
@@ -137,7 +140,7 @@ def start(csv_file):
     plt.title('WCSS', fontsize=16)
     wcss_plot = get_base64(plt)
     plt.clf()
-    print('knee: ', kneedle.knee)
+    # print('knee: ', kneedle.knee)
     clusters_number = kneedle.knee
 
     # Run k-means with the number of cluster chosen
@@ -181,15 +184,15 @@ def start(csv_file):
     explained_variance_ratio = pca.explained_variance_ratio_
 
     explained_variance_ratio_sum = pca.explained_variance_ratio_.cumsum()
-    print('explained variance: ', explained_variance_ratio_sum)
+    # print('explained variance: ', explained_variance_ratio_sum)
 
     # Create a plot for the porcetage of participation of each feature in each component
     plt.matshow(pca.components_, cmap='Blues')
-    plt.yticks(range(len(pc_colums_names)), pc_colums_names, fontsize=18)
+    plt.yticks(range(len(pc_colums_names)), pc_colums_names, fontsize=12)
     plt.colorbar()
     plt.xlabel('Features', fontsize=14)
     plt.ylabel('Principal components', fontsize=14)
-    plt.title('Components and Features', fontsize=18)
+    plt.title('Components and Features', fontsize=16)
     plt.xticks(range(len(features)), features, rotation=90, ha='right')
     components_and_features_plot = get_base64(plt, 'tight')
     plt.clf()
