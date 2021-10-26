@@ -831,11 +831,11 @@ def obtain_stops(session_id):
     records = session.record_set.filter(sensor__pid='0d').order_by('id')
 
     timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
-    singal_stop_count = 0
     total_stop_count = 0
     # Possible traffic light
     traffic_light_count = 0
-    counted = False
+    counted_stop = False
+    counted_trf_ligth = False
     first_time = True
     time_for_stop = datetime.timedelta(hours=0, minutes=0, seconds=6)
 
@@ -849,14 +849,18 @@ def obtain_stops(session_id):
 
             if record.value == '0.0':
                 timekeeper += record.time - last_time
-                if not counted:
-                    if timekeeper >= time_for_stop:
-                        traffic_light_count = traffic_light_count + 1
+                if not counted_stop:
+                    counted_stop = True
                     total_stop_count = total_stop_count + 1
-                    counted = True
+
+                if counted_stop and not counted_trf_ligth and timekeeper >= time_for_stop:
+                    counted_trf_ligth = True
+                    traffic_light_count = traffic_light_count + 1
+
             else:
                 timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
-                counted = False
+                counted_stop = False
+                counted_trf_ligth = False
 
             last_time = record.time
 
