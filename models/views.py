@@ -1,9 +1,6 @@
-import csv
 import json
 import os
-from array import array
 from builtins import print
-from wsgiref.util import FileWrapper
 
 import numpy as np
 import pandas as pd
@@ -12,14 +9,10 @@ from django.contrib import messages
 from django.db.models import Max
 from django.template.loader import render_to_string
 from django.utils.datetime_safe import datetime
-from django.utils.encoding import smart_str
 from django.utils.timezone import make_aware
 from django.views.decorators.csrf import csrf_exempt
 from geopy.geocoders import Nominatim
-from matplotlib.backends.backend_pdf import PdfPages
-from pandas._libs.parsers import k
-from reportlab.pdfgen import canvas
-from requests import request
+
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
 from django.http import HttpResponse, JsonResponse, FileResponse
@@ -32,7 +25,7 @@ import logging
 from rest_framework import viewsets
 from weasyprint import HTML
 
-from Torque.settings import MEDIA_URL, MEDIA_ROOT
+from Torque.settings import MEDIA_ROOT
 from ai import k_means as km, svm
 from models.models import Log, Record, Sensor, Track, TrackLog
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
@@ -106,9 +99,6 @@ def pca_request(request):
         # Apply SVM to the data labelled by k-means
         svm_plot = svm.start(
             svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
-        # print('CLUSTER_LIST: ', cluster_list)
-        # print('explained_variance_ratio: ', explained_variance_ratio)
-        # print('moreImportantFeatures', json.dumps(more_important_features))
 
         explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
                                     range(len(explained_variance_ratio))]
@@ -173,7 +163,7 @@ def tracking_all_sessions(request):
                 if interval >= 10:
                     coordinates = (obj.latitude, obj.longitude)
 
-                    location = geolocator.reverse(coordinates, zoom=17, timeout=3)
+                    location = geolocator.reverse(coordinates, zoom=17, timeout=10)
                     addresses = location.raw['address']
                     simple_address = ''
 
@@ -370,23 +360,7 @@ def download_csv_all_sessions(request):
     final_df = pandas.DataFrame()
 
     for log in logs:
-        records = log.record_set.all()
-        dictionary = {}
-        sensors_id = records.values_list('sensor_id', flat=True) \
-            .exclude(sensor__user_full_name__in=exclude_sensor_list).distinct().order_by('sensor_id')
-
-        for sensor_id in list(sensors_id):
-            sensor_name = Sensor.objects.get(id=sensor_id). \
-                user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
-                                                                                                               '_').upper()
-            values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
-            list_values = list(values)
-
-            dictionary[sensor_name] = list_values
-
-        dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
-        # dict_df = dict_df.assign(ID_SESSION=log.id)
-
+        dict_df = obtain_dataframe(request, log.id)
         dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
         final_df = final_df.append(dict_df)
 
@@ -419,8 +393,16 @@ def obtain_dataframe(request, session_id):
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
+    stops = obtain_stops(session_id)
+
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+
+    dict_df.insert(loc=len(dict_df.columns), column='SIGNAL_STOP_COUNT', value=stops['singal_stop_count'])
+    dict_df.insert(loc=len(dict_df.columns), column='TRAFFIC_LIGHT_COUNT', value=stops['traffic_light_count'])
+    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=stops['total_stop_count'])
+
     clean_dataset(dict_df)
+
     return dict_df
 
 
@@ -844,6 +826,50 @@ def separe_sessions(request):
     return render(request, 'success.html', context=context)
 
 
+def obtain_stops(session_id):
+    session = Log.objects.get(id=session_id)
+    records = session.record_set.filter(sensor__pid='0d').order_by('id')
+
+    timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
+    singal_stop_count = 0
+    total_stop_count = 0
+    # Possible traffic light
+    traffic_light_count = 0
+    counted = False
+    first_time = True
+    time_for_stop = datetime.timedelta(hours=0, minutes=0, seconds=6)
+
+    for record in records:
+
+        if first_time:
+            first_time = False
+            last_time = record.time
+
+        with transaction.atomic():
+
+            if record.value == '0.0':
+                timekeeper += record.time - last_time
+                if not counted:
+                    if timekeeper >= time_for_stop:
+                        traffic_light_count = traffic_light_count + 1
+                    total_stop_count = total_stop_count + 1
+                    counted = True
+            else:
+                timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
+                counted = False
+
+            last_time = record.time
+
+    singal_stop_count = total_stop_count - traffic_light_count
+
+    dictionary = {
+        'total_stop_count': total_stop_count,
+        'singal_stop_count': singal_stop_count,
+        'traffic_light_count': traffic_light_count
+    }
+    return dictionary
+
+
 def session_in_map(request, session_id):
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
@@ -881,16 +907,16 @@ def session_in_map(request, session_id):
         total_trip_time = 'Duracion'
         values[total_trip_time] = crs[3]
         # total_trip_fuel_used = field_names[4]
-        total_trip_fuel_used = 'Combustible utilizado'
+        total_trip_fuel_used = 'Combustible'
         values[total_trip_fuel_used] = crs[4]
         # total_trip_distance = field_names[5]
-        total_trip_distance = 'Distancia recorrida'
+        total_trip_distance = 'Distancia'
         values[total_trip_distance] = crs[5]
         # trip_co2_average = field_names[6]
-        trip_co2_average = 'C0₂ medio emitido'
+        trip_co2_average = 'C0₂ medio'
         values[trip_co2_average] = crs[6]
         # trip_speed_only_mov_average = field_names[7]
-        trip_speed_only_mov_average = 'Velocidad media solo en movimiento'
+        trip_speed_only_mov_average = 'Velocidad media (movimiento)'
         values[trip_speed_only_mov_average] = crs[7]
 
         type_dict["type"] = "Feature"
@@ -1028,6 +1054,12 @@ def session_in_map(request, session_id):
 
     if not dict_df.empty:
         dataframe_describe = dict_df.describe(include='all').round(2).to_html
+
+    # Possible Stops
+    stops = obtain_stops(session_id)
+    values['Posibles Stop'] = stops['singal_stop_count']
+    values['Posibles semaforos'] = stops['traffic_light_count']
+    values['Paradas totales'] = stops['total_stop_count']
 
     context = {
         'data': data,
