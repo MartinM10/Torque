@@ -13,7 +13,7 @@ from kneed import KneeLocator
 # pylint: disable=relative-beyond-top-level
 from .common import generate_cluster_labels, get_base64, COLOR_LIST, generate_pc_columns_names
 
-COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y']
+# COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y']
 
 
 def generate_cluster_map(number):
