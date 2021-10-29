@@ -4,6 +4,7 @@ from builtins import print
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from django.contrib import messages
 from django.db.models import Max
@@ -12,6 +13,7 @@ from django.utils.datetime_safe import datetime
 from django.utils.timezone import make_aware
 from django.views.decorators.csrf import csrf_exempt
 from geopy.geocoders import Nominatim
+from matplotlib import pyplot as plt
 
 from shapely.geometry import Point, mapping
 from django.db import connection, transaction
@@ -27,6 +29,7 @@ from weasyprint import HTML
 
 from Torque.settings import MEDIA_ROOT
 from ai import k_means as km, svm
+from ai.common import get_base64
 from models.models import Log, Record, Sensor, Track, TrackLog
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
 
@@ -360,7 +363,7 @@ def download_csv_all_sessions(request):
     final_df = pandas.DataFrame()
 
     for log in logs:
-        dict_df = obtain_dataframe(request, log.id)
+        dict_df = obtain_dataframe(log.id)
         dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
         final_df = final_df.append(dict_df)
 
@@ -378,7 +381,7 @@ def download_csv_all_sessions(request):
     return response
 
 
-def obtain_dataframe(request, session_id):
+def obtain_dataframe(session_id):
     log = Log.objects.get(id=session_id)
     records = log.record_set.all()
     dictionary = {}
@@ -387,19 +390,31 @@ def obtain_dataframe(request, session_id):
 
     for sensor_id in list(sensors_id):
         sensor_name = Sensor.objects.get(id=sensor_id). \
-            user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')', '').replace('.',
-                                                                                                           '_').upper()
+            user_short_name.replace('%', '').replace('₂', '2').replace(' ', '_'). \
+            replace('(', '_').replace(')', '').replace(
+            '.',
+            '_').upper()
         values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
-    stops = obtain_stops(session_id)
+    # records.filter(sensor__pid='')
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
 
+    # Calculated data
+    stops = obtain_stops(session_id)
+    # print(stops)
+    dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_4_SEC', value=stops['stop_less_4_seconds'])
+    dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_6_SEC', value=stops['stop_less_6_seconds'])
+    dict_df.insert(loc=len(dict_df.columns), column='STOP_MORE_EQ_6_SEC', value=stops['stop_more_eq_6_seconds'])
     dict_df.insert(loc=len(dict_df.columns), column='SIGNAL_STOP_COUNT', value=stops['singal_stop_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TRAFFIC_LIGHT_COUNT', value=stops['traffic_light_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=stops['total_stop_count'])
+    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
+    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
+    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
+    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=stops['count_car_off'])
 
     clean_dataset(dict_df)
 
@@ -407,7 +422,7 @@ def obtain_dataframe(request, session_id):
 
 
 def download_csv(request, session_id):
-    dict_df = obtain_dataframe(request, session_id)
+    dict_df = obtain_dataframe(session_id)
     # hasta aca
     # dataframe = obtain_dataframe(session_id=session_id)
 
@@ -467,7 +482,7 @@ def generate_custom_csv(request):
     dictionary = {}
 
     for id_sensor in id_sensors:
-        sensor_name = Sensor.objects.get(id=id_sensor).user_short_name.replace('₂', '2'). \
+        sensor_name = Sensor.objects.get(id=id_sensor).user_short_name.replace('%', '').replace('₂', '2'). \
             replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
 
         values = log.record_set.filter(sensor_id=id_sensor).values_list('value', flat=True)
@@ -503,7 +518,7 @@ def generate_csv_multiple_sessions(request):
 
     for id_session in id_sessiones:
         '''
-        sensor_name = Log.objects.get(id=id_session).user_short_name.replace('₂', '2'). \
+        sensor_name = Log.objects.get(id=id_session).replace('%', '').user_short_name.replace('₂', '2'). \
             replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper()
         '''
         values = sensor.record_set.filter(log_id=id_session).values_list('value', flat=True)
@@ -534,9 +549,8 @@ def export_sensors_for_react_app(request):
     final_dict = {}
     for sensor in sensors:
         item = {
-            'pid': sensor.user_short_name.replace('₂', '2').replace(' ', '_').replace('(', '_').replace(')',
-                                                                                                        '').replace('.',
-                                                                                                                    '_').upper(),
+            'pid': sensor.user_short_name.replace('%', '').replace('₂', '2'). \
+                replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper(),
             'description': sensor.user_full_name,
             'measurement_unit': sensor.user_unit
         }
@@ -828,27 +842,60 @@ def separe_sessions(request):
 
 def obtain_stops(session_id):
     session = Log.objects.get(id=session_id)
-    records = session.record_set.filter(sensor__pid='0d').order_by('id')
+    records = session.record_set.filter(sensor__pid='0d') | session.record_set.filter(sensor__pid='0c'). \
+        order_by('id')
 
     timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
+    timekeeper_car_off = datetime.timedelta(hours=0, minutes=0, seconds=0)
     total_stop_count = 0
+    stop_less_4_seconds = 0
+    counted_4_seconds = False
+    stop_less_6_seconds = 0
+    counted_6_seconds = False
+    stop_more_eq_6_seconds = 0
+    counted_more_eq_6_seconds = False
+    count_car_off = 0
+    counted_car_off = False
     # Possible traffic light
     traffic_light_count = 0
     counted_stop = False
     counted_trf_ligth = False
     first_time = True
+    first_time_car_off = True
+    reset = False
+    reset_car_off = False
     time_for_stop = datetime.timedelta(hours=0, minutes=0, seconds=6)
 
     for record in records:
+        if record.sensor.pid == '0d':
 
-        if first_time:
-            first_time = False
-            last_time = record.time
+            if float(record.value) == 0:
 
-        with transaction.atomic():
+                if reset:
+                    reset = False
 
-            if record.value == '0.0':
+                if first_time:
+                    first_time = False
+                    last_time = record.time
+
                 timekeeper += record.time - last_time
+
+                if not counted_4_seconds and timekeeper < datetime.timedelta(hours=0, minutes=0, seconds=4):
+                    stop_less_4_seconds += 1
+                    counted_4_seconds = True
+
+                if not counted_6_seconds and timekeeper <= datetime.timedelta(hours=0, minutes=0, seconds=6):
+                    stop_less_6_seconds += 1
+                    stop_less_4_seconds -= 1
+                    counted_6_seconds = True
+
+                if not counted_more_eq_6_seconds and timekeeper > datetime.timedelta(hours=0, minutes=0, seconds=6):
+                    stop_more_eq_6_seconds += 1
+                    stop_less_6_seconds -= 1
+                    counted_more_eq_6_seconds = True
+
+                # paradas_totales = sum ( 4, 6, >6 segs)
+
                 if not counted_stop:
                     counted_stop = True
                     total_stop_count = total_stop_count + 1
@@ -857,19 +904,63 @@ def obtain_stops(session_id):
                     counted_trf_ligth = True
                     traffic_light_count = traffic_light_count + 1
 
-            else:
-                timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
-                counted_stop = False
-                counted_trf_ligth = False
+                last_time = record.time
 
-            last_time = record.time
+            else:
+                if not reset:
+                    reset = True
+                    timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
+                    counted_stop = False
+                    counted_trf_ligth = False
+                    first_time = True
+                    counted_4_seconds = False
+                    counted_6_seconds = False
+                    counted_more_eq_6_seconds = False
+
+        if record.sensor.pid == '0c':
+
+            if float(record.value) == 0:
+                if reset_car_off:
+                    reset_car_off = False
+
+                # print('COCHE CALADO a las ', record.time)
+
+                if first_time_car_off:
+                    first_time_car_off = False
+                    last_time = record.time
+
+                else:
+                    if not counted_car_off:
+                        counted_car_off = True
+                        count_car_off += 1
+
+                timekeeper_car_off += record.time - last_time
+                last_time = record.time
+
+            else:
+                if not reset_car_off:
+                    reset_car_off = True
+                    timekeeper_car_off = datetime.timedelta(hours=0, minutes=0, seconds=0)
+                    counted_car_off = False
+                    first_time_car_off = True
 
     singal_stop_count = total_stop_count - traffic_light_count
-
+    '''
+    print('paradas totales: ', total_stop_count)
+    print('semaforos: ', traffic_light_count)
+    print('stop_less_4_seconds: ', stop_less_4_seconds)
+    print('stop_less_6_seconds: ', stop_less_6_seconds)
+    print('stop_more_eq_6_seconds: ', stop_more_eq_6_seconds)
+    print('numero de caladas: ', count_car_off)
+    '''
     dictionary = {
         'total_stop_count': total_stop_count,
         'singal_stop_count': singal_stop_count,
-        'traffic_light_count': traffic_light_count
+        'traffic_light_count': traffic_light_count,
+        'stop_less_4_seconds': stop_less_4_seconds,
+        'stop_less_6_seconds': stop_less_6_seconds,
+        'stop_more_eq_6_seconds': stop_more_eq_6_seconds,
+        'count_car_off': count_car_off
     }
     return dictionary
 
@@ -877,6 +968,9 @@ def obtain_stops(session_id):
 def session_in_map(request, session_id):
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
+
+    dataframe = obtain_dataframe(session_id)
+
     res = query(session_id)
     # using_orm(request, session_id)
     crs_list = res[0]
@@ -1020,17 +1114,32 @@ def session_in_map(request, session_id):
                                                                           '    "type":"FeatureCollection"\n' \
                                                                           '}'
     # print(co2_avg)
+    dict_dataframe = {}
 
-    dict_dataframe = {
-        'Velocidad_OBD': obd_speeds,
-        'Velocidad_GPS': gps_speeds,
-        'CO2_Instantáneo': co2_inst,
-        'CO2_Medio': co2_avg,
-        'Consumo_Instantáneo': lit_per_km_inst,
-        'Consumo_Medio': lit_per_km,
-        'Temperatura_Motor': temps,
-        'Revoluciones_Motor': engine_revs
-    }
+    if 'SPEED' in dataframe.columns:
+        obd_speeds = dataframe['SPEED'].tolist()
+        dict_dataframe['SPEED'] = obd_speeds
+    if 'GPS_SPD' in dataframe.columns:
+        gps_speeds = dataframe['GPS_SPD'].tolist()
+        dict_dataframe['GPS_SPD'] = gps_speeds
+    if 'CO2' in dataframe.columns:
+        co2_inst = dataframe['CO2'].tolist()
+        dict_dataframe['CO2'] = co2_inst
+    if 'AV_CO2' in dataframe.columns:
+        co2_avg = dataframe['AV_CO2'].tolist()
+        dict_dataframe['AV_CO2'] = co2_avg
+    if 'LPK' in dataframe.columns:
+        lit_per_km_inst = dataframe['LPK'].tolist()
+        dict_dataframe['LPK'] = lit_per_km_inst
+    if 'TRIP_LPK' in dataframe.columns:
+        lit_per_km = dataframe['TRIP_LPK'].tolist()
+        dict_dataframe['TRIP_LPK'] = lit_per_km
+    if 'COOLANT' in dataframe.columns:
+        temps = dataframe['COOLANT'].tolist()
+        dict_dataframe['COOLANT'] = temps
+    if 'REVS' in dataframe.columns:
+        engine_revs = dataframe['REVS'].tolist()
+        dict_dataframe['REVS'] = engine_revs
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
@@ -1060,10 +1169,49 @@ def session_in_map(request, session_id):
         dataframe_describe = dict_df.describe(include='all').round(2).to_html
 
     # Possible Stops
-    stops = obtain_stops(session_id)
-    values['Posibles Stop'] = stops['singal_stop_count']
-    values['Posibles semaforos'] = stops['traffic_light_count']
-    values['Paradas totales'] = stops['total_stop_count']
+    # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
+    values['Posibles Stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
+    values['Posibles semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
+    values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
+
+    # print(values)
+
+    # calcular el valor p del coeficiente de correlación entre puntos y asistencias
+    # pearsonr(df[' puntos '], df[' asiste '])
+    plt.figure(figsize=(16, 6))
+
+    heatmap = sns.heatmap(dict_df.corr(), cmap="Blues", vmin=-1, vmax=1, annot=True)
+    heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 12}, pad=12)
+    heatmap_plot = get_base64(plt, 'tight')
+    heatmap_plot = heatmap_plot.decode('ascii')
+
+    # print(dict_df.corr())
+    # print(dataframe)
+    '''
+    print(dataframe.drop(columns=[
+        'GPS_SPD',
+        'TRIP',
+        'GPS_ACC',
+        'TRIPTIME',
+        'TRIPMSPEED',
+        'TRIP_SPEED',
+        'AV_CO2',
+        'SPD_DIFF',
+        'TRIP_LPK',
+        'STOP_LESS_4_SEC',
+        'STOP_LESS_6_SEC',
+        'STOP_MORE_EQ_6_SEC',
+        'SIGNAL_STOP_COUNT',
+        'TRAFFIC_LIGHT_COUNT',
+        'TOTAL_STOP_COUNT',
+        'TOTAL_TRIP',
+        'TOTAL_TIME',
+        'TOTAL_FUEL_USED',
+        'TOTAL_CAR_OFF']).corr())
+    '''
+    # print('correlacion entre velocidad y contaminacion: ', dataframe['SPEED'].corr(dataframe['CO2']))
 
     context = {
         'data': data,
@@ -1081,7 +1229,8 @@ def session_in_map(request, session_id):
         'times': times,
         'address_list': address_list,
         'start_coordinates': start_coordinates,
-        'finish_coordinates': finish_coordinates
+        'finish_coordinates': finish_coordinates,
+        'heatmap_plot': heatmap_plot
     }
 
     return render(request, 'map.html', context=context)

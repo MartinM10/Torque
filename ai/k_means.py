@@ -183,7 +183,7 @@ def start(csv_file):
     # Print the amount of data that holds the components
     explained_variance_ratio = pca.explained_variance_ratio_
 
-    explained_variance_ratio_sum = pca.explained_variance_ratio_.cumsum()
+    # explained_variance_ratio_sum = pca.explained_variance_ratio_.cumsum()
     # print('explained variance: ', explained_variance_ratio_sum)
 
     # Create a plot for the porcetage of participation of each feature in each component
