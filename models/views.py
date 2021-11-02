@@ -1145,19 +1145,19 @@ def session_in_map(request, session_id):
 
     # Summary
     if 'TOTAL_TRIP' in dataframe.columns:
-        values['Distancia'] = round(dataframe['TOTAL_TRIP'][0], 2)
+        values['Distancia'] = round(dataframe.iloc[0]['TOTAL_TRIP'], 2)
 
     if 'TOTAL_TIME' in dataframe.columns:
         values['Duracion'] = datetime.timedelta(seconds=dataframe['TOTAL_TIME'][0])
 
     if 'TOTAL_FUEL_USED' in dataframe.columns:
-        values['Combustible'] = round(dataframe['TOTAL_FUEL_USED'][0], 2)
+        values['Combustible'] = round(dataframe.iloc[0]['TOTAL_FUEL_USED'], 2)
 
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+        values['Paradas totales'] = int(dataframe.iloc[0]['TOTAL_STOP_COUNT'])
 
     if 'TOTAL_CAR_OFF' in dataframe.columns:
-        values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
+        values['Caladas'] = int(dataframe.iloc[0]['TOTAL_CAR_OFF'])
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
