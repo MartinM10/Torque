@@ -1161,20 +1161,20 @@ def session_in_map(request, session_id):
         values['Velocidad media (en movimiento)'] = str(round(dataframe['MOVING'].mean(), 2)) + ' km/h'
 
     if 'TOTAL_TRIP' in dataframe.columns:
-        values['Distancia'] = str(round(dataframe.iloc[0]['TOTAL_TRIP'], 2)) + ' km'
+        values['Distancia'] = str(round(dataframe['TOTAL_TRIP'].iloc[0], 2)) + ' km'
 
     if 'TOTAL_TIME' in dataframe.columns:
-        seconds = dataframe.iloc[1]['TOTAL_TIME']
+        seconds = dataframe['TOTAL_TIME'].iloc[0]
         values['Duracion'] = str(datetime.timedelta(seconds=seconds))
 
     if 'TOTAL_FUEL_USED' in dataframe.columns:
-        values['Combustible'] = str(round(dataframe.iloc[0]['TOTAL_FUEL_USED'], 2)) + ' l'
+        values['Combustible'] = str(round(dataframe['TOTAL_FUEL_USED'].iloc[0], 2)) + ' l'
 
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas totales'] = int(dataframe.iloc[0]['TOTAL_STOP_COUNT'])
+        values['Paradas totales'] = int(dataframe['TOTAL_STOP_COUNT'].iloc[0])
 
     if 'TOTAL_CAR_OFF' in dataframe.columns:
-        values['Caladas'] = int(dataframe.iloc[0]['TOTAL_CAR_OFF'])
+        values['Caladas'] = int(dataframe['TOTAL_CAR_OFF'].iloc[0])
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
