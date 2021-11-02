@@ -411,10 +411,16 @@ def obtain_dataframe(session_id):
     dict_df.insert(loc=len(dict_df.columns), column='SIGNAL_STOP_COUNT', value=stops['singal_stop_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TRAFFIC_LIGHT_COUNT', value=stops['traffic_light_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=stops['total_stop_count'])
-    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
-    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
-    dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=stops['count_car_off'])
+
+    if 'TRIPTIME' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
+
+    if 'TRIP' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
+
+    if 'FUEL_USED' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
 
     clean_dataset(dict_df)
 
@@ -1113,45 +1119,55 @@ def session_in_map(request, session_id):
                                                                           '}'
     # print(co2_avg)
     dict_dataframe = {}
-
+    values = {}
     dataframe = obtain_dataframe(session_id)
 
     if 'SPEED' in dataframe.columns:
         obd_speeds = dataframe['SPEED'].tolist()
         dict_dataframe['SPEED'] = obd_speeds
+        values['Velocidad media'] = str(round(dataframe['SPEED'].mean(), 2)) + ' km/h'
+
     if 'GPS_SPD' in dataframe.columns:
         gps_speeds = dataframe['GPS_SPD'].tolist()
         dict_dataframe['GPS_SPD'] = gps_speeds
+
     if 'CO2' in dataframe.columns:
         co2_inst = dataframe['CO2'].tolist()
         dict_dataframe['CO2'] = co2_inst
+        values['CO₂ medio'] = str(round(dataframe['CO2'].mean(), 2)) + ' g/km'
+
     if 'AV_CO2' in dataframe.columns:
         co2_avg = dataframe['AV_CO2'].tolist()
         dict_dataframe['AV_CO2'] = co2_avg
+
     if 'LPK' in dataframe.columns:
         lit_per_km_inst = dataframe['LPK'].tolist()
         dict_dataframe['LPK'] = lit_per_km_inst
+
     if 'TRIP_LPK' in dataframe.columns:
         lit_per_km = dataframe['TRIP_LPK'].tolist()
         dict_dataframe['TRIP_LPK'] = lit_per_km
+
     if 'COOLANT' in dataframe.columns:
         temps = dataframe['COOLANT'].tolist()
         dict_dataframe['COOLANT'] = temps
+
     if 'REVS' in dataframe.columns:
         engine_revs = dataframe['REVS'].tolist()
         dict_dataframe['REVS'] = engine_revs
 
-    values = {}
-
     # Summary
+    if 'MOVING' in dataframe.columns:
+        values['Velocidad media (en movimiento)'] = str(round(dataframe['MOVING'].mean(), 2)) + ' km/h'
+
     if 'TOTAL_TRIP' in dataframe.columns:
-        values['Distancia'] = round(dataframe.iloc[0]['TOTAL_TRIP'], 2)
+        values['Distancia'] = str(round(dataframe.iloc[0]['TOTAL_TRIP'], 2)) + ' km'
 
     if 'TOTAL_TIME' in dataframe.columns:
         values['Duracion'] = datetime.timedelta(seconds=dataframe.iloc[0]['TOTAL_TIME'])
 
     if 'TOTAL_FUEL_USED' in dataframe.columns:
-        values['Combustible'] = round(dataframe.iloc[0]['TOTAL_FUEL_USED'], 2)
+        values['Combustible'] = str(round(dataframe.iloc[0]['TOTAL_FUEL_USED'], 2)) + ' l'
 
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
         values['Paradas totales'] = int(dataframe.iloc[0]['TOTAL_STOP_COUNT'])
