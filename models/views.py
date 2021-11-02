@@ -1157,8 +1157,8 @@ def session_in_map(request, session_id):
         dict_dataframe['REVS'] = engine_revs
 
     # Summary
-    if 'MOVING' in dataframe.columns:
-        values['Velocidad media (en movimiento)'] = str(round(dataframe['MOVING'].mean(), 2)) + ' km/h'
+    if 'TRIP_SPEED' in dataframe.columns:
+        values['Velocidad media (en movimiento)'] = str(round(dataframe['TRIP_SPEED'].mean(), 2)) + ' km/h'
 
     if 'TOTAL_TRIP' in dataframe.columns:
         values['Distancia'] = str(round(dataframe['TOTAL_TRIP'].iloc[0], 2)) + ' km'
