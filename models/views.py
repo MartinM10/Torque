@@ -1145,18 +1145,17 @@ def session_in_map(request, session_id):
     # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
     print(dataframe.columns)
     print(dataframe['SIGNAL_STOP_COUNT'].tolist())
-    print(dataframe['SIGNAL_STOP_COUNT'][0].tolist())
-    print(dataframe['SIGNAL_STOP_COUNT'][0])
+
     if 'SIGNAL_STOP_COUNT' in dataframe.columns:
-        values['Posibles_stop'] = dataframe['SIGNAL_STOP_COUNT'][0].tolist()
+        values['Posibles_stop'] = dataframe['SIGNAL_STOP_COUNT'].tolist()
     if 'TRAFFIC_LIGHT_COUNT' in dataframe.columns:
-        values['Posibles_semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0].tolist()
+        values['Posibles_semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'].tolist()
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'][0].tolist()
+        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'].tolist()
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'][0].tolist()
+        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'].tolist()
     if 'TOTAL_CAR_OFF' in dataframe.columns:
-        values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0].tolist()
+        values['Caladas'] = dataframe['TOTAL_CAR_OFF'].tolist()
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
