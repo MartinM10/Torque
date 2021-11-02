@@ -978,7 +978,7 @@ def session_in_map(request, session_id):
     feat_list = []
 
     field_names = res[1]
-    values = {}
+    # values = {}
     obd_speeds = []
     co2_inst = []
     co2_avg = []
@@ -1001,19 +1001,19 @@ def session_in_map(request, session_id):
 
         # total_trip_time = field_names[3]
         total_trip_time = 'Duracion'
-        values[total_trip_time] = crs[3]
+        # values[total_trip_time] = crs[3]
         # total_trip_fuel_used = field_names[4]
         total_trip_fuel_used = 'Combustible'
-        values[total_trip_fuel_used] = crs[4]
+        # values[total_trip_fuel_used] = crs[4]
         # total_trip_distance = field_names[5]
         total_trip_distance = 'Distancia'
-        values[total_trip_distance] = crs[5]
+        # values[total_trip_distance] = crs[5]
         # trip_co2_average = field_names[6]
         trip_co2_average = 'C0₂ medio'
-        values[trip_co2_average] = crs[6]
+        # values[trip_co2_average] = crs[6]
         # trip_speed_only_mov_average = field_names[7]
         trip_speed_only_mov_average = 'Velocidad media (movimiento)'
-        values[trip_speed_only_mov_average] = crs[7]
+        # values[trip_speed_only_mov_average] = crs[7]
 
         type_dict["type"] = "Feature"
 
@@ -1141,19 +1141,21 @@ def session_in_map(request, session_id):
         engine_revs = dataframe['REVS'].tolist()
         dict_dataframe['REVS'] = engine_revs
 
-    # Possible Stops
-    # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
-    print(dataframe.columns)
-    print(dataframe['SIGNAL_STOP_COUNT'].tolist())
-    print(dataframe['SIGNAL_STOP_COUNT'][0].to_numpy())
-    if 'SIGNAL_STOP_COUNT' in dataframe.columns:
-        values['Posibles_stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
-    if 'TRAFFIC_LIGHT_COUNT' in dataframe.columns:
-        values['Posibles_semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
+    values = {}
+
+    # Summary
+    if 'TOTAL_TRIP' in dataframe.columns:
+        values['Distancia'] = round(dataframe['TOTAL_TRIP'][0], 2)
+
+    if 'TOTAL_TIME' in dataframe.columns:
+        values['Duracion'] = datetime.timedelta(seconds=dataframe['TOTAL_TIME'][0])
+
+    if 'TOTAL_FUEL_USED' in dataframe.columns:
+        values['Combustible'] = round(dataframe['TOTAL_FUEL_USED'][0], 2)
+
     if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'][0]
-    if 'TOTAL_STOP_COUNT' in dataframe.columns:
-        values['Paradas_totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+
     if 'TOTAL_CAR_OFF' in dataframe.columns:
         values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
 
