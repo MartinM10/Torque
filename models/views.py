@@ -1148,7 +1148,7 @@ def session_in_map(request, session_id):
         values['Distancia'] = round(dataframe.iloc[0]['TOTAL_TRIP'], 2)
 
     if 'TOTAL_TIME' in dataframe.columns:
-        values['Duracion'] = datetime.timedelta(seconds=dataframe['TOTAL_TIME'][0])
+        values['Duracion'] = datetime.timedelta(seconds=dataframe.iloc[0]['TOTAL_TIME'])
 
     if 'TOTAL_FUEL_USED' in dataframe.columns:
         values['Combustible'] = round(dataframe.iloc[0]['TOTAL_FUEL_USED'], 2)
