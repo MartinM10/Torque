@@ -1170,11 +1170,16 @@ def session_in_map(request, session_id):
 
     # Possible Stops
     # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
-    values['Posibles Stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
-    values['Posibles semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
-    values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
-    values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
-    values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
+    if dataframe['SIGNAL_STOP_COUNT'][0]:
+        values['Posibles Stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
+    if dataframe['TRAFFIC_LIGHT_COUNT'][0]:
+        values['Posibles semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
+    if dataframe['TOTAL_STOP_COUNT'][0]:
+        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    if dataframe['TOTAL_STOP_COUNT'][0]:
+        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    if dataframe['TOTAL_CAR_OFF'][0]:
+        values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
 
     # print(values)
 
