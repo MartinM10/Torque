@@ -969,8 +969,6 @@ def session_in_map(request, session_id):
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
 
-    dataframe = obtain_dataframe(session_id)
-
     res = query(session_id)
     # using_orm(request, session_id)
     crs_list = res[0]
@@ -1116,6 +1114,8 @@ def session_in_map(request, session_id):
     # print(co2_avg)
     dict_dataframe = {}
 
+    dataframe = obtain_dataframe(session_id)
+
     if 'SPEED' in dataframe.columns:
         obd_speeds = dataframe['SPEED'].tolist()
         dict_dataframe['SPEED'] = obd_speeds
@@ -1140,6 +1140,19 @@ def session_in_map(request, session_id):
     if 'REVS' in dataframe.columns:
         engine_revs = dataframe['REVS'].tolist()
         dict_dataframe['REVS'] = engine_revs
+
+    # Possible Stops
+    # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
+    if 'SIGNAL_STOP_COUNT' in dataframe.columns:
+        values['Posibles Stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
+    if 'TRAFFIC_LIGHT_COUNT' in dataframe.columns:
+        values['Posibles semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
+    if 'TOTAL_STOP_COUNT' in dataframe.columns:
+        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    if 'TOTAL_STOP_COUNT' in dataframe.columns:
+        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
+    if 'TOTAL_CAR_OFF' in dataframe.columns:
+        values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
@@ -1167,19 +1180,6 @@ def session_in_map(request, session_id):
 
     if not dict_df.empty:
         dataframe_describe = dict_df.describe(include='all').round(2).to_html
-
-    # Possible Stops
-    # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
-    if dataframe['SIGNAL_STOP_COUNT'][0]:
-        values['Posibles Stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
-    if dataframe['TRAFFIC_LIGHT_COUNT'][0]:
-        values['Posibles semaforos'] = dataframe['TRAFFIC_LIGHT_COUNT'][0]
-    if dataframe['TOTAL_STOP_COUNT'][0]:
-        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
-    if dataframe['TOTAL_STOP_COUNT'][0]:
-        values['Paradas totales'] = dataframe['TOTAL_STOP_COUNT'][0]
-    if dataframe['TOTAL_CAR_OFF'][0]:
-        values['Caladas'] = dataframe['TOTAL_CAR_OFF'][0]
 
     # print(values)
 
