@@ -1145,7 +1145,7 @@ def session_in_map(request, session_id):
     # como estas columnas tienen todos los valores repetidos, me quedo con el primero [0]
     print(dataframe.columns)
     print(dataframe['SIGNAL_STOP_COUNT'].tolist())
-    print(dataframe['SIGNAL_STOP_COUNT'][0])
+    print(dataframe['SIGNAL_STOP_COUNT'][0].to_numpy())
     if 'SIGNAL_STOP_COUNT' in dataframe.columns:
         values['Posibles_stop'] = dataframe['SIGNAL_STOP_COUNT'][0]
     if 'TRAFFIC_LIGHT_COUNT' in dataframe.columns:
