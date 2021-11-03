@@ -875,7 +875,7 @@ def obtain_stops(session_id):
     for record in records:
         if record.sensor.pid == '0d':
 
-            if float(record.value) == 0:
+            if record.value and float(record.value) == 0:
 
                 if reset:
                     reset = False
@@ -925,7 +925,7 @@ def obtain_stops(session_id):
 
         if record.sensor.pid == '0c':
 
-            if float(record.value) == 0:
+            if record.value and float(record.value) == 0:
                 if reset_car_off:
                     reset_car_off = False
 
