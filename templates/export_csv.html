@@ -14,9 +14,15 @@
         <form action="generate_csv/" method="post" style="margin-top: 15px">
             <select name="sesiones" id="sessionList" style="text-align: center">
                 <option value="">Seleccione una sesión</option>
-                {% for session in sessions %}
-                    <option value="{{ session.id }}">{{ session.id }}</option>
-                {% endfor %}
+                {% if sessions %}
+                    {% for session in sessions %}
+                        <option value="{{ session.id }}">{{ session.id }}</option>
+                    {% endfor %}
+                    <br>
+                    <input type="button" id="select_all" value="Select All" style="margin-left: 15px"/>
+                    <input type="button" id="reset" value="Deselect All"/>
+                    </body>
+                {% endif %}
             </select>
 
             <br>
@@ -44,9 +50,14 @@
         <form action="generate_csv_multiple_sessions/" method="post" style="margin-top: 15px">
             <select name="sensores" id="sensorList2" style="text-align: center">
                 <option value="">Seleccione un sensor</option>
-                {% for sensor in sensors %}
-                    <option value="{{ sensor.id }}">{{ sensor.user_full_name }}</option>
-                {% endfor %}
+                {% if sensors %}
+                    {% for sensor in sensors %}
+                        <option value="{{ sensor.id }}">{{ sensor.user_full_name }}</option>
+                    {% endfor %}
+                    <br>
+                    <input type="button" id="select_all2" value="Select All" style="margin-left: 15px"/>
+                    <input type="button" id="reset2" value="Deselect All"/>
+                {% endif %}
             </select>
 
             <br>
@@ -74,15 +85,45 @@
 
 {% block scripts %}
     <script>
-
+        $("#select_all").hide()
+        $("#reset").hide()
+        $("#select_all2").hide()
+        $("#reset2").hide()
         $("#generarCSV").hide()
         $("#generarCSV2").hide()
         var sessionSelected = ""
+
+        $("#select_all").click(function () {
+            $('input[type="checkbox"]').each(function () {
+                this.checked = true;
+            });
+        })
+
+        $("#reset").click(function () {
+            $('input[type="checkbox"]').each(function () {
+                this.checked = false;
+            });
+        })
+
+        $("#select_all2").click(function () {
+            $('input[type="checkbox"]').each(function () {
+                this.checked = true;
+            });
+        })
+
+        $("#reset2").click(function () {
+            $('input[type="checkbox"]').each(function () {
+                this.checked = false;
+            });
+        })
+
         $("#sessionList").change(function () {
             sessionSelected = this.value
             if (sessionSelected === "") {
                 $("#sensorList").empty()
                 $("#generarCSV").hide()
+                $("#select_all").hide()
+                $("#reset").hide()
             } else {
                 $.ajax({
                     type: "get",
@@ -101,6 +142,12 @@
                 })
                 if ($("#generarCSV").is(":hidden")) {
                     $("#generarCSV").show()
+                }
+                if ($("#select_all").is(":hidden")) {
+                    $("#select_all").show()
+                }
+                if ($("#reset").is(":hidden")) {
+                    $("#reset").show()
                 }
             }
         })
@@ -138,6 +185,8 @@
             if (sensorSelected === "") {
                 $("#sessionList2").empty()
                 $("#generarCSV2").hide()
+                $("#select_all2").hide()
+                $("#reset2").hide()
             } else {
                 $.ajax({
                     type: "get",
@@ -158,6 +207,12 @@
                 })
                 if ($("#generarCSV2").is(":hidden")) {
                     $("#generarCSV2").show()
+                }
+                if ($("#select_all2").is(":hidden")) {
+                    $("#select_all2").show()
+                }
+                if ($("#reset2").is(":hidden")) {
+                    $("#reset2").show()
                 }
             }
         })
