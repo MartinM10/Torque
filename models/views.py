@@ -1367,14 +1367,15 @@ def upload_data(request):
                 date_time = dt
 
                 if 'E' in value or 'inf' in value or 'Inf' in value:
-                    value = None
                     logging.info('POSIBLE ERROR. key: ', key, ' value: ', value)
-                try:
-                    Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
-                           longitude=longitude).save()
-                except Exception as e:
-                    logging.info('Error al intentar guardar en la tabla records, motivo: ', e.args)
-                    print('Error al intentar guardar en la tabla records, motivo: ', e.args)
-                    print('Key: ', key, ' value: ', value)
+                    # value = None
+                elif value:
+                    try:
+                        Record(sensor_id=sensor_id, log_id=log_id, value=value, time=date_time, latitude=latitude,
+                               longitude=longitude).save()
+                    except Exception as e:
+                        logging.info('Error al intentar guardar en la tabla records, motivo: ', e.args)
+                        print('Error al intentar guardar en la tabla records, motivo: ', e.args)
+                        print('Key: ', key, ' value: ', value)
 
     return HttpResponse('OK!')
