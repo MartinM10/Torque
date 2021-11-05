@@ -9,14 +9,30 @@
                 Descargar PDF</a>
         </div>
     </div>
+
+    <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
+
+        <h2>More important features for principal components</h2>
+        <p>The most contributory features for each principal component. Each value represents the percentage of the
+            coeficient for the given feature. It corresponds to the first coeficient percetanges that their sum is equal
+            or greater to 90%</p>
+        {% for pca, dict in moreImportantFeatures.items %}
+            <ul style="padding: 0">
+                <strong>Principal Component {{ pca }}</strong><br>
+                {% for sensor, value in dict.items %}
+                    <li style="list-style: none; font-size: 12px">{{ sensor }}: {{ value|floatformat:2 }}%</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+
     <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
 
         <h2>Explained variance ratio</h2>
-        <p>How much information (variance) corresponds to
-            each of the Principal Components</p>
+        <p>How much information (variance) corresponds to each of the Principal Components</p>
         {% for variance in explainedVarianceRatio %}
-            <strong>Principal Component {{ forloop.counter }}</strong>
-            <p>{{ variance }}%</p>
+            <strong>Principal Component {{ forloop.counter|add:"-1" }}</strong>
+            <p style="font-size: 12px">{{ variance|floatformat:2 }}%</p>
         {% endfor %}
 
     </div>

@@ -73,14 +73,30 @@
     <div class='header'>
         <h1 class='title'>REPORT </h1>
     </div>
+
+    <h2 class="title">More important features for principal components</h2>
+    <div class="details">The most contributory features for each principal component. Each value represents the
+        percentage of the
+        coeficient for the given feature. It corresponds to the first coeficient percetanges that their sum is equal
+        or greater to 90%
+        {% for pca, dict in moreImportantFeatures.items %}
+            <ul style="padding: 0">
+                <strong>Principal Component {{ pca }}</strong><br>
+                {% for sensor, value in dict.items %}
+                    <li style="list-style: none; font-size: 12px">{{ sensor }}: {{ value|floatformat:2 }}%</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+
     <h2 class="title">Explained variance ratio</h2>
     <div class="details">How much information (variance) corresponds to
         each of the Principal Components
     </div>
     <div class="details">
         {% for variance in explainedVarianceRatio %}
-            <strong>Principal Component {{ forloop.counter }}</strong>
-            <p>{{ variance }}%</p>
+            <strong>Principal Component {{ forloop.counter|add:"-1" }}</strong>
+            <p style="font-size: 12px">{{ variance|floatformat:2 }}%</p>
         {% endfor %}
     </div>
 </div>

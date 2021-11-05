@@ -118,7 +118,7 @@ def pca_request(request):
             'cumulativeExplainedVarianceRatioPlot': cumulative_explained_variance_ratio_plot,
             'explainedVarianceRatio': explained_variance_ratio,
             'clusterList': cluster_list,
-            'moreImportantFeatures': json.dumps(more_important_features),
+            'moreImportantFeatures': more_important_features,
             'svmPlot': svm_plot,
             'filename': filename
         }

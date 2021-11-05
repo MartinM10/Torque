@@ -58,7 +58,7 @@ def get_pca_more_important_features(df, features, pca, components_number):
         pca_most_important_features = {}
 
         for per in pca_coef_percetage:
-            if (percentage_participation >= 90):
+            if percentage_participation >= 90:
                 break
 
             value = per[1]
@@ -82,7 +82,6 @@ def start(csv_file):
 
     # Standardizing data (mean = 0 , variance = 1)
     x = StandardScaler().fit_transform(x)
-    # BORRAR INDICES, DE LA FUNCION EXPORTAR Y COMPROBAR EL NUMERO DE COMPONENTES
 
     # Generate cumulative explanined variance ratio plot
     plt.rc('axes', labelsize=16)  # Only needed first time
