@@ -408,8 +408,6 @@ def obtain_dataframe(session_id):
     dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_4_SEC', value=stops['stop_less_4_seconds'])
     dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_6_SEC', value=stops['stop_less_6_seconds'])
     dict_df.insert(loc=len(dict_df.columns), column='STOP_MORE_EQ_6_SEC', value=stops['stop_more_eq_6_seconds'])
-    dict_df.insert(loc=len(dict_df.columns), column='SIGNAL_STOP_COUNT', value=stops['singal_stop_count'])
-    dict_df.insert(loc=len(dict_df.columns), column='TRAFFIC_LIGHT_COUNT', value=stops['traffic_light_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=stops['total_stop_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=stops['count_car_off'])
 
@@ -863,14 +861,11 @@ def obtain_stops(session_id):
     count_car_off = 0
     counted_car_off = False
     # Possible traffic light
-    traffic_light_count = 0
     counted_stop = False
-    counted_trf_ligth = False
     first_time = True
     first_time_car_off = True
     reset = False
     reset_car_off = False
-    time_for_stop = datetime.timedelta(hours=0, minutes=0, seconds=6)
 
     for record in records:
         if record.sensor.pid == '0d':
@@ -900,15 +895,9 @@ def obtain_stops(session_id):
                     stop_less_6_seconds -= 1
                     counted_more_eq_6_seconds = True
 
-                # paradas_totales = sum ( 4, 6, >6 segs)
-
                 if not counted_stop:
                     counted_stop = True
                     total_stop_count = total_stop_count + 1
-
-                if counted_stop and not counted_trf_ligth and timekeeper >= time_for_stop:
-                    counted_trf_ligth = True
-                    traffic_light_count = traffic_light_count + 1
 
                 last_time = record.time
 
@@ -917,7 +906,6 @@ def obtain_stops(session_id):
                     reset = True
                     timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
                     counted_stop = False
-                    counted_trf_ligth = False
                     first_time = True
                     counted_4_seconds = False
                     counted_6_seconds = False
@@ -950,10 +938,8 @@ def obtain_stops(session_id):
                     counted_car_off = False
                     first_time_car_off = True
 
-    singal_stop_count = total_stop_count - traffic_light_count
     '''
     print('paradas totales: ', total_stop_count)
-    print('semaforos: ', traffic_light_count)
     print('stop_less_4_seconds: ', stop_less_4_seconds)
     print('stop_less_6_seconds: ', stop_less_6_seconds)
     print('stop_more_eq_6_seconds: ', stop_more_eq_6_seconds)
@@ -961,8 +947,6 @@ def obtain_stops(session_id):
     '''
     dictionary = {
         'total_stop_count': total_stop_count,
-        'singal_stop_count': singal_stop_count,
-        'traffic_light_count': traffic_light_count,
         'stop_less_4_seconds': stop_less_4_seconds,
         'stop_less_6_seconds': stop_less_6_seconds,
         'stop_more_eq_6_seconds': stop_more_eq_6_seconds,
@@ -1231,8 +1215,6 @@ def session_in_map(request, session_id):
         'STOP_LESS_4_SEC',
         'STOP_LESS_6_SEC',
         'STOP_MORE_EQ_6_SEC',
-        'SIGNAL_STOP_COUNT',
-        'TRAFFIC_LIGHT_COUNT',
         'TOTAL_STOP_COUNT',
         'TOTAL_TRIP',
         'TOTAL_TIME',
