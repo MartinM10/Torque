@@ -1,9 +1,11 @@
+from itertools import cycle
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MeanShift, estimate_bandwidth
 import random
 import base64
 import io
@@ -12,6 +14,7 @@ import operator
 from kneed import KneeLocator
 # pylint: disable=relative-beyond-top-level
 from .common import generate_cluster_labels, get_base64, COLOR_LIST, generate_pc_columns_names
+
 
 # COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y']
 
@@ -86,7 +89,7 @@ def start(csv_file):
     # Generate cumulative explanined variance ratio plot
     plt.rc('axes', labelsize=16)  # Only needed first time
     pca = PCA().fit(x)
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(6, 6))
     plt.plot(np.cumsum(pca.explained_variance_ratio_))
     plt.xlabel('Components number', fontsize=14)
     plt.ylabel('Cumulative explained variance', fontsize=14)
@@ -101,7 +104,7 @@ def start(csv_file):
     plt.clf()
 
     # print('la posicion del elemento es: ', components_number, 'su valor es: ',
-     #     np.cumsum(pca.explained_variance_ratio_)[components_number])
+    #     np.cumsum(pca.explained_variance_ratio_)[components_number])
     # Create pca
     pca = PCA(n_components=components_number)
 
@@ -129,7 +132,7 @@ def start(csv_file):
                           curve='convex', direction='decreasing')
 
     # Plot wcss
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(6, 6))
     plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
     plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
         1], linestyles='dashed', colors='m', label='Elbow')
@@ -162,9 +165,15 @@ def start(csv_file):
 
     # Create columns labels for each component
     pc_colums_names = generate_pc_columns_names(components_number)
-
+    '''
+    labels = kmeans_pca.labels_
+    cluster_centers = kmeans_pca.cluster_centers_
+    # print('cluster centers: ', cluster_centers)
+    labels_unique = np.unique(labels)
+    n_clusters_ = len(labels_unique)
+    '''
     # Plot two first compontens
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel('Principal component 1', fontsize=14)
     ax.set_ylabel('Principal component 2', fontsize=14)
@@ -178,6 +187,31 @@ def start(csv_file):
     ax.legend(targets)
     ax.grid()
     two_first_components_plot = get_base64(plt)
+    '''
+    # #############################################################################
+
+    labels = kmeans_pca.labels_
+    cluster_centers = kmeans_pca.cluster_centers_
+    # print('cluster centers: ', cluster_centers)
+    labels_unique = np.unique(labels)
+    n_clusters_ = len(labels_unique)
+
+    plt.figure(figsize=(6, 6))
+
+    # print("number of estimated clusters : %d" % n_clusters_)
+    # print(x_scaled_reduced)
+    for k, col in zip(range(n_clusters_), colors):
+        my_members = labels == k
+        cluster_center = cluster_centers[k]
+        # print(cluster_center)
+        plt.plot(x_scaled_reduced[my_members, 0], x_scaled_reduced[my_members, 1], col + ".")
+        plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=14)
+    plt.title("Estimated number of clusters: %d" % n_clusters_)
+    # plt.grid()
+    plt.show()
+    # two_first_components_plot = get_base64(plt)
+    plt.clf()
+    '''
 
     # Print the amount of data that holds the components
     explained_variance_ratio = pca.explained_variance_ratio_

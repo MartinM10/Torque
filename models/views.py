@@ -531,7 +531,7 @@ def generate_csv_multiple_sessions(request):
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     clean_dataset(dict_df)
-    dict_df = dict_df.set_index(dict_df.columns[0]).transpose()
+    # dict_df = dict_df.set_index(dict_df.columns[0]).transpose()
 
     filename = sensor.user_short_name.replace('%', '').replace('₂', '2'). \
                    replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper() + '_all_sessions'

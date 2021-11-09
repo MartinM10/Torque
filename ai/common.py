@@ -8,7 +8,7 @@ def generate_pc_columns_names(number):
     res = []
 
     for i in range(number):
-        res.append("pc" + str(i + 1))
+        res.append("pc" + str(i))
 
     return res
 
