@@ -120,7 +120,7 @@ def start(csv_file):
     # print('more_important_features: ', more_important_features)
     # Fit kmeans using the data from PCA
     wcss = []
-    for i in range(1, 21):
+    for i in range(1, 11):
         kmeans_pca = KMeans(n_clusters=i, init='k-means++',
                             random_state=42)
         kmeans_pca.fit(pca_scores)
@@ -128,12 +128,12 @@ def start(csv_file):
 
     # Find elbow
     # print('wcs: ', wcss)
-    kneedle = KneeLocator(range(1, 21), wcss, S=1.0,
+    kneedle = KneeLocator(range(1, 11), wcss, S=1.0,
                           curve='convex', direction='decreasing')
 
     # Plot wcss
     plt.figure(figsize=(6, 6))
-    plt.plot(range(1, 21), wcss, marker='o', linestyle='--')
+    plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
     plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
         1], linestyles='dashed', colors='m', label='Elbow')
     plt.legend()
@@ -172,6 +172,8 @@ def start(csv_file):
     labels_unique = np.unique(labels)
     n_clusters_ = len(labels_unique)
     '''
+
+    '''
     # Plot two first compontens
     fig = plt.figure(figsize=(6, 6))
     ax = fig.add_subplot(1, 1, 1)
@@ -190,6 +192,7 @@ def start(csv_file):
     '''
     # #############################################################################
 
+    colors = COLOR_LIST
     labels = kmeans_pca.labels_
     cluster_centers = kmeans_pca.cluster_centers_
     # print('cluster centers: ', cluster_centers)
@@ -207,11 +210,11 @@ def start(csv_file):
         plt.plot(x_scaled_reduced[my_members, 0], x_scaled_reduced[my_members, 1], col + ".")
         plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=14)
     plt.title("Estimated number of clusters: %d" % n_clusters_)
-    # plt.grid()
-    plt.show()
-    # two_first_components_plot = get_base64(plt)
+    # plt.grid
+    two_first_components_plot = get_base64(plt)
+    # plt.show()
     plt.clf()
-    '''
+
 
     # Print the amount of data that holds the components
     explained_variance_ratio = pca.explained_variance_ratio_

@@ -359,40 +359,91 @@ def compare_all_routes(request, session_id, percentage=60):
 
 
 def obtain_summary(session_id):
-    dict_df = obtain_dataframe(session_id)
-    final_df = pandas.DataFrame()
+    dataframe = obtain_dataframe(session_id)
+    dictionary = {}
 
-    if 'FUEL_USED' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
+    if 'FUEL_USED' in dataframe.columns:
+        dictionary['TOTAL_FUEL_USED'] = dataframe['TOTAL_FUEL_USED'].tolist()
 
-    if 'TRIPTIME' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
+    if 'TRIPTIME' in dataframe.columns:
+        dictionary['TOTAL_TIME'] = dataframe['TOTAL_TIME'].tolist()
 
-    if 'TRIP' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
+    if 'TRIP' in dataframe.columns:
+        dictionary['TOTAL_TRIP'] = dataframe['TOTAL_TRIP'].tolist()
 
-    if 'HGWY' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='HGWY', value=dict_df['HGWY'].iloc[-1])
+    if 'TOTAL_HGWY' in dataframe.columns:
+        dictionary['TOTAL_HGWY'] = dataframe['TOTAL_HGWY'].tolist()
 
-    if 'CITY' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='CITY', value=dict_df['CITY'].iloc[-1])
+    if 'TOTAL_CITY' in dataframe.columns:
+        dictionary['TOTAL_CITY'] = dataframe['TOTAL_CITY'].tolist()
 
-    if 'IDLE' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='IDLE', value=dict_df['IDLE'].iloc[-1])
+    if 'TOTAL_IDLE' in dataframe.columns:
+        dictionary['TOTAL_IDLE'] = dataframe['TOTAL_IDLE'].tolist()
 
-    return final_df
+    return dictionary
 
 
 def download_summary_all_sessions(request):
-    logs = Log.objects.all().order_by('id')
+    logs = Log.objects.all().order_by('-id')
     final_df = pandas.DataFrame()
 
     for log in logs:
-        df = obtain_summary(log.id)
-        df.insert(loc=0, column='SESSION_ID', value=log.id)
-        final_df = final_df.append(df)
 
+        dataframe = obtain_dataframe(log.id)
+        dict_dataframe = {}
+
+        if 'TOTAL_FUEL_USED' in dataframe.columns:
+            fuel = dataframe['TOTAL_FUEL_USED'].tolist()
+            dict_dataframe['TOTAL_FUEL_USED'] = fuel
+
+        if 'TOTAL_TIME' in dataframe.columns:
+            duration = dataframe['TOTAL_TIME'].tolist()
+            dict_dataframe['TOTAL_TIME'] = duration
+
+        if 'TOTAL_TRIP' in dataframe.columns:
+            distance = dataframe['TOTAL_TRIP'].tolist()
+            dict_dataframe['TOTAL_TRIP'] = distance
+
+        if 'TOTAL_HGWY' in dataframe.columns:
+            highway = dataframe['TOTAL_HGWY'].tolist()
+            dict_dataframe['TOTAL_HGWY'] = highway
+
+        if 'TOTAL_CITY' in dataframe.columns:
+            city = dataframe['TOTAL_CITY'].tolist()
+            dict_dataframe['TOTAL_CITY'] = city
+
+        if 'TOTAL_IDLE' in dataframe.columns:
+            idle = dataframe['TOTAL_IDLE'].tolist()
+            dict_dataframe['TOTAL_IDLE'] = idle
+
+        if 'STOP_LESS_4_SEC' in dataframe.columns:
+            stop_less_4sec = dataframe['STOP_LESS_4_SEC'].tolist()
+            dict_dataframe['STOP_LESS_4_SEC'] = stop_less_4sec
+
+        if 'STOP_LESS_6_SEC' in dataframe.columns:
+            stop_less_6sec = dataframe['STOP_LESS_6_SEC'].tolist()
+            dict_dataframe['STOP_LESS_6_SEC'] = stop_less_6sec
+
+        if 'STOP_MORE_EQ_6_SEC' in dataframe.columns:
+            stop_more_eq_6sec = dataframe['STOP_MORE_EQ_6_SEC'].tolist()
+            dict_dataframe['STOP_MORE_EQ_6_SEC'] = stop_more_eq_6sec
+
+        if 'TOTAL_STOP_COUNT' in dataframe.columns:
+            stop_count = dataframe['TOTAL_STOP_COUNT'].tolist()
+            dict_dataframe['TOTAL_STOP_COUNT'] = stop_count
+
+        if 'TOTAL_CAR_OFF' in dataframe.columns:
+            car_off = dataframe['TOTAL_CAR_OFF'].tolist()
+            dict_dataframe['TOTAL_CAR_OFF'] = car_off
+
+        dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
+        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
+
+        final_df = final_df.append(dict_df)
+
+    final_df.drop_duplicates(inplace=True)
     final_df.reset_index(drop=True, inplace=True)
+    print(final_df)
 
     filename = 'all_sessions'
     time_now = datetime.datetime.now()
@@ -466,6 +517,15 @@ def obtain_dataframe(session_id):
 
     if 'FUEL_USED' in dict_df.columns:
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
+
+    if 'HGWY' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_HGWY', value=dict_df['HGWY'].iloc[-1])
+
+    if 'CITY' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CITY', value=dict_df['CITY'].iloc[-1])
+
+    if 'IDLE' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=dict_df['IDLE'].iloc[-1])
 
     clean_dataset(dict_df)
 
