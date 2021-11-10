@@ -399,7 +399,7 @@ def obtain_dataframe(session_id):
         dictionary[sensor_name] = list_values
 
     # records.filter(sensor__pid='')
-    print(dictionary)
+    # print(dictionary)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
 
     # Calculated data
