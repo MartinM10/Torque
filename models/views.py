@@ -421,10 +421,10 @@ def obtain_dataframe(session_id):
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
 
     if 'CITY' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='CITY', value=dict_df['CITY'].last())
+        dict_df.insert(loc=len(dict_df.columns), column='CITY', value=dict_df['CITY'].iloc[-1])
 
     if 'HGWY' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='HGWY', value=dict_df['HGWY'].last())
+        dict_df.insert(loc=len(dict_df.columns), column='HGWY', value=dict_df['HGWY'].iloc[-1])
 
     clean_dataset(dict_df)
 
