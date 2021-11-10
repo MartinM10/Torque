@@ -391,15 +391,16 @@ def download_summary_all_sessions(request):
         df = obtain_summary(log.id)
         df.insert(loc=0, column='SESSION_ID', value=log.id)
         final_df = final_df.append(df)
-        final_df.reset_index(drop=True, inplace=True)
 
-        filename = 'all_sessions'
-        time_now = datetime.datetime.now()
+    final_df.reset_index(drop=True, inplace=True)
 
-        content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
-        final_df.to_csv(path_or_buf=response, index=False)
+    filename = 'all_sessions'
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    final_df.to_csv(path_or_buf=response, index=False)
 
     return response
 
