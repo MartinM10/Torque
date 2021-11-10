@@ -1161,13 +1161,13 @@ def session_in_map(request, session_id):
         values['Caladas'] = int(dataframe['TOTAL_CAR_OFF'].iloc[0])
 
     if 'CITY' in dataframe.columns:
-        values['% Ciudad'] = int(dataframe['CITY'].iloc[0])
+        values['%Ciudad'] = round(dataframe['CITY'].iloc[-1], 2)
 
     if 'HGWY' in dataframe.columns:
-        values['% Autovía'] = int(dataframe['HGWY'].iloc[0])
+        values['%Autovía'] = round(dataframe['HGWY'].iloc[-1], 2)
 
     if 'IDLE' in dataframe.columns:
-        values['% Idle'] = int(dataframe['IDLE'].iloc[0])
+        values['%Idle'] = round(dataframe['IDLE'].iloc[-1], 2)
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
