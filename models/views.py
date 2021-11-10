@@ -366,7 +366,7 @@ def obtain_summary(session_id):
         final_df.insert(loc=len(final_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
 
     if 'TRIPTIME' in dict_df.columns:
-        final_df.insert(loc=len(final_df.columns), column='TOTAL_TIME', value=dict_df['FUEL_USED'].max())
+        final_df.insert(loc=len(final_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
 
     if 'TRIP' in dict_df.columns:
         final_df.insert(loc=len(final_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
