@@ -399,7 +399,7 @@ def obtain_dataframe(session_id):
         dictionary[sensor_name] = list_values
 
     # records.filter(sensor__pid='')
-
+    print(dictionary)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
 
     # Calculated data
@@ -419,6 +419,12 @@ def obtain_dataframe(session_id):
 
     if 'FUEL_USED' in dict_df.columns:
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
+
+    if 'CITY' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='CITY', value=dict_df['CITY'].last())
+
+    if 'HGWY' in dict_df.columns:
+        dict_df.insert(loc=len(dict_df.columns), column='HGWY', value=dict_df['HGWY'].last())
 
     clean_dataset(dict_df)
 
@@ -1159,6 +1165,15 @@ def session_in_map(request, session_id):
 
     if 'TOTAL_CAR_OFF' in dataframe.columns:
         values['Caladas'] = int(dataframe['TOTAL_CAR_OFF'].iloc[0])
+
+    if 'CITY' in dataframe.columns:
+        values['% Ciudad'] = int(dataframe['CITY'].iloc[0])
+
+    if 'HGWY' in dataframe.columns:
+        values['% Autovía'] = int(dataframe['HGWY'].iloc[0])
+
+    if 'IDLE' in dataframe.columns:
+        values['% Idle'] = int(dataframe['IDLE'].iloc[0])
 
     for key in list(dict_dataframe):
         if dict_dataframe[key].__len__() == 0:
