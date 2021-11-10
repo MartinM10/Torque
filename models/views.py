@@ -358,6 +358,52 @@ def compare_all_routes(request, session_id, percentage=60):
     return render(request, 'routes.html', context=context)
 
 
+def obtain_summary(session_id):
+    dict_df = obtain_dataframe(session_id)
+    final_df = pandas.DataFrame()
+
+    if 'FUEL_USED' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
+
+    if 'TRIPTIME' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='TOTAL_TIME', value=dict_df['FUEL_USED'].max())
+
+    if 'TRIP' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
+
+    if 'HGWY' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='HGWY', value=dict_df['HGWY'].iloc[-1])
+
+    if 'CITY' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='CITY', value=dict_df['CITY'].iloc[-1])
+
+    if 'IDLE' in dict_df.columns:
+        final_df.insert(loc=len(final_df.columns), column='IDLE', value=dict_df['IDLE'].iloc[-1])
+
+    return final_df
+
+
+def download_summary_all_sessions(request):
+    logs = Log.objects.all().order_by('id')
+    final_df = pandas.DataFrame()
+
+    for log in logs:
+        df = obtain_summary(log.id)
+        df.insert(loc=0, column='SESSION_ID', value=log.id)
+        final_df = final_df.append(df)
+        final_df.reset_index(drop=True, inplace=True)
+
+        filename = 'all_sessions'
+        time_now = datetime.datetime.now()
+
+        content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+        final_df.to_csv(path_or_buf=response, index=False)
+
+    return response
+
+
 def download_csv_all_sessions(request):
     logs = Log.objects.all().order_by('id')
     final_df = pandas.DataFrame()

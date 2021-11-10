@@ -50,6 +50,8 @@ urlpatterns = [
     path('export_sensors/', export_sensors_for_react_app, name='export_sensors'),
     path('export_pdf/<str:filename>/', export_pdf, name="export-pdf"),
 
+    path('download_summary_all_sessions/', download_summary_all_sessions, name='download_summary_all_sessions'),
+
     # AI
     path('upload_csv/', upload_csv, name='upload_csv'),
     path('pca/', pca_request, name='pca'),
