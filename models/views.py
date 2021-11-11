@@ -437,15 +437,16 @@ def download_summary_all_sessions(request):
             dict_dataframe['TOTAL_CAR_OFF'] = car_off
 
         dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dict_dataframe.items()}, dtype=float)
-        # dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
+        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
 
         final_df = final_df.append(dict_df)
 
     final_df.drop_duplicates(inplace=True)
     final_df.reset_index(drop=True, inplace=True)
+    clean_dataset(final_df)
     # print(final_df)
 
-    filename = 'all_sessions'
+    filename = 'summary_all_sessions'
     time_now = datetime.datetime.now()
 
     content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
