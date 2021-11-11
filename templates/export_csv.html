@@ -46,7 +46,7 @@
         </form>
         <hr>
 
-        <h3>Exportar datos de varias sesiones (CSV)</h3>
+        <h3>Exportar 1 sensor de varias sesiones (CSV)</h3>
         <form action="generate_csv_multiple_sessions/" method="post" style="margin-top: 15px">
             <select name="sensores" id="sensorList2" style="text-align: center">
                 <option value="">Seleccione un sensor</option>
@@ -80,6 +80,9 @@
                 Generar CSV
             </button>
         </form>
+        <hr>
+        <h3>Exportar resumen de todas las sesiones (CSV)</h3>
+        <a href="{% url 'download_summary_all_sessions' %}" class="btn btn-primary" role="button">Exportar</a>
     </div>
 {% endblock %}
 

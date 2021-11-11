@@ -208,7 +208,7 @@ def start(csv_file):
         cluster_center = cluster_centers[k]
         # print(cluster_center)
         plt.plot(x_scaled_reduced[my_members, 0], x_scaled_reduced[my_members, 1], col + ".")
-        plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=14)
+        plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=10)
     plt.title("Estimated number of clusters: %d" % n_clusters_)
     # plt.grid
     two_first_components_plot = get_base64(plt)
