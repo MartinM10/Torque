@@ -94,7 +94,7 @@ def export_pdf(request, filename):
 
 
 def metricas_type_sessions(request):
-    types_sessions = Log.objects.filter(type__isnull=False).values_list('type', flat=True).distinct().order_by('type')
+    types_sessions = Log.objects.exclude(type__isnull=True).values_list('type', flat=True).distinct().order_by('type')
     dictionary = {}
     dict = {}
 
