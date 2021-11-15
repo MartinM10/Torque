@@ -193,7 +193,9 @@ def pca_request(request):
                                                  ).save()
 
         kmeans = KMeans.objects.filter(dataset_id=dataset_id)
+
         if not kmeans:
+
             KMeans(two_first_components_plot=two_first_components_plot,
                    explained_variance_ratio=explained_variance_ratio,
                    components_and_features_plot=components_and_features_plot,
@@ -203,7 +205,7 @@ def pca_request(request):
                    more_important_features=more_important_features,
                    dataset_id=dataset_id
                    ).save()
-
+            dataset = Dataset.objects.filter(name=complete_name)
             dataset.update(classification_applied=True)
 
         else:
