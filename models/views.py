@@ -115,11 +115,13 @@ def metricas_type_sessions(request):
 
             if values_speed:
                 for value in values_speed:
-                    speeds.append(float(value))
+                    if value:
+                        speeds.append(float(value))
 
             if values_co2:
                 for value in values_co2:
-                    co2.append(float(value))
+                    if value:
+                        co2.append(float(value))
 
             stops = obtain_stops(log.id)
             count_stops.append(stops['total_stop_count'])
