@@ -503,7 +503,7 @@ def download_summary_all_sessions(request):
         if 'TOTAL_TRIP' in dataframe.columns:
             distance = dataframe['TOTAL_TRIP'].tolist()
             dict_dataframe['TOTAL_TRIP'] = distance
-
+        '''
         if 'TOTAL_HGWY' in dataframe.columns:
             highway = dataframe['TOTAL_HGWY'].tolist()
             dict_dataframe['TOTAL_HGWY'] = highway
@@ -515,6 +515,8 @@ def download_summary_all_sessions(request):
         if 'TOTAL_IDLE' in dataframe.columns:
             idle = dataframe['TOTAL_IDLE'].tolist()
             dict_dataframe['TOTAL_IDLE'] = idle
+        '''
+
         '''
         if 'STOP_LESS_4_SEC' in dataframe.columns:
             stop_less_4sec = dataframe['STOP_LESS_4_SEC'].tolist()
