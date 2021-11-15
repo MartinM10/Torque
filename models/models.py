@@ -1,14 +1,52 @@
 from django.db import models
 
-'''
+
 # Create your models here.
+class Log(models.Model):
+    session = models.DateTimeField(null=True)
+    email = models.CharField(null=True, max_length=255)
+    id_app = models.CharField(null=True, max_length=255)
+    type = models.IntegerField(null=True, blank=True)
+
+    # la session ya trae el tiempo en unix timestamp
+    # time = models.DateTimeField(null=True, auto_now_add=True)
+    # dataset = models.ForeignKey(Dataset, null=True, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('email', 'session')
+
+
+class Sensor(models.Model):
+    pid = models.CharField(unique=True, max_length=255)
+    user_full_name = models.CharField(null=True, max_length=255)
+    user_short_name = models.CharField(null=True, max_length=255)
+    ai4drive_name = models.CharField(null=True, max_length=255)
+    user_unit = models.CharField(null=True, max_length=50)
+    default_unit = models.CharField(null=True, max_length=50)
+    logs = models.ManyToManyField(Log, through='Record')
+
+    def __str__(self):
+        return self.user_full_name
+
+
+class Record(models.Model):
+    log = models.ForeignKey(Log, null=True, on_delete=models.CASCADE)
+    sensor = models.ForeignKey(Sensor, null=True, on_delete=models.CASCADE)
+    value = models.CharField(null=True, max_length=255)
+    time = models.DateTimeField(null=True)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
+
+
 class Dataset(models.Model):
-    date = models.BigIntegerField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     name = models.CharField(null=True, max_length=255)
     rows_number = models.IntegerField(null=True, default=0)
     column_names = models.TextField(null=True)
     classification_applied = models.BooleanField(null=True, default=False)
     prediction_applied = models.BooleanField(null=True, default=False)
+    log = models.ForeignKey(Log, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -40,32 +78,6 @@ class KMeans(models.Model):
     cluster_list = models.TextField(null=True)
     more_important_features = models.TextField(null=True)
     dataset = models.OneToOneField(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
-'''
-
-
-class Sensor(models.Model):
-    pid = models.CharField(unique=True, max_length=255)
-    user_full_name = models.CharField(null=True, max_length=255)
-    user_short_name = models.CharField(null=True, max_length=255)
-    ai4drive_name = models.CharField(null=True, max_length=255)
-    user_unit = models.CharField(null=True, max_length=50)
-    default_unit = models.CharField(null=True, max_length=50)
-
-    def __str__(self):
-        return self.user_full_name
-
-
-class Log(models.Model):
-    session = models.DateTimeField(null=True)
-    email = models.CharField(null=True, max_length=255)
-    id_app = models.CharField(null=True, max_length=255)
-
-    # la session ya trae el tiempo en unix timestamp
-    # time = models.DateTimeField(null=True, auto_now_add=True)
-    # dataset = models.ForeignKey(Dataset, null=True, on_delete=models.SET_NULL)
-
-    class Meta:
-        unique_together = ('email', 'session')
 
 
 class Track(models.Model):
@@ -87,16 +99,6 @@ class Profile(models.Model):
     fuel_type = models.CharField(null=True, max_length=50)
     fuel_cost = models.FloatField(null=True)
 '''
-
-
-class Record(models.Model):
-    sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
-    log = models.ForeignKey(Log, on_delete=models.CASCADE)
-    value = models.CharField(null=True, max_length=255)
-    time = models.DateTimeField(null=True)
-    latitude = models.FloatField(null=True)
-    longitude = models.FloatField(null=True)
-
 
 '''
 class DataTorque(models.Model):

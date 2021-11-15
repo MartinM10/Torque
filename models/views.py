@@ -30,7 +30,7 @@ from weasyprint import HTML
 from Torque.settings import MEDIA_ROOT
 from ai import k_means as km, svm
 from ai.common import get_base64
-from models.models import Log, Record, Sensor, Track, TrackLog
+from models.models import Log, Record, Sensor, Track, TrackLog, Dataset, KMeans
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
 
 geolocator = Nominatim(user_agent="Torque")
@@ -93,18 +93,137 @@ def export_pdf(request, filename):
     return response
 
 
+def metricas_type_sessions(request):
+    types_sessions = Log.objects.all().values_list('type', flat=True).distinct().order_by('type')
+    dictionary = {}
+    dict = {}
+
+    for type in types_sessions:
+        logs_type = Log.objects.filter(type=type)
+        speeds = []
+        co2 = []
+        sessions_list = []
+        count_stops = []
+        count_car_off = []
+
+        for log_type in logs_type:
+            log = Log.objects.get(id=log_type.id)
+            sessions_list.append(log.id)
+
+            values_speed = list(log.record_set.filter(sensor__pid='0d').values_list('value', flat=True))
+            values_co2 = list(log.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True))
+
+            if values_speed:
+                for value in values_speed:
+                    speeds.append(float(value))
+
+            if values_co2:
+                for value in values_co2:
+                    co2.append(float(value))
+
+            stops = obtain_stops(log.id)
+            count_stops.append(stops['total_stop_count'])
+            count_car_off.append(stops['count_car_off'])
+
+        dict[type] = sessions_list
+        speed_mean = round(np.mean(speeds).astype(float), 2)
+        co2_mean = round(np.mean(co2).astype(float), 2)
+        stops_mean = round(np.mean(count_stops).astype(float), 2)
+        car_off_mean = round(np.mean(count_car_off).astype(float), 2)
+
+        results = [speed_mean, co2_mean, stops_mean, car_off_mean]
+        dictionary[type] = results
+
+    context = {
+        'dictionary': dictionary,
+        'session_list': dict,
+    }
+    return render(request, 'sessions_classified.html', context=context)
+
+
 def pca_request(request):
     # Apply k-means to the CSV
     if request.method == 'POST':
+
         two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
-        explained_variance_ratio, cluster_list, more_important_features, svm_params = \
+        explained_variance_ratio, cluster_list, more_important_features, svm_params, df, original_df = \
             km.start(request.FILES.get("file"))
+
+        complete_name = request.FILES.get("file").name
+        dataset_id = None
+        dataset = None
+
+        if 'all' not in complete_name:
+            # elimino lo que hay despues del _, que vendría a ser la fecha
+            index = complete_name.find('_')
+            complete_name = complete_name[:index]
+            session_id = int(complete_name.replace('session', ''))
+
+            dataset = Dataset.objects.filter(log_id=session_id)
+            name = 'dataset_session_' + str(session_id)
+
+            if not dataset:
+                with transaction.atomic():
+                    Dataset.objects.create(log_id=session_id, name=name, rows_number=df.shape[0],
+                                           column_names=list(df.columns.values),
+                                           classification_applied=False,
+                                           prediction_applied=False).save()
+
+            dataset_id = Dataset.objects.get(log_id=session_id).id
+
+        else:
+            # print(original_df)
+            # print(original_df['SESSION_ID'].tolist())
+            sessions_id = original_df['SESSION_ID'].tolist()
+            clusters = df['cluster'].tolist()
+            count = 0
+
+            for session_id in sessions_id:
+                log = Log.objects.filter(id=session_id).update(type=clusters[count])
+                count += 1
+
+            dataset = Dataset.objects.filter(name=complete_name)
+
+            if not dataset:
+                dataset = Dataset.objects.create(name=complete_name,
+                                                 rows_number=df.shape[0],
+                                                 column_names=list(df.columns.values),
+                                                 classification_applied=True,
+                                                 prediction_applied=False
+                                                 ).save()
+
+        kmeans = KMeans.objects.filter(dataset_id=dataset_id)
+        if not kmeans:
+            KMeans(two_first_components_plot=two_first_components_plot,
+                   explained_variance_ratio=explained_variance_ratio,
+                   components_and_features_plot=components_and_features_plot,
+                   wcss_plot=wcss_plot,
+                   acumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
+                   cluster_list=cluster_list,
+                   more_important_features=more_important_features,
+                   dataset_id=dataset_id
+                   ).save()
+
+            dataset.update(classification_applied=True)
+
+        else:
+            kmeans.update(
+                two_first_components_plot=two_first_components_plot,
+                explained_variance_ratio=explained_variance_ratio,
+                components_and_features_plot=components_and_features_plot,
+                wcss_plot=wcss_plot,
+                acumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
+                cluster_list=cluster_list,
+                more_important_features=more_important_features
+            )
+
         # Apply SVM to the data labelled by k-means
         svm_plot = svm.start(
             svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
 
-        explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
-                                    range(len(explained_variance_ratio))]
+        if np.any(explained_variance_ratio):
+            explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
+                                        range(len(explained_variance_ratio))]
 
         filename = 'report.pdf'
         if request.FILES:
@@ -358,31 +477,6 @@ def compare_all_routes(request, session_id, percentage=60):
     return render(request, 'routes.html', context=context)
 
 
-def obtain_summary(session_id):
-    dataframe = obtain_dataframe(session_id)
-    dictionary = {}
-
-    if 'FUEL_USED' in dataframe.columns:
-        dictionary['TOTAL_FUEL_USED'] = dataframe['TOTAL_FUEL_USED'].tolist()
-
-    if 'TRIPTIME' in dataframe.columns:
-        dictionary['TOTAL_TIME'] = dataframe['TOTAL_TIME'].tolist()
-
-    if 'TRIP' in dataframe.columns:
-        dictionary['TOTAL_TRIP'] = dataframe['TOTAL_TRIP'].tolist()
-
-    if 'TOTAL_HGWY' in dataframe.columns:
-        dictionary['TOTAL_HGWY'] = dataframe['TOTAL_HGWY'].tolist()
-
-    if 'TOTAL_CITY' in dataframe.columns:
-        dictionary['TOTAL_CITY'] = dataframe['TOTAL_CITY'].tolist()
-
-    if 'TOTAL_IDLE' in dataframe.columns:
-        dictionary['TOTAL_IDLE'] = dataframe['TOTAL_IDLE'].tolist()
-
-    return dictionary
-
-
 def download_summary_all_sessions(request):
     logs = Log.objects.all().order_by('-id')
     final_df = pandas.DataFrame()
@@ -391,7 +485,11 @@ def download_summary_all_sessions(request):
 
         dataframe = obtain_dataframe(log.id)
         dict_dataframe = {}
-
+        '''
+        if 'SESSION_ID' in dataframe.columns:
+            session = dataframe['SESSION_ID'].tolist()
+            dict_dataframe['SESSION_ID'] = session
+        '''
         if 'TOTAL_FUEL_USED' in dataframe.columns:
             fuel = dataframe['TOTAL_FUEL_USED'].tolist()
             dict_dataframe['TOTAL_FUEL_USED'] = fuel
@@ -415,7 +513,7 @@ def download_summary_all_sessions(request):
         if 'TOTAL_IDLE' in dataframe.columns:
             idle = dataframe['TOTAL_IDLE'].tolist()
             dict_dataframe['TOTAL_IDLE'] = idle
-
+        '''
         if 'STOP_LESS_4_SEC' in dataframe.columns:
             stop_less_4sec = dataframe['STOP_LESS_4_SEC'].tolist()
             dict_dataframe['STOP_LESS_4_SEC'] = stop_less_4sec
@@ -427,7 +525,7 @@ def download_summary_all_sessions(request):
         if 'STOP_MORE_EQ_6_SEC' in dataframe.columns:
             stop_more_eq_6sec = dataframe['STOP_MORE_EQ_6_SEC'].tolist()
             dict_dataframe['STOP_MORE_EQ_6_SEC'] = stop_more_eq_6sec
-
+        '''
         if 'TOTAL_STOP_COUNT' in dataframe.columns:
             stop_count = dataframe['TOTAL_STOP_COUNT'].tolist()
             dict_dataframe['TOTAL_STOP_COUNT'] = stop_count
@@ -463,7 +561,7 @@ def download_csv_all_sessions(request):
 
     for log in logs:
         dict_df = obtain_dataframe(log.id)
-        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
+        # dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
         final_df = final_df.append(dict_df)
 
     clean_dataset(final_df)
@@ -500,7 +598,7 @@ def obtain_dataframe(session_id):
     # records.filter(sensor__pid='')
     # print(dictionary)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
-
+    dict_df.insert(loc=0, column='SESSION_ID', value=session_id)
     # Calculated data
     stops = obtain_stops(session_id)
     # print(stops)
@@ -527,6 +625,15 @@ def obtain_dataframe(session_id):
 
     if 'IDLE' in dict_df.columns:
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=dict_df['IDLE'].iloc[-1])
+
+    dataset = Dataset.objects.filter(log_id=session_id)
+    if not dataset:
+        name = 'dataset_session_' + str(session_id)
+
+        with transaction.atomic():
+            Dataset.objects.create(log_id=session_id, name=name, rows_number=dict_df.shape[0],
+                                   column_names=list(dict_df.columns.values),
+                                   classification_applied=False, prediction_applied=False).save()
 
     clean_dataset(dict_df)
 

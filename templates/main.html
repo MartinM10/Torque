@@ -108,6 +108,7 @@
             <li class="nav-item"><a href="{% url 'session_list' %}">Inicio</a></li>
             <li class="nav-item"><a href="{% url 'export_data' %}">Exportar Datos</a></li>
             <li class="nav-item"><a href="{% url 'upload_csv' %}">Aplicar Machine Learning</a></li>
+            <li class="nav-item"><a href="{% url 'metricas_type_sessions' %}">Rutas clasificadas</a></li>
             <li class="nav-item"><a href="http://mallba3.lcc.uma.es:3701/">Analizar Datos</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
@@ -125,6 +126,10 @@
 </nav>
 
 {% block success %}
+
+{% endblock %}
+
+{% block sessions_classified %}
 
 {% endblock %}
 

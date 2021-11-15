@@ -76,170 +76,262 @@ def get_pca_more_important_features(df, features, pca, components_number):
 def start(csv_file):
     # Read CSV file
     df = pd.read_csv(csv_file)
+    original_df = df.copy()
 
     # Get features from the first row
     features = df.columns.values
+
+    if 'SESSION_ID' in features:
+        df.drop(columns='SESSION_ID', inplace=True)
+        features = np.delete(features, 0)
+
+    # print(features)
+    # print(df)
 
     # Remove features labels
     x = df.loc[:, features].values
 
     # Standardizing data (mean = 0 , variance = 1)
     x = StandardScaler().fit_transform(x)
-
-    # Generate cumulative explanined variance ratio plot
-    plt.rc('axes', labelsize=16)  # Only needed first time
-    pca = PCA().fit(x)
-    plt.figure(figsize=(6, 6))
-    plt.plot(np.cumsum(pca.explained_variance_ratio_))
-    plt.xlabel('Components number', fontsize=14)
-    plt.ylabel('Cumulative explained variance', fontsize=14)
-    plt.title('Cumulative explained variance ratio', fontsize=16)
-    # print('VARIANZA ACUMULADA: ', np.cumsum(pca.explained_variance_ratio_))
-    components_number = np.argmax(np.cumsum(pca.explained_variance_ratio_) >= 0.9)
-    plt.vlines(components_number, plt.ylim()[0], plt.ylim()[
-        1], linestyles='dashed', colors='m', label='Cumulative explained variance >= 0.9')
-    plt.legend()
-    cumulative_explained_variance_ratio_plot = get_base64(plt)
-
-    plt.clf()
-
-    # print('la posicion del elemento es: ', components_number, 'su valor es: ',
-    #     np.cumsum(pca.explained_variance_ratio_)[components_number])
-    # Create pca
-    pca = PCA(n_components=components_number)
-
-    # Fit model with the number of components selected
-    x_scaled_reduced = pca.fit_transform(x)
-
-    # Get PCA scores (create clusters based on the components scores)
-    pca_scores = pca.transform(x)
-    # print('pca_scores: ', pca_scores)
-    # Get the principal features for each principal component
-    more_important_features = get_pca_more_important_features(
-        df, features, pca, components_number)
-    # print('more_important_features: ', more_important_features)
-    # Fit kmeans using the data from PCA
     wcss = []
-    for i in range(1, 11):
-        kmeans_pca = KMeans(n_clusters=i, init='k-means++',
-                            random_state=42)
+
+    if len(features) > 10:
+
+        # Generate cumulative explanined variance ratio plot
+        plt.rc('axes', labelsize=16)  # Only needed first time
+        pca = PCA().fit(x)
+        plt.figure(figsize=(6, 6))
+        plt.plot(np.cumsum(pca.explained_variance_ratio_))
+        plt.xlabel('Components number', fontsize=14)
+        plt.ylabel('Cumulative explained variance', fontsize=14)
+        plt.title('Cumulative explained variance ratio', fontsize=16)
+        # print('VARIANZA ACUMULADA: ', np.cumsum(pca.explained_variance_ratio_))
+        components_number = np.argmax(np.cumsum(pca.explained_variance_ratio_) >= 0.9)
+        plt.vlines(components_number, plt.ylim()[0], plt.ylim()[
+            1], linestyles='dashed', colors='m', label='Cumulative explained variance >= 0.9')
+        plt.legend()
+        cumulative_explained_variance_ratio_plot = get_base64(plt)
+
+        plt.clf()
+
+        # print('la posicion del elemento es: ', components_number, 'su valor es: ',
+        #     np.cumsum(pca.explained_variance_ratio_)[components_number])
+        # Create pca
+        pca = PCA(n_components=components_number)
+
+        # Fit model with the number of components selected
+        x_scaled_reduced = pca.fit_transform(x)
+
+        # Get PCA scores (create clusters based on the components scores)
+        pca_scores = pca.transform(x)
+        # print('pca_scores: ', pca_scores)
+        # Get the principal features for each principal component
+        more_important_features = get_pca_more_important_features(
+            df, features, pca, components_number)
+        # print('more_important_features: ', more_important_features)
+        # Fit kmeans using the data from PCA
+        wcss = []
+        for i in range(1, 11):
+            kmeans_pca = KMeans(n_clusters=i, init='k-means++',
+                                random_state=42)
+            kmeans_pca.fit(pca_scores)
+            wcss.append(kmeans_pca.inertia_)
+
+        # Find elbow
+        # print('wcs: ', wcss)
+        kneedle = KneeLocator(range(1, 11), wcss, S=1.0,
+                              curve='convex', direction='decreasing')
+
+        # Plot wcss
+        plt.figure(figsize=(6, 6))
+        plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
+        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
+            1], linestyles='dashed', colors='m', label='Elbow')
+        plt.legend()
+        plt.xlabel("Clusters number", fontsize=14)
+        plt.ylabel("WCSS", fontsize=14)
+        plt.title('WCSS', fontsize=16)
+        wcss_plot = get_base64(plt)
+        plt.clf()
+        # print('knee: ', kneedle.knee)
+        clusters_number = kneedle.knee
+
+        # Run k-means with the number of cluster chosen
+        kmeans_pca = KMeans(n_clusters=clusters_number,
+                            init='k-means++', random_state=42)
+
+        # Fit data with the k-means pca model
         kmeans_pca.fit(pca_scores)
-        wcss.append(kmeans_pca.inertia_)
 
-    # Find elbow
-    # print('wcs: ', wcss)
-    kneedle = KneeLocator(range(1, 11), wcss, S=1.0,
-                          curve='convex', direction='decreasing')
+        # Create dataset with results from PCA and the cluster column
+        df_kmeans_pca = pd.concat(
+            [df.reset_index(drop=True), pd.DataFrame(pca_scores)], axis=1)
+        df_kmeans_pca.columns.values[-components_number:] = generate_pc_columns_names(
+            components_number)
+        df_kmeans_pca['Kmeans value'] = kmeans_pca.labels_
 
-    # Plot wcss
-    plt.figure(figsize=(6, 6))
-    plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
-    plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
-        1], linestyles='dashed', colors='m', label='Elbow')
-    plt.legend()
-    plt.xlabel("Clusters number", fontsize=14)
-    plt.ylabel("WCSS", fontsize=14)
-    plt.title('WCSS', fontsize=16)
-    wcss_plot = get_base64(plt)
-    plt.clf()
-    # print('knee: ', kneedle.knee)
-    clusters_number = kneedle.knee
+        # Add cluster column with a label associated to each kmeans value
+        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(
+            generate_cluster_map(clusters_number))
 
-    # Run k-means with the number of cluster chosen
-    kmeans_pca = KMeans(n_clusters=clusters_number,
-                        init='k-means++', random_state=42)
+        # Create columns labels for each component
+        pc_colums_names = generate_pc_columns_names(components_number)
+        '''
+        labels = kmeans_pca.labels_
+        cluster_centers = kmeans_pca.cluster_centers_
+        # print('cluster centers: ', cluster_centers)
+        labels_unique = np.unique(labels)
+        n_clusters_ = len(labels_unique)
+        '''
 
-    # Fit data with the k-means pca model
-    kmeans_pca.fit(pca_scores)
+        '''
+        # Plot two first compontens
+        fig = plt.figure(figsize=(6, 6))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_xlabel('Principal component 1', fontsize=14)
+        ax.set_ylabel('Principal component 2', fontsize=14)
+        ax.set_title('PCA', fontsize=16)
+        targets = generate_cluster_labels(clusters_number)
+        colors = COLOR_LIST
+        for target, color in zip(targets, colors):
+            indicesToKeep = df_kmeans_pca['Cluster'] == target
+            ax.scatter(df_kmeans_pca.loc[indicesToKeep, 'pc1'],
+                       df_kmeans_pca.loc[indicesToKeep, 'pc2'], c=color, s=50)
+        ax.legend(targets)
+        ax.grid()
+        two_first_components_plot = get_base64(plt)
+        '''
+        # #############################################################################
 
-    # Create dataset with results from PCA and the cluster column
-    df_kmeans_pca = pd.concat(
-        [df.reset_index(drop=True), pd.DataFrame(pca_scores)], axis=1)
-    df_kmeans_pca.columns.values[-components_number:] = generate_pc_columns_names(
-        components_number)
-    df_kmeans_pca['Kmeans value'] = kmeans_pca.labels_
+        colors = COLOR_LIST
+        labels = kmeans_pca.labels_
+        cluster_centers = kmeans_pca.cluster_centers_
+        # print('cluster centers: ', cluster_centers)
+        labels_unique = np.unique(labels)
+        n_clusters_ = len(labels_unique)
 
-    # Add cluster column with a label associated to each kmeans value
-    df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(
-        generate_cluster_map(clusters_number))
+        plt.figure(figsize=(6, 6))
 
-    # Create columns labels for each component
-    pc_colums_names = generate_pc_columns_names(components_number)
-    '''
-    labels = kmeans_pca.labels_
-    cluster_centers = kmeans_pca.cluster_centers_
-    # print('cluster centers: ', cluster_centers)
-    labels_unique = np.unique(labels)
-    n_clusters_ = len(labels_unique)
-    '''
+        # print("number of estimated clusters : %d" % n_clusters_)
+        # print(x_scaled_reduced)
+        for k, col in zip(range(n_clusters_), colors):
+            my_members = labels == k
+            cluster_center = cluster_centers[k]
+            # print(cluster_center)
+            plt.plot(x_scaled_reduced[my_members, 0], x_scaled_reduced[my_members, 1], col + ".")
+            plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=10)
+        plt.title("Estimated number of clusters: %d" % n_clusters_)
+        # plt.grid
+        two_first_components_plot = get_base64(plt)
+        # plt.show()
+        plt.clf()
 
-    '''
-    # Plot two first compontens
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_xlabel('Principal component 1', fontsize=14)
-    ax.set_ylabel('Principal component 2', fontsize=14)
-    ax.set_title('PCA', fontsize=16)
-    targets = generate_cluster_labels(clusters_number)
-    colors = COLOR_LIST
-    for target, color in zip(targets, colors):
-        indicesToKeep = df_kmeans_pca['Cluster'] == target
-        ax.scatter(df_kmeans_pca.loc[indicesToKeep, 'pc1'],
-                   df_kmeans_pca.loc[indicesToKeep, 'pc2'], c=color, s=50)
-    ax.legend(targets)
-    ax.grid()
-    two_first_components_plot = get_base64(plt)
-    '''
-    # #############################################################################
+        # Print the amount of data that holds the components
+        explained_variance_ratio = pca.explained_variance_ratio_
 
-    colors = COLOR_LIST
-    labels = kmeans_pca.labels_
-    cluster_centers = kmeans_pca.cluster_centers_
-    # print('cluster centers: ', cluster_centers)
-    labels_unique = np.unique(labels)
-    n_clusters_ = len(labels_unique)
+        # explained_variance_ratio_sum = pca.explained_variance_ratio_.cumsum()
+        # print('explained variance: ', explained_variance_ratio_sum)
 
-    plt.figure(figsize=(6, 6))
+        # Create a plot for the porcetage of participation of each feature in each component
+        plt.matshow(pca.components_, cmap='Blues')
+        plt.yticks(range(len(pc_colums_names)), pc_colums_names, fontsize=12)
+        plt.colorbar()
+        plt.xlabel('Features', fontsize=14)
+        plt.ylabel('Principal components', fontsize=14)
+        plt.title('Components and Features', fontsize=16)
+        plt.xticks(range(len(features)), features, rotation=90, ha='right')
+        components_and_features_plot = get_base64(plt, 'tight')
+        plt.clf()
 
-    # print("number of estimated clusters : %d" % n_clusters_)
-    # print(x_scaled_reduced)
-    for k, col in zip(range(n_clusters_), colors):
-        my_members = labels == k
-        cluster_center = cluster_centers[k]
-        # print(cluster_center)
-        plt.plot(x_scaled_reduced[my_members, 0], x_scaled_reduced[my_members, 1], col + ".")
-        plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=10)
-    plt.title("Estimated number of clusters: %d" % n_clusters_)
-    # plt.grid
-    two_first_components_plot = get_base64(plt)
-    # plt.show()
-    plt.clf()
+        # Set data for SVM
+        df['cluster'] = kmeans_pca.labels_
+        original_df['cluster'] = kmeans_pca.labels_
 
+        svm_params = {'df': df, 'x_scaled_reduced': x_scaled_reduced,
+                      'clusters_number': clusters_number}
 
-    # Print the amount of data that holds the components
-    explained_variance_ratio = pca.explained_variance_ratio_
+        return (two_first_components_plot.decode('ascii'), components_and_features_plot.decode('ascii'),
+                wcss_plot.decode('ascii'), cumulative_explained_variance_ratio_plot.decode(
+            'ascii'), explained_variance_ratio,
+                # pd.Series(explained_variance_ratio, dtype=float).to_json(orient='values'),
+                pd.Series(kmeans_pca.labels_).to_json(orient='values'), more_important_features, svm_params, df,
+                original_df)
 
-    # explained_variance_ratio_sum = pca.explained_variance_ratio_.cumsum()
-    # print('explained variance: ', explained_variance_ratio_sum)
+    else:
+        for i in range(1, 11):
+            kmeans_pca = KMeans(n_clusters=i, init='k-means++',
+                                random_state=42)
+            kmeans_pca.fit(x)
+            wcss.append(kmeans_pca.inertia_)
 
-    # Create a plot for the porcetage of participation of each feature in each component
-    plt.matshow(pca.components_, cmap='Blues')
-    plt.yticks(range(len(pc_colums_names)), pc_colums_names, fontsize=12)
-    plt.colorbar()
-    plt.xlabel('Features', fontsize=14)
-    plt.ylabel('Principal components', fontsize=14)
-    plt.title('Components and Features', fontsize=16)
-    plt.xticks(range(len(features)), features, rotation=90, ha='right')
-    components_and_features_plot = get_base64(plt, 'tight')
-    plt.clf()
+        # Find elbow
+        # print('wcs: ', wcss)
+        kneedle = KneeLocator(range(1, 11), wcss, S=1.0,
+                              curve='convex', direction='decreasing')
 
-    # Set data for SVM
-    df['cluster'] = kmeans_pca.labels_
-    svm_params = {'df': df, 'x_scaled_reduced': x_scaled_reduced,
-                  'clusters_number': clusters_number}
+        # Plot wcss
+        plt.figure(figsize=(6, 6))
+        plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
+        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
+            1], linestyles='dashed', colors='m', label='Elbow')
+        plt.legend()
+        plt.xlabel("Clusters number", fontsize=14)
+        plt.ylabel("WCSS", fontsize=14)
+        plt.title('WCSS', fontsize=16)
+        wcss_plot = get_base64(plt)
+        plt.clf()
+        # print('knee: ', kneedle.knee)
+        clusters_number = kneedle.knee
 
-    return (two_first_components_plot.decode('ascii'), components_and_features_plot.decode('ascii'),
-            wcss_plot.decode('ascii'), cumulative_explained_variance_ratio_plot.decode(
-        'ascii'), explained_variance_ratio,
-            # pd.Series(explained_variance_ratio, dtype=float).to_json(orient='values'),
-            pd.Series(kmeans_pca.labels_).to_json(orient='values'), more_important_features, svm_params)
+        # Run k-means with the number of cluster chosen
+        kmeans_pca = KMeans(n_clusters=clusters_number,
+                            init='k-means++', random_state=42)
+
+        # Fit data with the k-means pca model
+        kmeans_pca.fit(x)
+
+        # Create dataset with results from PCA and the cluster column
+        df_kmeans_pca = pd.concat(
+            [df.reset_index(drop=True), pd.DataFrame(x)], axis=1)
+        df_kmeans_pca.columns.values[-len(features):] = generate_pc_columns_names(
+            len(features))
+        df_kmeans_pca['Kmeans value'] = kmeans_pca.labels_
+
+        # Add cluster column with a label associated to each kmeans value
+        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(
+            generate_cluster_map(clusters_number))
+
+        # #############################################################################
+
+        colors = COLOR_LIST
+        labels = kmeans_pca.labels_
+        cluster_centers = kmeans_pca.cluster_centers_
+        # print('cluster centers: ', cluster_centers)
+        labels_unique = np.unique(labels)
+        n_clusters_ = len(labels_unique)
+
+        plt.figure(figsize=(6, 6))
+
+        # print("number of estimated clusters : %d" % n_clusters_)
+        # print(x_scaled_reduced)
+        for k, col in zip(range(n_clusters_), colors):
+            my_members = labels == k
+            cluster_center = cluster_centers[k]
+            # print(cluster_center)
+            plt.plot(x[my_members, 0], x[my_members, 1], col + ".")
+            plt.plot(cluster_center[0], cluster_center[1], "X", markerfacecolor=col, markeredgecolor="k", markersize=10)
+        plt.title("Estimated number of clusters: %d" % n_clusters_)
+        # plt.grid
+        two_first_components_plot = get_base64(plt)
+        # plt.show()
+        plt.clf()
+
+        # Set data for SVM
+        df['cluster'] = kmeans_pca.labels_
+        original_df['cluster'] = kmeans_pca.labels_
+
+        svm_params = {'df': df, 'x_scaled_reduced': x,
+                      'clusters_number': clusters_number}
+
+        return (two_first_components_plot.decode('ascii'), None, wcss_plot.decode('ascii'), None, None,
+                pd.Series(kmeans_pca.labels_).to_json(orient='values'), None, svm_params, df, original_df)

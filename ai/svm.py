@@ -23,7 +23,7 @@ def generate_svm_color_map(number):
 def plot_contours(ax, clf, xx, yy, **params):
     Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape((xx.shape))
-    print(Z.shape)
+    # print(Z.shape)
     out = ax.contourf(xx, yy, Z, **params)
     return out
 

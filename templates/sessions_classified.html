@@ -1,0 +1,33 @@
+{% extends 'main.html' %}
+
+{% load static %}
+
+{% block sessions_classified %}
+    <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
+        <h3>Resumen de sesiones por tipo</h3>
+
+        {% for key,value in dictionary.items %}
+            <b>Sessiones tipo {{ key }}</b><br>
+            <br>
+
+            velocidad media: {{ value.0 }} km/h<br>
+            contaminación media: {{ value.1 }}g/km<br>
+            número de paradas: {{ value.2 }}<br>
+            número de caladas: {{ value.3 }}<br>
+
+            <br>
+        {% endfor %}
+        <br>
+        <h3>Lista de sesiones por tipo</h3>
+        {% for type, sessions in session_list.items %}
+            <b>Sesiones tipo {{ type }}</b><br>
+            <br>
+
+            {{ sessions }}<br>
+
+            <br>
+        {% endfor %}
+
+    </div>
+{% endblock %}
+
