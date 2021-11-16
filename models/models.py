@@ -16,6 +16,20 @@ class Log(models.Model):
         unique_together = ('email', 'session')
 
 
+class Summary(models.Model):
+    co2_mean = models.FloatField(null=True)
+    speed_moving_mean = models.FloatField(null=True)
+    distance = models.FloatField(null=True)
+    duration = models.FloatField(null=True)
+    total_fuel_used = models.FloatField(null=True)
+    total_count_stop = models.FloatField(null=True)
+    total_car_off = models.FloatField(null=True)
+    city = models.FloatField(null=True)
+    hgwy = models.FloatField(null=True)
+    idle = models.FloatField(null=True)
+    log = models.OneToOneField(Log, null=True, blank=True, on_delete=models.SET_NULL)
+
+
 class Sensor(models.Model):
     pid = models.CharField(unique=True, max_length=255)
     user_full_name = models.CharField(null=True, max_length=255)

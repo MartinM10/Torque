@@ -30,7 +30,7 @@ from weasyprint import HTML
 from Torque.settings import MEDIA_ROOT
 from ai import k_means as km, svm
 from ai.common import get_base64
-from models.models import Log, Record, Sensor, Track, TrackLog, Dataset, KMeans
+from models.models import Log, Record, Sensor, Track, TrackLog, Dataset, KMeans, Summary
 from models.serializers import LogSerializer, RecordSerializer, SensorSerializer
 
 geolocator = Nominatim(user_agent="Torque")
@@ -505,6 +505,7 @@ def download_summary_all_sessions(request):
         if 'TOTAL_TRIP' in dataframe.columns:
             distance = dataframe['TOTAL_TRIP'].tolist()
             dict_dataframe['TOTAL_TRIP'] = distance
+
         '''
         if 'TOTAL_HGWY' in dataframe.columns:
             highway = dataframe['TOTAL_HGWY'].tolist()
@@ -519,19 +520,6 @@ def download_summary_all_sessions(request):
             dict_dataframe['TOTAL_IDLE'] = idle
         '''
 
-        '''
-        if 'STOP_LESS_4_SEC' in dataframe.columns:
-            stop_less_4sec = dataframe['STOP_LESS_4_SEC'].tolist()
-            dict_dataframe['STOP_LESS_4_SEC'] = stop_less_4sec
-
-        if 'STOP_LESS_6_SEC' in dataframe.columns:
-            stop_less_6sec = dataframe['STOP_LESS_6_SEC'].tolist()
-            dict_dataframe['STOP_LESS_6_SEC'] = stop_less_6sec
-
-        if 'STOP_MORE_EQ_6_SEC' in dataframe.columns:
-            stop_more_eq_6sec = dataframe['STOP_MORE_EQ_6_SEC'].tolist()
-            dict_dataframe['STOP_MORE_EQ_6_SEC'] = stop_more_eq_6sec
-        '''
         if 'TOTAL_STOP_COUNT' in dataframe.columns:
             stop_count = dataframe['TOTAL_STOP_COUNT'].tolist()
             dict_dataframe['TOTAL_STOP_COUNT'] = stop_count
@@ -601,36 +589,18 @@ def obtain_dataframe(session_id):
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
-    # records.filter(sensor__pid='')
-    # print(dictionary)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     dict_df.insert(loc=0, column='SESSION_ID', value=session_id)
+
     # Calculated data
+    '''
+    # Stops and car off
     stops = obtain_stops(session_id)
-    # print(stops)
-    dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_4_SEC', value=stops['stop_less_4_seconds'])
-    dict_df.insert(loc=len(dict_df.columns), column='STOP_LESS_6_SEC', value=stops['stop_less_6_seconds'])
-    dict_df.insert(loc=len(dict_df.columns), column='STOP_MORE_EQ_6_SEC', value=stops['stop_more_eq_6_seconds'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=stops['total_stop_count'])
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=stops['count_car_off'])
-
-    if 'TRIPTIME' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=dict_df['TRIPTIME'].max())
-
-    if 'TRIP' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=dict_df['TRIP'].max())
-
-    if 'FUEL_USED' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=dict_df['FUEL_USED'].max())
-
-    if 'HGWY' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_HGWY', value=dict_df['HGWY'].iloc[-1])
-
-    if 'CITY' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CITY', value=dict_df['CITY'].iloc[-1])
-
-    if 'IDLE' in dict_df.columns:
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=dict_df['IDLE'].iloc[-1])
+    '''
+    # Summary
+    summary = obtain_summary(session_id, dict_df)
 
     dataset = Dataset.objects.filter(log_id=session_id)
     if not dataset:
@@ -642,7 +612,6 @@ def obtain_dataframe(session_id):
                                    classification_applied=False, prediction_applied=False).save()
     # print(dict_df)
     clean_dataset(dict_df)
-
     return dict_df
 
 
@@ -1064,23 +1033,151 @@ def separe_sessions(request):
     return render(request, 'success.html', context=context)
 
 
+def obtain_summary(session_id, dict_df=None):
+    summary = Summary.objects.filter(log_id=session_id)
+
+    if summary:
+        co2_mean = summary.get().co2_mean
+        duration = summary.get().duration
+        distance = summary.get().distance
+        total_fuel_used = summary.get().total_fuel_used
+        speed_moving_mean = summary.get().speed_moving_mean
+        total_stop_count = summary.get().total_count_stop
+        total_car_off = summary.get().total_car_off
+        hgwy = summary.get().hgwy
+        city = summary.get().city
+        idle = summary.get().idle
+
+        if co2_mean:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CO2', value=co2_mean)
+        if duration:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=duration)
+        if distance:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=distance)
+        if total_fuel_used:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=total_fuel_used)
+        if speed_moving_mean:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP_SPEED', value=speed_moving_mean)
+        if total_stop_count:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=total_stop_count)
+        if total_car_off:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=total_car_off)
+        if hgwy:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_HGWY', value=hgwy)
+        if city:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CITY', value=city)
+        if idle:
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=idle)
+
+        dictionary = {
+            'co2_mean': co2_mean,
+            'duration': duration,
+            'distance': distance,
+            'total_fuel_used': total_fuel_used,
+            'speed_moving_mean': speed_moving_mean,
+            'total_stop_count': total_stop_count,
+            'total_car_off': total_car_off,
+            'hgwy': hgwy,
+            'city': city,
+            'idle': idle
+        }
+        return dictionary
+
+    # Stops and car off
+    stops = obtain_stops(session_id)
+    total_count_stop = stops['total_stop_count']
+    total_car_off = stops['count_car_off']
+
+    co2_mean = None
+    speed_moving_mean = None
+    distance = None
+    duration = None
+    total_fuel_used = None
+    city = None
+    hgwy = None
+    idle = None
+
+    if 'CO2' in dict_df.columns:
+        co2_mean = round(dict_df['CO2'].mean(), 2)
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CO2', value=co2_mean)
+
+    if 'TRIPTIME' in dict_df.columns:
+        duration = dict_df['TRIPTIME'].max()
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TIME', value=duration)
+
+    if 'TRIP' in dict_df.columns:
+        distance = round(dict_df['TRIP'].max(), 2)
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=distance)
+
+    if 'TRIP_SPEED' in dict_df.columns:
+        speed_moving_mean = round(dict_df['TRIP_SPEED'].max(), 2)
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP_SPEED', value=speed_moving_mean)
+
+    if 'FUEL_USED' in dict_df.columns:
+        total_fuel_used = round(dict_df['FUEL_USED'].max(), 2)
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=total_fuel_used)
+
+    if 'HGWY' in dict_df.columns:
+        hgwy = dict_df['HGWY'].iloc[-1]
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_HGWY', value=hgwy)
+
+    if 'CITY' in dict_df.columns:
+        city = dict_df['CITY'].iloc[-1]
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CITY', value=city)
+
+    if 'IDLE' in dict_df.columns:
+        idle = dict_df['IDLE'].iloc[-1]
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=idle)
+
+    summary = Summary.objects.filter(log_id=session_id)
+    if not summary:
+        with transaction.atomic():
+            Summary.objects.create(co2_mean=co2_mean,
+                                   speed_moving_mean=speed_moving_mean,
+                                   distance=distance,
+                                   duration=duration,
+                                   total_fuel_used=total_fuel_used,
+                                   total_count_stop=stops['total_stop_count'],
+                                   total_car_off=stops['count_car_off'],
+                                   city=city,
+                                   hgwy=hgwy,
+                                   idle=idle,
+                                   log_id=session_id
+                                   ).save()
+    dictionary = {
+        'co2_mean': co2_mean,
+        'duration': duration,
+        'distance': distance,
+        'total_fuel_used': total_fuel_used,
+        'speed_moving_mean': speed_moving_mean,
+        'total_stop_count': total_count_stop,
+        'total_car_off': total_car_off,
+        'hgwy': hgwy,
+        'city': city,
+        'idle': idle
+    }
+    return dictionary
+
+
 def obtain_stops(session_id):
     session = Log.objects.get(id=session_id)
+    stops = Summary.objects.filter(log_id=session_id)
+
+    if stops:
+        dictionary = {
+            'total_stop_count': stops.get().total_count_stop,
+            'count_car_off': stops.get().total_car_off,
+        }
+        return dictionary
+
     records = session.record_set.filter(sensor__pid='0d') | session.record_set.filter(sensor__pid='0c'). \
         order_by('id')
 
     timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
     timekeeper_car_off = datetime.timedelta(hours=0, minutes=0, seconds=0)
     total_stop_count = 0
-    stop_less_4_seconds = 0
-    counted_4_seconds = False
-    stop_less_6_seconds = 0
-    counted_6_seconds = False
-    stop_more_eq_6_seconds = 0
-    counted_more_eq_6_seconds = False
     count_car_off = 0
     counted_car_off = False
-    # Possible traffic light
     counted_stop = False
     first_time = True
     first_time_car_off = True
@@ -1091,7 +1188,6 @@ def obtain_stops(session_id):
         if record.sensor.pid == '0d':
 
             if record.value and float(record.value) == 0:
-
                 if reset:
                     reset = False
 
@@ -1100,20 +1196,6 @@ def obtain_stops(session_id):
                     last_time = record.time
 
                 timekeeper += record.time - last_time
-
-                if not counted_4_seconds and timekeeper < datetime.timedelta(hours=0, minutes=0, seconds=4):
-                    stop_less_4_seconds += 1
-                    counted_4_seconds = True
-
-                if not counted_6_seconds and timekeeper <= datetime.timedelta(hours=0, minutes=0, seconds=6):
-                    stop_less_6_seconds += 1
-                    stop_less_4_seconds -= 1
-                    counted_6_seconds = True
-
-                if not counted_more_eq_6_seconds and timekeeper > datetime.timedelta(hours=0, minutes=0, seconds=6):
-                    stop_more_eq_6_seconds += 1
-                    stop_less_6_seconds -= 1
-                    counted_more_eq_6_seconds = True
 
                 if not counted_stop:
                     counted_stop = True
@@ -1127,12 +1209,8 @@ def obtain_stops(session_id):
                     timekeeper = datetime.timedelta(hours=0, minutes=0, seconds=0)
                     counted_stop = False
                     first_time = True
-                    counted_4_seconds = False
-                    counted_6_seconds = False
-                    counted_more_eq_6_seconds = False
 
         if record.sensor.pid == '0c':
-
             if record.value and float(record.value) == 0:
                 if reset_car_off:
                     reset_car_off = False
@@ -1158,18 +1236,8 @@ def obtain_stops(session_id):
                     counted_car_off = False
                     first_time_car_off = True
 
-    '''
-    print('paradas totales: ', total_stop_count)
-    print('stop_less_4_seconds: ', stop_less_4_seconds)
-    print('stop_less_6_seconds: ', stop_less_6_seconds)
-    print('stop_more_eq_6_seconds: ', stop_more_eq_6_seconds)
-    print('numero de caladas: ', count_car_off)
-    '''
     dictionary = {
         'total_stop_count': total_stop_count,
-        'stop_less_4_seconds': stop_less_4_seconds,
-        'stop_less_6_seconds': stop_less_6_seconds,
-        'stop_more_eq_6_seconds': stop_more_eq_6_seconds,
         'count_car_off': count_car_off
     }
     return dictionary
@@ -1424,35 +1492,12 @@ def session_in_map(request, session_id):
     # pearsonr(df[' puntos '], df[' asiste '])
     plt.figure(figsize=(16, 6))
     heatmap_plot = None
+
     if not dict_df.empty:
         heatmap = sns.heatmap(dict_df.corr(), cmap="Blues", vmin=-1, vmax=1, annot=True)
         heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 12}, pad=12)
         heatmap_plot = get_base64(plt, 'tight')
         heatmap_plot = heatmap_plot.decode('ascii')
-
-    # print(dict_df.corr())
-    # print(dataframe)
-    '''
-    print(dataframe.drop(columns=[
-        'GPS_SPD',
-        'TRIP',
-        'GPS_ACC',
-        'TRIPTIME',
-        'TRIPMSPEED',
-        'TRIP_SPEED',
-        'AV_CO2',
-        'SPD_DIFF',
-        'TRIP_LPK',
-        'STOP_LESS_4_SEC',
-        'STOP_LESS_6_SEC',
-        'STOP_MORE_EQ_6_SEC',
-        'TOTAL_STOP_COUNT',
-        'TOTAL_TRIP',
-        'TOTAL_TIME',
-        'TOTAL_FUEL_USED',
-        'TOTAL_CAR_OFF']).corr())
-    '''
-    # print('correlacion entre velocidad y contaminacion: ', dataframe['SPEED'].corr(dataframe['CO2']))
 
     context = {
         'data': data,
