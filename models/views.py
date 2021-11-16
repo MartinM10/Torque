@@ -1118,15 +1118,15 @@ def obtain_summary(session_id, dict_df=None):
         total_fuel_used = round(dict_df['FUEL_USED'].max(), 2)
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=total_fuel_used)
 
-    if 'HGWY' in dict_df.columns and not math.nan(dict_df['HGWY'].iloc[-1]):
+    if 'HGWY' in dict_df.columns and not math.isnan(dict_df['HGWY'].iloc[-1]):
         hgwy = dict_df['HGWY'].iloc[-1]
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_HGWY', value=hgwy)
 
-    if 'CITY' in dict_df.columns and not math.nan(dict_df['CITY'].iloc[-1]):
+    if 'CITY' in dict_df.columns and not math.isnan(dict_df['CITY'].iloc[-1]):
         city = dict_df['CITY'].iloc[-1]
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CITY', value=city)
 
-    if 'IDLE' in dict_df.columns and not math.nan(dict_df['IDLE'].iloc[-1]):
+    if 'IDLE' in dict_df.columns and not math.isnan(dict_df['IDLE'].iloc[-1]):
         idle = dict_df['IDLE'].iloc[-1]
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=idle)
 
