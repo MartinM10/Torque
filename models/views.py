@@ -111,18 +111,17 @@ def metricas_type_sessions(request):
             log = Log.objects.get(id=log_type.id)
             sessions_list.append(log.id)
 
-            values_speed = list(log.record_set.filter(sensor__pid='0d').values_list('value', flat=True))
-            values_co2 = list(log.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True))
+            summary = Summary.objects.filter(log_id=log_type.id)
+            values_speed = summary.get().speed_moving_mean
+            values_co2 = summary.get().co2_mean
+            # values_speed = list(log.record_set.filter(sensor__pid='0d').values_list('value', flat=True))
+            # values_co2 = list(log.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True))
 
             if values_speed:
-                for value in values_speed:
-                    if value:
-                        speeds.append(float(value))
+                speeds.append(values_speed)
 
             if values_co2:
-                for value in values_co2:
-                    if value:
-                        co2.append(float(value))
+                co2.append(values_co2)
 
             stops = obtain_stops(log.id)
             count_stops.append(stops['total_stop_count'])
