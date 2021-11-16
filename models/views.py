@@ -640,7 +640,7 @@ def obtain_dataframe(session_id):
             Dataset.objects.create(log_id=session_id, name=name, rows_number=dict_df.shape[0],
                                    column_names=list(dict_df.columns.values),
                                    classification_applied=False, prediction_applied=False).save()
-    print(dict_df)
+    # print(dict_df)
     clean_dataset(dict_df)
 
     return dict_df
