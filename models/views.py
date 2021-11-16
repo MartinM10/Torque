@@ -1362,9 +1362,8 @@ def session_in_map(request, session_id):
 
     # Summary
     if 'TRIP_SPEED' in dataframe.columns:
-        print('tamaño: ', dataframe['TRIP_SPEED'].size - 1)
         values['Velocidad media (en movimiento)'] = str(
-            round(dataframe['TRIP_SPEED'].iloc[dataframe['TRIP_SPEED'].size - 1], 2)) + ' km/h'
+            round(dataframe['TRIP_SPEED'].iloc[- 1], 2)) + ' km/h'
 
     if 'TOTAL_TRIP' in dataframe.columns:
         values['Distancia'] = str(round(dataframe['TOTAL_TRIP'].iloc[0], 2)) + ' km'
