@@ -640,7 +640,7 @@ def obtain_dataframe(session_id):
             Dataset.objects.create(log_id=session_id, name=name, rows_number=dict_df.shape[0],
                                    column_names=list(dict_df.columns.values),
                                    classification_applied=False, prediction_applied=False).save()
-
+    print(dict_df)
     clean_dataset(dict_df)
 
     return dict_df
@@ -1423,11 +1423,12 @@ def session_in_map(request, session_id):
     # calcular el valor p del coeficiente de correlación entre puntos y asistencias
     # pearsonr(df[' puntos '], df[' asiste '])
     plt.figure(figsize=(16, 6))
-
-    heatmap = sns.heatmap(dict_df.corr(), cmap="Blues", vmin=-1, vmax=1, annot=True)
-    heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 12}, pad=12)
-    heatmap_plot = get_base64(plt, 'tight')
-    heatmap_plot = heatmap_plot.decode('ascii')
+    heatmap_plot = None
+    if not dict_df.empty:
+        heatmap = sns.heatmap(dict_df.corr(), cmap="Blues", vmin=-1, vmax=1, annot=True)
+        heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 12}, pad=12)
+        heatmap_plot = get_base64(plt, 'tight')
+        heatmap_plot = heatmap_plot.decode('ascii')
 
     # print(dict_df.corr())
     # print(dataframe)
