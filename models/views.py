@@ -597,7 +597,7 @@ def obtain_dataframe(session_id):
             replace('(', '_').replace(')', '').replace(
             '.',
             '_').upper()
-        values = records.filter(sensor_id=sensor_id).values_list('value', flat=True)
+        values = records.filter(sensor_id=sensor_id).values_list('value', flat=True).exclude(value__isnull=True)
         list_values = list(values)
         dictionary[sensor_name] = list_values
 
@@ -632,6 +632,7 @@ def obtain_dataframe(session_id):
     if 'IDLE' in dict_df.columns:
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_IDLE', value=dict_df['IDLE'].iloc[-1])
 
+    print(dict_df)
     dataset = Dataset.objects.filter(log_id=session_id)
     if not dataset:
         name = 'dataset_session_' + str(session_id)
