@@ -9,11 +9,41 @@
         {% for key,value in dictionary.items %}
             <b>Sessiones tipo {{ key }}</b><br>
             <br>
+            {% if value.0 %}
+                velocidad media: {{ value.0 }} km/h<br>
+            {% endif %}
 
-            velocidad media: {{ value.0 }} km/h<br>
-            contaminación media: {{ value.1 }}g/km<br>
-            número de paradas: {{ value.2 }}<br>
-            número de caladas: {{ value.3 }}<br>
+            {% if value.1 %}
+                contaminación media: {{ value.1 }} g/km<br>
+            {% endif %}
+
+            {% if value.2 %}
+                distancia media: {{ value.2 }} km<br>
+            {% endif %}
+
+            {% if  value.3 %}
+                duracion media: {{ value.3 }}<br>
+            {% endif %}
+
+            {% if value.4 %}
+                número de paradas: {{ value.4 }}<br>
+            {% endif %}
+
+            {% if value.5 %}
+                número de caladas: {{ value.5 }}<br>
+            {% endif %}
+
+            {% if  value.6 %}
+                autovia: {{ value.6 }} %<br>
+            {% endif %}
+
+            {% if  value.7 %}
+                ciudad: {{ value.7 }} %<br>
+            {% endif %}
+
+            {% if value.8 %}
+                idle: {{ value.8 }} %<br>
+            {% endif %}
 
             <br>
         {% endfor %}

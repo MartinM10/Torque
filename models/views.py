@@ -103,9 +103,16 @@ def metricas_type_sessions(request):
         logs_type = Log.objects.filter(type=type)
         speeds = []
         co2 = []
+        distances = []
+        durations = []
+        stops = []
+        car_off = []
         sessions_list = []
         count_stops = []
         count_car_off = []
+        hgwys = []
+        citys = []
+        idles = []
 
         for log_type in logs_type:
             log = Log.objects.get(id=log_type.id)
@@ -114,32 +121,77 @@ def metricas_type_sessions(request):
             summary = Summary.objects.filter(log_id=log_type.id)
             values_speed = summary.get().speed_moving_mean
             values_co2 = summary.get().co2_mean
+            values_distance = summary.get().distance
+            values_duration = summary.get().duration
+            values_total_stop = summary.get().total_count_stop
+            values_total_carr_off = summary.get().total_car_off
+            values_hgwy = summary.get().hgwy
+            values_city = summary.get().city
+            values_idle = summary.get().idle
+
             # values_speed = list(log.record_set.filter(sensor__pid='0d').values_list('value', flat=True))
             # values_co2 = list(log.record_set.filter(sensor__pid='ff1257').values_list('value', flat=True))
 
             if values_speed:
                 speeds.append(values_speed)
-
             if values_co2:
                 co2.append(values_co2)
-
-            stops = obtain_stops(log.id)
-            count_stops.append(stops['total_stop_count'])
-            count_car_off.append(stops['count_car_off'])
+            if values_distance:
+                distances.append(values_distance)
+            if values_duration:
+                durations.append(values_duration)
+            if values_total_stop:
+                stops.append(values_total_stop)
+            if values_total_carr_off:
+                car_off.append(values_total_carr_off)
+            if values_hgwy:
+                hgwys.append(values_hgwy)
+            if values_city:
+                citys.append(values_city)
+            if values_idle:
+                idles.append(values_idle)
 
         dict[type] = sessions_list
-        speed_mean = round(np.mean(speeds).astype(float), 2)
-        co2_mean = round(np.mean(co2).astype(float), 2)
-        stops_mean = round(np.mean(count_stops).astype(float), 2)
-        car_off_mean = round(np.mean(count_car_off).astype(float), 2)
 
-        results = [speed_mean, co2_mean, stops_mean, car_off_mean]
+        speed_mean = None
+        co2_mean = None
+        distance_mean = None
+        duration_mean = None
+        stops_mean = None
+        car_off_mean = None
+        hgwy_mean = None
+        idle_mean = None
+        city_mean = None
+
+        if speeds:
+            speed_mean = round(np.mean(speeds).astype(float), 2)
+        if co2:
+            co2_mean = round(np.mean(co2).astype(float), 2)
+        if distances:
+            distance_mean = round(np.mean(distances).astype(float), 2)
+        if durations:
+            duration_mean = round(np.mean(durations).astype(float), 2)
+        if stops:
+            stops_mean = round(np.mean(stops).astype(float), 2)
+        if car_off:
+            car_off_mean = round(np.mean(car_off).astype(float), 2)
+        if hgwys:
+            hgwy_mean = round(np.mean(hgwys).astype(float), 2)
+        if citys:
+            city_mean = round(np.mean(citys).astype(float), 2)
+        if idles:
+            idle_mean = round(np.mean(idles).astype(float), 2)
+
+        results = [speed_mean, co2_mean, distance_mean,
+                   str(datetime.timedelta(seconds=duration_mean)),
+                   stops_mean, car_off_mean, hgwy_mean, city_mean,
+                   idle_mean]
         dictionary[type] = results
 
-    context = {
-        'dictionary': dictionary,
-        'session_list': dict,
-    }
+        context = {
+            'dictionary': dictionary,
+            'session_list': dict,
+        }
     return render(request, 'sessions_classified.html', context=context)
 
 
