@@ -54,8 +54,10 @@ urlpatterns = [
 
                   path('download_summary_all_sessions/', download_summary_all_sessions,
                        name='download_summary_all_sessions'),
+                  path('export_by_type_session/<int:type_session>/', export_by_type_session,
+                       name='export_by_type_session'),
 
-                  path('metricas_type_sessions/', metricas_type_sessions, name='metricas_type_sessions'),
+                  path('metricas_type_sessions', metricas_type_sessions, name='metricas_type_sessions'),
 
                   # AI
                   path('upload_csv/', upload_csv, name='upload_csv'),

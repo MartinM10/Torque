@@ -8,7 +8,13 @@
 
         {% for key,value in dictionary.items %}
             <b>Sessiones tipo {{ key }}</b><br>
+            <a style="margin-top:5px;margin-bottom: 5px" href="{% url 'export_by_type_session' type_session=key %}"
+               class="btn btn-primary" role="button">Exportar
+                lecturas de los sensores de las sesiones tipo {{ key }}</a>
             <br>
+            {% if value.9 %}
+                número de sesiones: {{ value.9 }}<br>
+            {% endif %}
             {% if value.0 %}
                 velocidad media: {{ value.0 }} km/h<br>
             {% endif %}

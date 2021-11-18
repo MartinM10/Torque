@@ -108,8 +108,6 @@ def metricas_type_sessions(request):
         stops = []
         car_off = []
         sessions_list = []
-        count_stops = []
-        count_car_off = []
         hgwys = []
         citys = []
         idles = []
@@ -152,7 +150,6 @@ def metricas_type_sessions(request):
                 idles.append(values_idle)
 
         dict[type] = sessions_list
-
         speed_mean = None
         co2_mean = None
         distance_mean = None
@@ -162,6 +159,7 @@ def metricas_type_sessions(request):
         hgwy_mean = None
         idle_mean = None
         city_mean = None
+        len_seassion_list = len(sessions_list)
 
         if speeds:
             speed_mean = round(np.mean(speeds).astype(float), 2)
@@ -185,7 +183,7 @@ def metricas_type_sessions(request):
         results = [speed_mean, co2_mean, distance_mean,
                    str(datetime.timedelta(seconds=duration_mean)),
                    stops_mean, car_off_mean, hgwy_mean, city_mean,
-                   idle_mean]
+                   idle_mean, len_seassion_list]
         dictionary[type] = results
 
         context = {
@@ -531,6 +529,91 @@ def compare_all_routes(request, session_id, percentage=60):
     }
 
     return render(request, 'routes.html', context=context)
+
+
+def export_by_type_session(request, type_session):
+    logs = Log.objects.filter(type=type_session)
+    '''
+    final_df = pandas.DataFrame()
+    dataframe = pandas.DataFrame()
+    for log in logs:
+        records = Record.objects.filter(log_id=log.id).order_by('id').exclude(
+            sensor__user_full_name__in=exclude_sensor_list)
+
+        dict_dataframe = []
+
+        for record in records:
+            dict_dataframe.append(record.value)
+
+        dict_df = pandas.DataFrame(columns=['value'], data=dict_dataframe, dtype=float)
+        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
+
+        final_df = final_df.append(dict_df)
+
+    final_df.reset_index(drop=True, inplace=True)
+    clean_dataset(final_df)
+    print(final_df)
+    '''
+    recs = Record.objects.filter(log__type=type_session).exclude(
+        sensor__user_full_name__in=exclude_sensor_list).order_by(
+        'log_id')
+
+    values = list(recs.values_list('value', flat=True))
+    sessions = list(recs.values_list('log_id', flat=True))
+    dictionary = {}
+    dataframe_final = pandas.DataFrame()
+
+    for log in logs:
+        recs = Record.objects.filter(log__type=type_session, log_id=log.id). \
+            exclude(sensor__user_full_name__in=exclude_sensor_list).order_by('log_id')
+        values = list(recs.values_list('value', flat=True))
+
+        dictionary['SESSION_ID'] = [log.id] * len(values)
+        dictionary['values'] = values
+        dataframe3 = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+        dataframe_final = dataframe_final.append(dataframe3)
+
+    # print(dataframe_final)
+    clean_dataset(dataframe_final)
+    # print('final')
+    # print(dataframe_final.transpose())
+    df_final = pandas.DataFrame()
+    for log in logs:
+        vals = dataframe_final[dataframe_final['SESSION_ID'] == log.id]
+        # print(vals)
+        df_final.insert(loc=len(df_final.columns), column=log.id, value=vals['values'], allow_duplicates=True)
+
+    # print('finals')
+    # print(df_final)
+    df_final = df_final.dropna(1)
+    df_final = df_final.set_index(df_final.columns[0]).transpose()
+
+    # print(df_final)
+    # print(dataframe_final[dataframe_final['SESSION_ID'] == 317].transpose)
+
+    # dataframe_final.set_index('SESSION_ID', inplace=True)
+
+    # dataframe_final = dataframe_final.transpose()
+
+    # print(dataframe_final)
+
+    '''
+    # dataframe = pandas.DataFrame(columns=['value'], data=dict_dataframe, dtype=float)
+    dataframe.insert(loc=0, column='SESSION_ID', value=sessions, allow_duplicates=True)
+    dataframe.insert(loc=1, column='value', value=values, allow_duplicates=True)
+    clean_dataset(dataframe)
+
+    print(dataframe)
+    '''
+    filename = 'all_sessions_type_' + str(type_session)
+    time_now = datetime.datetime.now()
+
+    content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
+    df_final.to_csv(path_or_buf=response, index=False)
+
+    return response
 
 
 def download_summary_all_sessions(request):
@@ -1109,7 +1192,7 @@ def obtain_summary(session_id, dict_df=None):
         if total_fuel_used:
             dict_df.insert(loc=len(dict_df.columns), column='TOTAL_FUEL_USED', value=total_fuel_used)
         if speed_moving_mean:
-            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP_SPEED', value=speed_moving_mean)
+            dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIPMSPEED', value=speed_moving_mean)
         if total_stop_count:
             dict_df.insert(loc=len(dict_df.columns), column='TOTAL_STOP_COUNT', value=total_stop_count)
         if total_car_off:
@@ -1161,9 +1244,9 @@ def obtain_summary(session_id, dict_df=None):
         distance = round(dict_df['TRIP'].max(), 2)
         dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP', value=distance)
 
-    if 'TRIP_SPEED' in dict_df.columns:
-        speed_moving_mean = round(dict_df['TRIP_SPEED'].max(), 2)
-        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIP_SPEED', value=speed_moving_mean)
+    if 'TRIPMSPEED' in dict_df.columns:
+        speed_moving_mean = round(dict_df['TRIPMSPEED'].max(), 2)
+        dict_df.insert(loc=len(dict_df.columns), column='TOTAL_TRIPMSPEED', value=speed_moving_mean)
 
     if 'FUEL_USED' in dict_df.columns:
         total_fuel_used = round(dict_df['FUEL_USED'].max(), 2)
@@ -1482,9 +1565,9 @@ def session_in_map(request, session_id):
             dict_dataframe['REVS'] = engine_revs
 
         # Summary
-        if 'TRIP_SPEED' in dataframe.columns:
+        if 'TRIPMSPEED' in dataframe.columns:
             values['Velocidad media (en movimiento)'] = str(
-                round(dataframe['TRIP_SPEED'].iloc[-1], 2)) + ' km/h'
+                round(dataframe['TRIPMSPEED'].iloc[-1], 2)) + ' km/h'
 
         if 'TOTAL_TRIP' in dataframe.columns:
             values['Distancia'] = str(round(dataframe['TOTAL_TRIP'].iloc[0], 2)) + ' km'
