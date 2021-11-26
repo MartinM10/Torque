@@ -54,8 +54,14 @@ urlpatterns = [
 
                   path('download_summary_all_sessions/', download_summary_all_sessions,
                        name='download_summary_all_sessions'),
+
                   path('export_by_type_session/<int:type_session>/', export_by_type_session,
                        name='export_by_type_session'),
+
+                  path('types_of_sessions/<int:type_session>/', obtain_type_sessions, name='types_of_sessions'),
+
+                  path('types_of_sessions_2/<int:type_session>/', obtain_type_sessions_2,
+                       name='obtain_type_sessions_2'),
 
                   path('metricas_type_sessions', metricas_type_sessions, name='metricas_type_sessions'),
 

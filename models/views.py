@@ -197,11 +197,14 @@ def pca_request(request):
     # Apply k-means to the CSV
     if request.method == 'POST':
 
+        csv_file = request.FILES['file']
+        filename = csv_file.name
+
         two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
         explained_variance_ratio, cluster_list, more_important_features, svm_params, df, original_df = \
-            km.start(request.FILES.get("file"))
+            km.start(csv_file, filename=filename)
 
-        complete_name = request.FILES.get("file").name
+        complete_name = filename
         dataset_id = None
         dataset = None
 
@@ -272,9 +275,10 @@ def pca_request(request):
             )
 
         # Apply SVM to the data labelled by k-means
-        svm_plot = svm.start(
-            svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
-
+        # svm_plot = svm.start(
+        #    svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
+        svm_plot = None
+        
         if np.any(explained_variance_ratio):
             explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
                                         range(len(explained_variance_ratio))]
@@ -531,85 +535,41 @@ def compare_all_routes(request, session_id, percentage=60):
     return render(request, 'routes.html', context=context)
 
 
+@csrf_exempt
 def export_by_type_session(request, type_session):
     logs = Log.objects.filter(type=type_session)
-    '''
-    final_df = pandas.DataFrame()
-    dataframe = pandas.DataFrame()
-    for log in logs:
-        records = Record.objects.filter(log_id=log.id).order_by('id').exclude(
-            sensor__user_full_name__in=exclude_sensor_list)
-
-        dict_dataframe = []
-
-        for record in records:
-            dict_dataframe.append(record.value)
-
-        dict_df = pandas.DataFrame(columns=['value'], data=dict_dataframe, dtype=float)
-        dict_df.insert(loc=0, column='SESSION_ID', value=log.id)
-
-        final_df = final_df.append(dict_df)
-
-    final_df.reset_index(drop=True, inplace=True)
-    clean_dataset(final_df)
-    print(final_df)
-    '''
     recs = Record.objects.filter(log__type=type_session).exclude(
         sensor__user_full_name__in=exclude_sensor_list).order_by(
         'log_id')
 
     values = list(recs.values_list('value', flat=True))
     sessions = list(recs.values_list('log_id', flat=True))
-    dictionary = {}
-    dataframe_final = pandas.DataFrame()
+    data = list(zip(sessions, values))
+    dataframe = pandas.DataFrame(columns=['SESSION_ID', 'values'], data=data)
 
-    for log in logs:
-        recs = Record.objects.filter(log__type=type_session, log_id=log.id). \
-            exclude(sensor__user_full_name__in=exclude_sensor_list).order_by('log_id')
-        values = list(recs.values_list('value', flat=True))
-
-        dictionary['SESSION_ID'] = [log.id] * len(values)
-        dictionary['values'] = values
-        dataframe3 = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
-        dataframe_final = dataframe_final.append(dataframe3)
-
-    # print(dataframe_final)
-    clean_dataset(dataframe_final)
-    # print('final')
-    # print(dataframe_final.transpose())
-    df_final = pandas.DataFrame()
-    for log in logs:
-        vals = dataframe_final[dataframe_final['SESSION_ID'] == log.id]
-        # print(vals)
-        df_final.insert(loc=len(df_final.columns), column=log.id, value=vals['values'], allow_duplicates=True)
-
-    # print('finals')
-    # print(df_final)
-    df_final = df_final.dropna(1)
-    df_final = df_final.set_index(df_final.columns[0]).transpose()
-
-    # print(df_final)
-    # print(dataframe_final[dataframe_final['SESSION_ID'] == 317].transpose)
-
-    # dataframe_final.set_index('SESSION_ID', inplace=True)
-
-    # dataframe_final = dataframe_final.transpose()
-
-    # print(dataframe_final)
-
-    '''
-    # dataframe = pandas.DataFrame(columns=['value'], data=dict_dataframe, dtype=float)
-    dataframe.insert(loc=0, column='SESSION_ID', value=sessions, allow_duplicates=True)
-    dataframe.insert(loc=1, column='value', value=values, allow_duplicates=True)
     clean_dataset(dataframe)
 
-    print(dataframe)
-    '''
+    df_final = pandas.DataFrame()
+    for log in logs:
+        vals = dataframe[dataframe['SESSION_ID'] == log.id]
+        vals.reset_index(drop=True, inplace=True)
+        df_final.insert(loc=len(df_final.columns), column=log.id, value=vals['values'], allow_duplicates=True)
+
+    # clean_dataset(df_final2)
+    df_final = df_final.dropna()
+    df_final.reset_index(drop=True, inplace=True)
+    df_final = df_final.transpose()
+
+    df_final.insert(loc=0, column='SESSION_ID', value='')
+
+    for log in logs:
+        df_final.loc[log.id, 'SESSION_ID'] = log.id
+
     filename = 'all_sessions_type_' + str(type_session)
     time_now = datetime.datetime.now()
 
     content = 'attachment; filename=' + filename + '_%s.csv' % time_now.isoformat()
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='application/csv')
     response['Content-Disposition'] = content  # 'attachment; filename="session.csv"'
     df_final.to_csv(path_or_buf=response, index=False)
 
@@ -770,10 +730,12 @@ def download_csv(request, session_id):
 def export_data_to_csv(request):
     session_queryset = Log.objects.all().order_by('-id')
     sensors = Sensor.objects.all().exclude(user_full_name__in=exclude_sensor_list).order_by('id')
+    types = Log.objects.values_list('type', flat=True).distinct().order_by('type')
 
     context = {
         'sessions': session_queryset,
         'sensors': sensors,
+        'types': types
     }
 
     return render(request, 'export_csv.html', context=context)
@@ -803,6 +765,43 @@ def obtain_sessions_from_sensor(request, sensor_id):
     return JsonResponse({"sessions": list(sessions)})
 
 
+def obtain_type_sessions(request, type_session):
+    logs = Log.objects.filter(type=type_session)
+    dictionary = {}
+    dataframe_final = pandas.DataFrame()
+
+    for log in logs:
+        recs = Record.objects.filter(log__type=type_session, log_id=log.id). \
+            exclude(sensor__user_full_name__in=exclude_sensor_list).order_by('log_id')
+        values = list(recs.values_list('value', flat=True))
+
+        dictionary['SESSION_ID'] = [log.id] * len(values)
+        dictionary['values'] = values
+        dataframe = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
+        dataframe_final = dataframe_final.append(dataframe)
+
+    clean_dataset(dataframe_final)
+
+    df_final = pandas.DataFrame()
+
+    for log in logs:
+        vals = dataframe_final[dataframe_final['SESSION_ID'] == log.id]
+        df_final.insert(loc=len(df_final.columns), column=log.id, value=vals['values'], allow_duplicates=True)
+
+    df_final = df_final.dropna()
+    df_final.reset_index(drop=True, inplace=True)
+    df_final = df_final.transpose()
+
+    df_final.insert(loc=0, column='SESSION_ID', value='')
+
+    for log in logs:
+        df_final.loc[log.id, 'SESSION_ID'] = log.id
+
+    results = df_final.to_json(orient='split')
+
+    return JsonResponse(results, safe=False)
+
+
 @csrf_exempt
 def generate_custom_csv(request):
     id_session = request.POST['sesiones']
@@ -821,6 +820,7 @@ def generate_custom_csv(request):
 
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     clean_dataset(dict_df)
+    dict_df.insert(loc=0, column='SESSION_ID', value=id_session, allow_duplicates=True)
     # print(dict_df)
     # dict_df.reset_index(drop=True, inplace=True)
 
@@ -840,10 +840,13 @@ def generate_custom_csv(request):
 def generate_csv_multiple_sessions(request):
     id_sensor = request.POST['sensores']
     sensor = Sensor.objects.get(id=id_sensor)
-    id_sessiones = [value for key, value in request.POST.items() if 'session' in key]
+    id_sessiones = [int(value) for key, value in request.POST.items() if 'session' in key]
 
     # log = Log.objects.get(id=id_sensor)
     dictionary = {}
+
+    if id_sessiones:
+        id_sessiones = sorted(id_sessiones)
 
     for id_session in id_sessiones:
         '''
@@ -853,10 +856,16 @@ def generate_csv_multiple_sessions(request):
         values = sensor.record_set.filter(log_id=id_session).values_list('value', flat=True)
         # print(sensor_name)
         dictionary[id_session] = list(values)
-
+        # dictionary['SESSION_ID'] = [id_session] * len(values)
+        # print(dictionary)
     dict_df = pandas.DataFrame({key: pandas.Series(value) for key, value in dictionary.items()}, dtype=float)
     clean_dataset(dict_df)
-    dict_df = dict_df.set_index(dict_df.columns[0]).transpose()
+    # dict_df = dict_df.set_index(dict_df.columns[0]).transpose()
+    dict_df = dict_df.transpose()
+    dict_df.insert(loc=0, column='SESSION_ID', value='')
+
+    for id_session in id_sessiones:
+        dict_df.loc[id_session, 'SESSION_ID'] = id_session
 
     filename = sensor.user_short_name.replace('%', '').replace('₂', '2'). \
                    replace(' ', '_').replace('(', '_').replace(')', '').replace('.', '_').upper() + '_all_sessions'
@@ -869,6 +878,23 @@ def generate_csv_multiple_sessions(request):
 
     return response
     # return HttpResponse('OK')
+
+
+@csrf_exempt
+def obtain_type_sessions_2(request, type_session):
+    logs = Log.objects.filter(type=type_session)
+    dataframe_final = pandas.DataFrame()
+
+    for log in logs:
+        dataframe = obtain_dataframe(log.id)
+        dataframe_final = dataframe_final.append(dataframe)
+
+    clean_dataset(dataframe_final)
+
+    dataframe_final.reset_index(drop=True, inplace=True)
+    results = dataframe_final.to_json(orient='split')
+
+    return JsonResponse(results, safe=False)
 
 
 def export_sensors_for_react_app(request):

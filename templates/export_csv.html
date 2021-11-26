@@ -80,7 +80,33 @@
                 Generar CSV
             </button>
         </form>
+
         <hr>
+        <h3>Exportar sessiones por tipo (1 sesión, 1 fila) (CSV)</h3>
+        <select name="types" id="type_sessions_list" style="text-align: center">
+            <option value="">Seleccione un tipo de session</option>
+            {% if types %}
+                {% for type in types %}
+                    <option value="{{ type }}">Tipo {{ type }}</option>
+                {% endfor %}
+                <br>
+            {% endif %}
+        </select>
+        <hr>
+
+        <h3>Exportar sessiones por tipo (CSV)</h3>
+
+        <select name="types" id="type_sessions_list2" style="text-align: center">
+            <option value="">Seleccione un tipo de session</option>
+            {% if types %}
+                {% for type in types %}
+                    <option value="{{ type }}">Tipo {{ type }}</option>
+                {% endfor %}
+                <br>
+            {% endif %}
+        </select>
+        <hr>
+
         <h3>Exportar resumen de todas las sesiones (CSV)</h3>
         <a href="{% url 'download_summary_all_sessions' %}" class="btn btn-primary" role="button">Exportar</a>
     </div>
@@ -118,6 +144,82 @@
             $('input[type="checkbox"]').each(function () {
                 this.checked = false;
             });
+        })
+
+        const DownloadCsv = (function () {
+            const a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
+            return function (data, fileName) {
+                const blob = new Blob([data], {
+                        type: "octet/stream"
+                    }),
+                    url = window.URL.createObjectURL(blob);
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            };
+        }());
+
+        function ConvertToCSV(objArray) {
+            var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+            var str = array.columns + '\r\n';
+
+            for (var i = 0; i < array.index.length; i++) {
+                var line = '';
+                for (var j = 0; j < array.columns.length; j++) {
+                    if (line !== '') line += ','
+                    line += array.data[i][j];
+                }
+                str += line + '\r\n';
+            }
+
+            return str;
+        }
+
+        $("#type_sessions_list").change(function () {
+            typeSelected = this.value
+
+            $.ajax({
+                type: "get",
+                url: "/types_of_sessions/" + this.value + "/",
+                success: function (data) {
+
+                    /*
+                      var fileName = this.Response('Content-Disposition').split("filename=")[1];
+                      console.info(fileName);
+                    */
+
+                    data = JSON.parse(data)
+
+                    filename = 'all_sessions_type_' + typeSelected + '.csv'
+                    res = ConvertToCSV(data)
+                    DownloadCsv(res, filename)
+                }
+            })
+        })
+
+        $("#type_sessions_list2").change(function () {
+            typeSelected = this.value
+
+            $.ajax({
+                type: "get",
+                url: "/types_of_sessions_2/" + this.value + "/",
+                success: function (data) {
+
+                    /*
+                      var fileName = this.Response('Content-Disposition').split("filename=")[1];
+                      console.info(fileName);
+                    */
+
+                    data = JSON.parse(data)
+                    console.log(data)
+                    filename = 'all_sessions_type_' + typeSelected + '.csv'
+                    res = ConvertToCSV(data)
+                    DownloadCsv(res, filename)
+                }
+            })
         })
 
         $("#sessionList").change(function () {
