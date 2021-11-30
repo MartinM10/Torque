@@ -202,7 +202,7 @@ def pca_request(request):
 
         two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
         explained_variance_ratio, cluster_list, more_important_features, svm_params, df, original_df = \
-            km.start(csv_file, filename=filename)
+            km.start(csv_file, filename)
 
         complete_name = filename
         dataset_id = None
@@ -232,10 +232,11 @@ def pca_request(request):
             sessions_id = original_df['SESSION_ID'].tolist()
             clusters = df['cluster'].tolist()
             count = 0
-
-            for session_id in sessions_id:
-                log = Log.objects.filter(id=session_id).update(type=clusters[count])
-                count += 1
+            
+            if 'summary' in filename:
+                for session_id in sessions_id:
+                    log = Log.objects.filter(id=session_id).update(type=clusters[count])
+                    count += 1
 
             dataset = Dataset.objects.filter(name=complete_name)
 
@@ -278,7 +279,7 @@ def pca_request(request):
         # svm_plot = svm.start(
         #    svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
         svm_plot = None
-        
+
         if np.any(explained_variance_ratio):
             explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
                                         range(len(explained_variance_ratio))]

@@ -268,7 +268,8 @@ def start(csv_file, filename):
         # Find elbow
         # print('wcs: ', wcss)
         kneedle = KneeLocator(range(1, iterations), wcss, S=1.0, curve='convex', direction='decreasing')
-        # print('knee: ', kneedle.knee)
+        clusters_number = kneedle.knee
+
         # Plot wcss
         plt.figure(figsize=(6, 6))
         plt.plot(range(1, iterations), wcss, marker='o', linestyle='--')
@@ -280,7 +281,6 @@ def start(csv_file, filename):
         wcss_plot = get_base64(plt)
         plt.clf()
         # print('knee: ', kneedle.knee)
-        clusters_number = kneedle.knee
 
         # Run k-means with the number of cluster chosen
         kmeans_pca = KMeans(n_clusters=clusters_number, init='k-means++', random_state=42)
