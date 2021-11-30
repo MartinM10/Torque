@@ -266,7 +266,7 @@ def start(csv_file, filename):
         # Find elbow
         # print('wcs: ', wcss)
         kneedle = KneeLocator(range(1, df.shape[0]), wcss, S=1.0, curve='convex', direction='decreasing')
-        print('knee: ', kneedle.knee)
+        # print('knee: ', kneedle.knee)
         # Plot wcss
         plt.figure(figsize=(6, 6))
         plt.plot(range(1, df.shape[0]), wcss, marker='o', linestyle='--')
