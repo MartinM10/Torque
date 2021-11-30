@@ -73,7 +73,7 @@ def get_pca_more_important_features(df, features, pca, components_number):
     return more_important_features
 
 
-def start(csv_file):
+def start(csv_file, filename):
     # Read CSV file
     df = pd.read_csv(csv_file)
     original_df = df.copy()
@@ -95,7 +95,7 @@ def start(csv_file):
     x = StandardScaler().fit_transform(x)
     wcss = []
 
-    if len(features) > 10:
+    if 'all' not in filename:
 
         # Generate cumulative explanined variance ratio plot
         plt.rc('axes', labelsize=16)  # Only needed first time
@@ -258,22 +258,19 @@ def start(csv_file):
                 original_df)
 
     else:
-        for i in range(1, 11):
-            kmeans_pca = KMeans(n_clusters=i, init='k-means++',
-                                random_state=42)
+        for i in range(1, df.shape[0]):
+            kmeans_pca = KMeans(n_clusters=i, init='k-means++', random_state=42)
             kmeans_pca.fit(x)
             wcss.append(kmeans_pca.inertia_)
 
         # Find elbow
         # print('wcs: ', wcss)
-        kneedle = KneeLocator(range(1, 11), wcss, S=1.0,
-                              curve='convex', direction='decreasing')
-
+        kneedle = KneeLocator(range(1, df.shape[0]), wcss, S=1.0, curve='convex', direction='decreasing')
+        print('knee: ', kneedle.knee)
         # Plot wcss
         plt.figure(figsize=(6, 6))
-        plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
-        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
-            1], linestyles='dashed', colors='m', label='Elbow')
+        plt.plot(range(1, df.shape[0]), wcss, marker='o', linestyle='--')
+        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='m', label='Elbow')
         plt.legend()
         plt.xlabel("Clusters number", fontsize=14)
         plt.ylabel("WCSS", fontsize=14)
