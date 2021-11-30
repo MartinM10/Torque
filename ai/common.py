@@ -1,7 +1,7 @@
 import base64
 import io
 
-COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'w', 'o', 'p']
+COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 
 
 def generate_pc_columns_names(number):
