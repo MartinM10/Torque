@@ -95,6 +95,8 @@ def start(csv_file, filename):
     x = StandardScaler().fit_transform(x)
     wcss = []
 
+    colors = COLOR_LIST
+
     if 'all' not in filename:
 
         # Generate cumulative explanined variance ratio plot
@@ -132,8 +134,7 @@ def start(csv_file, filename):
         # Fit kmeans using the data from PCA
         wcss = []
         for i in range(1, 11):
-            kmeans_pca = KMeans(n_clusters=i, init='k-means++',
-                                random_state=42)
+            kmeans_pca = KMeans(n_clusters=i, init='k-means++', random_state=42)
             kmeans_pca.fit(pca_scores)
             wcss.append(kmeans_pca.inertia_)
 
@@ -145,8 +146,7 @@ def start(csv_file, filename):
         # Plot wcss
         plt.figure(figsize=(6, 6))
         plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
-        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[
-            1], linestyles='dashed', colors='m', label='Elbow')
+        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='m', label='Elbow')
         plt.legend()
         plt.xlabel("Clusters number", fontsize=14)
         plt.ylabel("WCSS", fontsize=14)
@@ -157,22 +157,18 @@ def start(csv_file, filename):
         clusters_number = kneedle.knee
 
         # Run k-means with the number of cluster chosen
-        kmeans_pca = KMeans(n_clusters=clusters_number,
-                            init='k-means++', random_state=42)
+        kmeans_pca = KMeans(n_clusters=clusters_number, init='k-means++', random_state=42)
 
         # Fit data with the k-means pca model
         kmeans_pca.fit(pca_scores)
 
         # Create dataset with results from PCA and the cluster column
-        df_kmeans_pca = pd.concat(
-            [df.reset_index(drop=True), pd.DataFrame(pca_scores)], axis=1)
-        df_kmeans_pca.columns.values[-components_number:] = generate_pc_columns_names(
-            components_number)
+        df_kmeans_pca = pd.concat([df.reset_index(drop=True), pd.DataFrame(pca_scores)], axis=1)
+        df_kmeans_pca.columns.values[-components_number:] = generate_pc_columns_names(components_number)
         df_kmeans_pca['Kmeans value'] = kmeans_pca.labels_
 
         # Add cluster column with a label associated to each kmeans value
-        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(
-            generate_cluster_map(clusters_number))
+        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(generate_cluster_map(clusters_number))
 
         # Create columns labels for each component
         pc_colums_names = generate_pc_columns_names(components_number)
@@ -203,7 +199,6 @@ def start(csv_file, filename):
         '''
         # #############################################################################
 
-        colors = COLOR_LIST
         labels = kmeans_pca.labels_
         cluster_centers = kmeans_pca.cluster_centers_
         # print('cluster centers: ', cluster_centers)
@@ -258,18 +253,25 @@ def start(csv_file, filename):
                 original_df)
 
     else:
-        for i in range(1, df.shape[0]):
+        iterations = 0
+
+        if df.shape[0] > 20:
+            iterations = 11
+        else:
+            iterations = df.shape[0]
+
+        for i in range(1, iterations):
             kmeans_pca = KMeans(n_clusters=i, init='k-means++', random_state=42)
             kmeans_pca.fit(x)
             wcss.append(kmeans_pca.inertia_)
 
         # Find elbow
         # print('wcs: ', wcss)
-        kneedle = KneeLocator(range(1, df.shape[0]), wcss, S=1.0, curve='convex', direction='decreasing')
+        kneedle = KneeLocator(range(1, iterations), wcss, S=1.0, curve='convex', direction='decreasing')
         # print('knee: ', kneedle.knee)
         # Plot wcss
         plt.figure(figsize=(6, 6))
-        plt.plot(range(1, df.shape[0]), wcss, marker='o', linestyle='--')
+        plt.plot(range(1, iterations), wcss, marker='o', linestyle='--')
         plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='m', label='Elbow')
         plt.legend()
         plt.xlabel("Clusters number", fontsize=14)
@@ -281,26 +283,21 @@ def start(csv_file, filename):
         clusters_number = kneedle.knee
 
         # Run k-means with the number of cluster chosen
-        kmeans_pca = KMeans(n_clusters=clusters_number,
-                            init='k-means++', random_state=42)
+        kmeans_pca = KMeans(n_clusters=clusters_number, init='k-means++', random_state=42)
 
         # Fit data with the k-means pca model
         kmeans_pca.fit(x)
 
         # Create dataset with results from PCA and the cluster column
-        df_kmeans_pca = pd.concat(
-            [df.reset_index(drop=True), pd.DataFrame(x)], axis=1)
-        df_kmeans_pca.columns.values[-len(features):] = generate_pc_columns_names(
-            len(features))
+        df_kmeans_pca = pd.concat([df.reset_index(drop=True), pd.DataFrame(x)], axis=1)
+        df_kmeans_pca.columns.values[-len(features):] = generate_pc_columns_names(len(features))
         df_kmeans_pca['Kmeans value'] = kmeans_pca.labels_
 
         # Add cluster column with a label associated to each kmeans value
-        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(
-            generate_cluster_map(clusters_number))
+        df_kmeans_pca['Cluster'] = df_kmeans_pca['Kmeans value'].map(generate_cluster_map(clusters_number))
 
         # #############################################################################
 
-        colors = COLOR_LIST
         labels = kmeans_pca.labels_
         cluster_centers = kmeans_pca.cluster_centers_
         # print('cluster centers: ', cluster_centers)
