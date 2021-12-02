@@ -90,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'torque_db',
         'USER': 'martin',
-        'PASSWORD': 'Mj14capo.',
+        'PASSWORD': 'martinjs',
         'HOST': 'localhost',
         # 3306 por defecto,
         'PORT': '3306',
