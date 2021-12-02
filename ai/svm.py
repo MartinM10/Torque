@@ -60,11 +60,9 @@ def start(df, x_scaled_reduced, clusters_number):
     x_train_scaled_reduced = pca1.fit_transform(x_train_scaled)
     x_test_scaled_reduced = pca1.fit_transform(x_test_scaled)
 
-    parameters = {'SVM__C': (0.001, 0.1, 10,
-                             100, 10e5), 'SVM__gamma': (0.1, 0.01)}
+    parameters = {'SVM__C': (0.001, 0.1, 10, 100, 10e5), 'SVM__gamma': (0.1, 0.01)}
 
-    create_grid = GridSearchCV(
-        pipeline, param_grid=parameters, cv=clusters_number)  # check
+    create_grid = GridSearchCV(pipeline, param_grid=parameters, cv=clusters_number - 1)  # check
     create_grid.fit(x_train, y_train)
 
     svm = SVC(kernel='rbf', C=float(create_grid.best_params_[
@@ -143,11 +141,9 @@ def classify_svm(csv_file, original_dataset_rows_number):
     x_train_scaled_reduced = pca1.fit_transform(x_train_scaled)
     x_test_scaled_reduced = pca1.fit_transform(x_test_scaled)
 
-    parameters = {'SVM__C': (0.001, 0.1, 10,
-                             100, 10e5), 'SVM__gamma': (0.1, 0.01)}
+    parameters = {'SVM__C': (0.001, 0.1, 10, 100, 10e5), 'SVM__gamma': (0.1, 0.01)}
 
-    create_grid = GridSearchCV(
-        pipeline, param_grid=parameters, cv=clusters_number - 1)  # check
+    create_grid = GridSearchCV(pipeline, param_grid=parameters, cv=clusters_number - 1)  # check
     create_grid.fit(x_train, y_train)
 
     svm = SVC(kernel='rbf', C=float(create_grid.best_params_[

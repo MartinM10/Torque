@@ -5,18 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans, MeanShift, estimate_bandwidth
-import random
-import base64
-import io
-import json
+from sklearn.cluster import KMeans
 import operator
 from kneed import KneeLocator
 # pylint: disable=relative-beyond-top-level
 from .common import generate_cluster_labels, get_base64, COLOR_LIST, generate_pc_columns_names
-
-
-# COLOR_LIST = ['b', 'g', 'r', 'c', 'm', 'y']
 
 
 def generate_cluster_map(number):
@@ -273,7 +266,7 @@ def start(csv_file, filename):
         # Plot wcss
         plt.figure(figsize=(6, 6))
         plt.plot(range(1, iterations), wcss, marker='o', linestyle='--')
-        plt.vlines(kneedle.knee, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='m', label='Elbow')
+        plt.vlines(clusters_number, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='m', label='Elbow')
         plt.legend()
         plt.xlabel("Clusters number", fontsize=14)
         plt.ylabel("WCSS", fontsize=14)

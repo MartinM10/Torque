@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
+import errno
 import os
 from pathlib import Path
 
@@ -73,6 +74,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Torque.wsgi.application'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 '''
@@ -88,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'torque_db',
         'USER': 'martin',
-        'PASSWORD': 'martinjs',
+        'PASSWORD': 'Mj14capo.',
         'HOST': 'localhost',
         # 3306 por defecto,
         'PORT': '3306',
@@ -137,7 +139,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
@@ -149,3 +151,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # MEDIA_URL = '/media/'
 # FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 # FILE_UPLOAD_PERMISSIONS = 0o644
+if not os.path.exists('media/reports'):
+    try:
+        os.makedirs('media/reports')
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise

@@ -215,11 +215,11 @@ def pca_request(request):
             session_id = int(complete_name.replace('session', ''))
 
             dataset = Dataset.objects.filter(log_id=session_id)
-            name = 'dataset_session_' + str(session_id)
+            # name = 'dataset_session_' + str(session_id)
 
             if not dataset:
                 with transaction.atomic():
-                    Dataset.objects.create(log_id=session_id, name=name, rows_number=df.shape[0],
+                    Dataset.objects.create(log_id=session_id, name=complete_name, rows_number=df.shape[0],
                                            column_names=list(df.columns.values),
                                            classification_applied=False,
                                            prediction_applied=False).save()
@@ -276,9 +276,8 @@ def pca_request(request):
             )
 
         # Apply SVM to the data labelled by k-means
-        # svm_plot = svm.start(
-        #    svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
-        svm_plot = None
+        svm_plot = svm.start(svm_params['df'], svm_params['x_scaled_reduced'], svm_params['clusters_number'])
+        # svm_plot = None
 
         if np.any(explained_variance_ratio):
             explained_variance_ratio = [explained_variance_ratio[i] * 100 for i in
@@ -590,6 +589,11 @@ def download_summary_all_sessions(request):
             session = dataframe['SESSION_ID'].tolist()
             dict_dataframe['SESSION_ID'] = session
         '''
+
+        if 'TOTAL_TRIPMSPEED' in dataframe.columns:
+            moving_mean_speed = dataframe['TOTAL_TRIPMSPEED'].tolist()
+            dict_dataframe['TOTAL_TRIPMSPEED'] = moving_mean_speed
+
         if 'TOTAL_FUEL_USED' in dataframe.columns:
             fuel = dataframe['TOTAL_FUEL_USED'].tolist()
             dict_dataframe['TOTAL_FUEL_USED'] = fuel
