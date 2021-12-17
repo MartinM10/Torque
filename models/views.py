@@ -44,6 +44,17 @@ TIME_LAST_HTTP_REQUEST = datetime.datetime.now()
 TIME_TO_CONSIDER_NEW_SESSION = datetime.timedelta(minutes=1)
 
 exclude_sensor_list = ['',
+                       'GPS Latitude',
+                       'GPS Longitude',
+                       'Android device Battery Level',
+                       # Nuevos
+                       'GPS Accuracy',
+                       'GPS Satellites',
+                       'GPS Bearing',
+                       'GPS vs OBD Speed difference',
+                       ]
+'''
+exclude_sensor_list = ['',
                        'GPS Accuracy',
                        'Speed (GPS)',
                        'GPS Satellites',
@@ -61,8 +72,8 @@ exclude_sensor_list = ['',
                        'Percentage of City driving',
                        'Percentage of Highway driving',
                        'Percentage of Idle driving',
-                       'Level']
-
+                       ]
+'''
 
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
