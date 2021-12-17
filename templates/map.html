@@ -170,6 +170,202 @@
         -->
     </div>
 
+
+
+    {% if dataset and dataset.classification_applied %}
+        <hr>
+        <h2 style="text-align: center">Time series after Clustering</h2>
+        <hr>
+
+        <div class="container-fluid" style="width: 80%; margin-top: 10px;">
+            <div class="row">
+                {% if dataset.kmeans.distance_plot %}
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <div class="card" style="width: 100%">
+                            <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.distance_plot }}" alt=""
+                                 style="width: 100%; height: auto">
+                            <div class="card-body">
+                                <p class="card-text" style="text-align: center">Distance</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if dataset.kmeans.fuel_used_plot %}
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                            <div class="card" style="width: 100%">
+                                <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.fuel_used_plot }}"
+                                     alt=""
+                                     style="width: 100%; height: auto">
+                                <div class="card-body">
+                                    <p class="card-text" style="text-align: center">Fuel Used</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    </div>
+
+                    <div class="row">
+                        {% if dataset.kmeans.average_co2_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img"
+                                         src="data:image/png;base64,{{ dataset.kmeans.average_co2_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Average CO2</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if dataset.kmeans.co2_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.co2_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Instant CO2</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        {% if dataset.kmeans.instant_speed_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img"
+                                         src="data:image/png;base64,{{ dataset.kmeans.instant_speed_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Instant Speed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if dataset.kmeans.trip_speed_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img"
+                                         src="data:image/png;base64,{{ dataset.kmeans.trip_speed_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Average Trip Speed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        {% if dataset.kmeans.trip_lpk_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.trip_lpk_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Average Litres Per Kilometer</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if dataset.kmeans.coolant_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.coolant_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Coolant</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        {% if dataset.kmeans.trip_moving_speed_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img"
+                                         src="data:image/png;base64,{{ dataset.kmeans.trip_moving_speed_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Average Speed (Moving)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if dataset.kmeans.idle_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.idle_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">% Idle</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        {% if dataset.kmeans.moving_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.moving_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">% Moving</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if dataset.kmeans.highway_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.highway_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">% Highway</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="row">
+                        {% if dataset.kmeans.stopped_plot %}
+                            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                                <div class="card" style="width: 100%">
+                                    <img class="card-img" src="data:image/png;base64,{{ dataset.kmeans.stopped_plot }}"
+                                         alt=""
+                                         style="width: 100%; height: auto">
+                                    <div class="card-body">
+                                        <p class="card-text" style="text-align: center">Time stoped</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+        </div>
+    {% endif %}
+
+    </div>
     <!--
     <div class="container-fluid" style="width: 90%; margin-top: 10px;">
         <h3 style="text-align: center"><b>Resumen</b></h3>

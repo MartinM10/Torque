@@ -305,7 +305,7 @@ def start(csv_file, filename):
         # plt.title("Estimated number of clusters: %d" % n_clusters_, fontsize=16)
         plt.legend()
         plt.grid()
-        two_first_components_plot = get_base64(plt)  # To export
+        two_first_components_plot = get_base64(plt).decode('ascii')  # To export
         plt.close()
 
         # ==============================================================================
@@ -342,7 +342,7 @@ def start(csv_file, filename):
 
         return (
             None,  # all_time_series
-            two_first_components_plot.decode('ascii'),
+            two_first_components_plot,
             components_and_features_plot.decode('ascii'),
             wcss_plot.decode('ascii'),
             cumulative_explained_variance_ratio_plot,
@@ -459,14 +459,14 @@ def start(csv_file, filename):
         else:
 
             # variables used for plot time series
-            all_time_series = []
+            all_time_series = {}
+            list_features = list(features)
             index_time_feature = list(features).index('TRIPTIME')
 
             for i in range(len(features)):
-                if not i == 1:
-                    all_time_series.append(
-                        get_time_series(i, index_time_feature, features, x, n_clusters_, labels, cluster_centers,
-                                        types))
+                if not i == index_time_feature:
+                    all_time_series[list_features[i]] = get_time_series(i, index_time_feature, features, x, n_clusters_,
+                                                                        labels, cluster_centers, types)
 
         # ==============================================================================
         # Set data for SVM

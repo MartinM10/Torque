@@ -52,6 +52,7 @@ exclude_sensor_list = ['',
                        'GPS Satellites',
                        'GPS Bearing',
                        'GPS vs OBD Speed difference',
+                       'Speed (GPS)'
                        ]
 '''
 exclude_sensor_list = ['',
@@ -74,6 +75,7 @@ exclude_sensor_list = ['',
                        'Percentage of Idle driving',
                        ]
 '''
+
 
 class LogViewSet(viewsets.ModelViewSet):
     serializer_class = LogSerializer
@@ -274,16 +276,77 @@ def pca_request(request):
                                                  classification_applied=True,
                                                  prediction_applied=False
                                                  ).save()
+            else:
+                dataset.classification_applied = True
+                dataset.save()
 
         kmeans = KMeans.objects.filter(dataset_id=dataset_id)
 
+        distance_plot = trip_moving_speed_plot = trip_speed_plot = fuel_used_plot = co2_plot = average_co2_plot = \
+            trip_lpk_plot = coolant_plot = instant_speed_plot = revs_plot = litres_per_km_plot = stopped_plot = \
+            moving_plot = city_plot = highway_plot = idle_plot = None
+
+        if all_time_series:
+            all_time_series = dict(all_time_series)
+
+            for key, value in all_time_series.items():
+                if key == 'TRIP':
+                    distance_plot = value
+                if key == 'TRIPMSPEED':
+                    trip_moving_speed_plot = value
+                if key == 'TRIP_SPEED':
+                    trip_speed_plot = value
+                if key == 'FUEL_USED':
+                    fuel_used_plot = value
+                if key == 'CO2':
+                    co2_plot = value
+                if key == 'AV_CO2':
+                    average_co2_plot = value
+                if key == 'TRIP_LPK':
+                    trip_lpk_plot = value
+                if key == 'COOLANT':
+                    coolant_plot = value
+                if key == 'SPEED':
+                    instant_speed_plot = value
+                if key == 'REVS':
+                    revs_plot = value
+                if key == 'LPK':
+                    litres_per_km_plot = value
+                if key == 'STOPPED':
+                    stopped_plot = value
+                if key == 'MOVING':
+                    moving_plot = value
+                if key == 'CITY':
+                    city_plot = value
+                if key == 'HGWY':
+                    highway_plot = value
+                if key == 'IDLE':
+                    idle_plot = value
+
         if not kmeans:
 
-            KMeans(two_first_components_plot=two_first_components_plot,
+            KMeans(distance_plot=distance_plot,
+                   trip_moving_speed_plot=trip_moving_speed_plot,
+                   trip_speed_plot=trip_speed_plot,
+                   fuel_used_plot=fuel_used_plot,
+                   co2_plot=co2_plot,
+                   average_co2_plot=average_co2_plot,
+                   trip_lpk_plot=trip_lpk_plot,
+                   coolant_plot=coolant_plot,
+                   instant_speed_plot=instant_speed_plot,
+                   revs_plot=revs_plot,
+                   litres_per_km_plot=litres_per_km_plot,
+                   stopped_plot=stopped_plot,
+                   moving_plot=moving_plot,
+                   city_plot=city_plot,
+                   highway_plot=highway_plot,
+                   idle_plot=idle_plot,
+                   #
+                   two_first_components_plot=two_first_components_plot,
                    explained_variance_ratio=explained_variance_ratio,
                    components_and_features_plot=components_and_features_plot,
                    wcss_plot=wcss_plot,
-                   acumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
+                   cumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
                    cluster_list=cluster_list,
                    more_important_features=more_important_features,
                    dataset_id=dataset_id
@@ -293,11 +356,28 @@ def pca_request(request):
 
         else:
             kmeans.update(
+                distance_plot=distance_plot,
+                trip_moving_speed_plot=trip_moving_speed_plot,
+                trip_speed_plot=trip_speed_plot,
+                fuel_used_plot=fuel_used_plot,
+                co2_plot=co2_plot,
+                average_co2_plot=average_co2_plot,
+                trip_lpk_plot=trip_lpk_plot,
+                coolant_plot=coolant_plot,
+                instant_speed_plot=instant_speed_plot,
+                revs_plot=revs_plot,
+                litres_per_km_plot=litres_per_km_plot,
+                stopped_plot=stopped_plot,
+                moving_plot=moving_plot,
+                city_plot=city_plot,
+                highway_plot=highway_plot,
+                idle_plot=idle_plot,
+                #
                 two_first_components_plot=two_first_components_plot,
                 explained_variance_ratio=explained_variance_ratio,
                 components_and_features_plot=components_and_features_plot,
                 wcss_plot=wcss_plot,
-                acumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
+                cumulative_explained_variance_ratio_plot=cumulative_explained_variance_ratio_plot,
                 cluster_list=cluster_list,
                 more_important_features=more_important_features
             )
@@ -728,11 +808,11 @@ def obtain_dataframe(session_id):
     dict_df.insert(loc=len(dict_df.columns), column='TOTAL_CAR_OFF', value=stops['count_car_off'])
     '''
     # Summary
-    summary = obtain_summary(session_id, dict_df)
-
+    # summary = obtain_summary(session_id, dict_df)
+    obtain_summary(session_id, dict_df)
     dataset = Dataset.objects.filter(log_id=session_id)
     if not dataset:
-        name = 'dataset_session_' + str(session_id)
+        name = 'session' + str(session_id)
 
         with transaction.atomic():
             Dataset.objects.create(log_id=session_id, name=name, rows_number=dict_df.shape[0],
@@ -1692,6 +1772,10 @@ def session_in_map(request, session_id):
         heatmap.set_title('Correlation Heatmap', fontdict={'fontsize': 12}, pad=12)
         heatmap_plot = get_base64(plt, 'tight')
         heatmap_plot = heatmap_plot.decode('ascii')
+    plt.close()
+
+    # Results of classification
+    dataset = Dataset.objects.get(log=session)
 
     context = {
         'data': data,
@@ -1710,7 +1794,8 @@ def session_in_map(request, session_id):
         'address_list': address_list,
         'start_coordinates': start_coordinates,
         'finish_coordinates': finish_coordinates,
-        'heatmap_plot': heatmap_plot
+        'heatmap_plot': heatmap_plot,
+        'dataset': dataset,
     }
 
     return render(request, 'map.html', context=context)

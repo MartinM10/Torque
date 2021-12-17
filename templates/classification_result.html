@@ -98,9 +98,9 @@
         {% endif %}
 
         {% if all_time_series %}
-            {% for serie in all_time_series %}
+            {% for value in all_time_series.values %}
                 <div class="card" style="width: 100%">
-                    <img class="card-img" src="data:image/png;base64,{{ serie }}" alt=""
+                    <img class="card-img" src="data:image/png;base64,{{ value }}" alt=""
                          style="width: 40%; height: auto">
                     <div class="card-body">
                         <p class="card-text">Two Principal Components plot by clusters</p>

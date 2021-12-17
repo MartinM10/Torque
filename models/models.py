@@ -84,11 +84,29 @@ class Prediction(models.Model):
 
 
 class KMeans(models.Model):
+    # Time series
+    distance_plot = models.TextField(null=True)
+    trip_moving_speed_plot = models.TextField(null=True)
+    trip_speed_plot = models.TextField(null=True)
+    fuel_used_plot = models.TextField(null=True)
+    co2_plot = models.TextField(null=True)
+    average_co2_plot = models.TextField(null=True)
+    trip_lpk_plot = models.TextField(null=True)
+    coolant_plot = models.TextField(null=True)
+    instant_speed_plot = models.TextField(null=True)
+    revs_plot = models.TextField(null=True)
+    litres_per_km_plot = models.TextField(null=True)
+    stopped_plot = models.TextField(null=True)
+    moving_plot = models.TextField(null=True)
+    city_plot = models.TextField(null=True)
+    highway_plot = models.TextField(null=True)
+    idle_plot = models.TextField(null=True)
+    #
     two_first_components_plot = models.TextField(null=True)
     explained_variance_ratio = models.TextField(null=True)
     components_and_features_plot = models.TextField(null=True)
     wcss_plot = models.TextField(null=True)
-    acumulative_explained_variance_ratio_plot = models.TextField(null=True)
+    cumulative_explained_variance_ratio_plot = models.TextField(null=True)
     cluster_list = models.TextField(null=True)
     more_important_features = models.TextField(null=True)
     dataset = models.OneToOneField(Dataset, null=True, blank=True, on_delete=models.SET_NULL)

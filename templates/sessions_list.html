@@ -29,6 +29,7 @@
                     <th style="text-align: center">Id</th>
                     <th style="text-align: center">Nombre</th>
                     <th style="text-align: center">Fecha</th>
+                    <th style="text-align: center">Tipo</th>
                     <th style="text-align: center">Map</th>
                     <th style="text-align: center">CSV</th>
                 </tr>
@@ -39,6 +40,11 @@
                         <td>{{ session.id }}</td>
                         <td>{{ session.email }}</td>
                         <td>{{ session.session }}</td>
+                        {% if session.type %}
+                            <td>{{ session.type }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
                         <td><a href="{% url 'session_map' session.id %}">Ver en el mapa</a></td>
                         <td><a href="{% url 'download' session.id %}">Descargar</a></td>
                     </tr>
