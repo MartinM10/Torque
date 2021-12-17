@@ -39,13 +39,29 @@ geolocator = Nominatim(user_agent="Torque")
 # rev = RateLimiter(geolocator.reverse, min_delay_seconds=0.001)
 
 logging.basicConfig(filename='./logs/InfoLog.log', level=logging.INFO)
-logging.basicConfig(filename='./logs/WarningLog.log', level=logging.WARNING)
-logging.basicConfig(filename='./logs/ErrorLog.log', level=logging.ERROR)
 
 TIME_LAST_HTTP_REQUEST = datetime.datetime.now()
 TIME_TO_CONSIDER_NEW_SESSION = datetime.timedelta(minutes=1)
 
-exclude_sensor_list = ['', 'GPS Latitude', 'GPS Longitude', 'Android device Battery Level']
+exclude_sensor_list = ['',
+                       'GPS Accuracy',
+                       'Speed (GPS)',
+                       'GPS Satellites',
+                       'GPS Bearing',
+                       'GPS vs OBD Speed difference',
+                       'Average trip speed(whilst moving only)',
+                       'GPS Latitude',
+                       'GPS Longitude',
+                       'Android device Battery Level',
+                       'Trip time(whilst stationary)',
+                       'Trip time(whilst moving)',
+                       'Average trip speed(whilst stopped or moving)',
+                       'CO₂ in g/km (Average)',
+                       'Trip average Litres/100 KM',
+                       'Percentage of City driving',
+                       'Percentage of Highway driving',
+                       'Percentage of Idle driving',
+                       'Level']
 
 
 class LogViewSet(viewsets.ModelViewSet):
@@ -200,9 +216,9 @@ def pca_request(request):
         csv_file = request.FILES['file']
         filename = csv_file.name
 
-        two_first_components_plot, components_and_features_plot, wcss_plot, cumulative_explained_variance_ratio_plot, \
-        explained_variance_ratio, cluster_list, more_important_features, svm_params, df, original_df = \
-            km.start(csv_file, filename)
+        all_time_series, two_first_components_plot, components_and_features_plot, wcss_plot, \
+        cumulative_explained_variance_ratio_plot, explained_variance_ratio, cluster_list, \
+        more_important_features, svm_params, df, original_df = km.start(csv_file, filename)
 
         complete_name = filename
         dataset_id = None
@@ -232,7 +248,7 @@ def pca_request(request):
             sessions_id = original_df['SESSION_ID'].tolist()
             clusters = df['cluster'].tolist()
             count = 0
-            
+
             if 'summary' in filename:
                 for session_id in sessions_id:
                     log = Log.objects.filter(id=session_id).update(type=clusters[count])
@@ -289,6 +305,7 @@ def pca_request(request):
             filename = filename.replace('csv', 'pdf')
 
         context = {
+            'all_time_series': all_time_series,
             'twoFirstComponentsPlot': two_first_components_plot,
             'componentsAndFeaturesPlot': components_and_features_plot,
             'wcssPlot': wcss_plot,

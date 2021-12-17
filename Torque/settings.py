@@ -157,3 +157,10 @@ if not os.path.exists('media/reports'):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+if not os.path.exists('logs/'):
+    try:
+        os.makedirs('logs/')
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise

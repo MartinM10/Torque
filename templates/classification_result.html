@@ -12,8 +12,10 @@
 
     {% if moreImportantFeatures %}
         <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
-
-            <h2>More important features for principal components</h2>
+            <hr>
+            <h2>PCA</h2>
+            <hr>
+            <h4>More important features for principal components</h4>
             <p>The most contributory features for each principal component. Each value represents the percentage of the
                 coeficient for the given feature. It corresponds to the first coeficient percetanges that their sum is
                 equal
@@ -32,7 +34,7 @@
     {% if explainedVarianceRatio %}
         <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
 
-            <h2>Explained variance ratio</h2>
+            <h4>Explained variance ratio</h4>
             <p>How much information (variance) corresponds to each of the Principal Components</p>
             {% for variance in explainedVarianceRatio %}
                 <strong>Principal Component {{ forloop.counter|add:"-1" }}</strong>
@@ -41,48 +43,82 @@
 
         </div>
     {% endif %}
-
     <div class="container-fluid" style="width: 100%; margin-top: 10px;  text-align: center">
 
-        <div class="card" style="width: 100%">
-            <img class="card-img" src="data:image/png;base64,{{ cumulativeExplainedVarianceRatioPlot }}" alt=""
-                 style="width: 40%; height: auto">
-            <div class="card-body">
-                <p class="card-text">Amount of variance (y axis) depending on the number of components</p>
+        {% if componentsAndFeaturesPlot %}
+            <div class="card" style="width: 100%">
+                <img class="card-img-overlay" src="data:image/png;base64,{{ componentsAndFeaturesPlot }}" alt=""
+                     style="width: 55%; height: auto">
+                <div class="card-body">
+                    <p class="card-text">Chart about how the features affect each component</p>
+                </div>
             </div>
-        </div>
-        <br>
-        <div class="card" style="width: 100%">
-            <img class="card-img-top" src="data:image/png;base64,{{ wcssPlot }}" alt=""
-                 style="width: 40%; height: auto">
-            <div class="card-body">
-                <p class="card-text"> Within Cluster Sum of Squares (WCSS) measures the squared average distance of all
-                    the points within a cluster to the cluster centroid</p>
+            <br>
+        {% endif %}
+
+        {% if  cumulativeExplainedVarianceRatioPlot %}
+            <div class="card" style="width: 100%">
+                <img class="card-img" src="data:image/png;base64,{{ cumulativeExplainedVarianceRatioPlot }}" alt=""
+                     style="width: 40%; height: auto">
+                <div class="card-body">
+                    <p class="card-text">Amount of variance (y axis) depending on the number of components</p>
+                </div>
             </div>
-        </div>
-        <br>
-        <div class="card" style="width: 100%">
-            <img class="card-img" src="data:image/png;base64,{{ twoFirstComponentsPlot }}" alt=""
-                 style="width: 40%; height: auto">
-            <div class="card-body">
-                <p class="card-text">Two Principal Components plot by clusters</p>
+            <br>
+        {% endif %}
+
+        {% if wcssPlot %}
+            <hr>
+            <h2>Clustering by k-means</h2>
+            <hr>
+            <h4>The elbow method</h4>
+            <p>The method consists of plotting the explained variation as a function of the number of clusters, and
+                picking the elbow of the curve as the number of clusters to use</p>
+            <div class="card" style="width: 100%">
+                <img class="card-img-top" src="data:image/png;base64,{{ wcssPlot }}" alt=""
+                     style="width: 40%; height: auto">
+                <div class="card-body">
+                    <p class="card-text"> Within Cluster Sum of Squares (WCSS) measures the squared average distance of
+                        all
+                        the points within a cluster to the cluster centroid</p>
+                </div>
             </div>
-        </div>
-        <br>
-        <div class="card" style="width: 100%">
-            <img class="card-img-overlay" src="data:image/png;base64,{{ componentsAndFeaturesPlot }}" alt=""
-                 style="width: 70%; height: auto">
-            <div class="card-body">
-                <p class="card-text">Chart about how the features affect each component</p>
+            <br>
+        {% endif %}
+
+        {% if twoFirstComponentsPlot %}
+            <div class="card" style="width: 100%">
+                <img class="card-img" src="data:image/png;base64,{{ twoFirstComponentsPlot }}" alt=""
+                     style="width: 40%; height: auto">
+                <div class="card-body">
+                    <p class="card-text">Two Principal Components plot by clusters</p>
+                </div>
             </div>
-        </div>
-        <br>
-        <div class="card" style="width: 100%">
-            <img class="card-img" src="data:image/png;base64,{{ svmPlot }}" alt="" style="width: 40%; height: auto">
-            <div class="card-body">
-                <p class="card-text">Two Principal Components plot by categories</p>
+            <br>
+        {% endif %}
+
+        {% if all_time_series %}
+            {% for serie in all_time_series %}
+                <div class="card" style="width: 100%">
+                    <img class="card-img" src="data:image/png;base64,{{ serie }}" alt=""
+                         style="width: 40%; height: auto">
+                    <div class="card-body">
+                        <p class="card-text">Two Principal Components plot by clusters</p>
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+        {% endif %}
+
+        {% if svmPlot %}
+            <div class="card" style="width: 100%">
+                <img class="card-img" src="data:image/png;base64,{{ svmPlot }}" alt="" style="width: 40%; height: auto">
+                <div class="card-body">
+                    <p class="card-text">Two Principal Components plot by categories</p>
+                </div>
             </div>
-        </div>
-        <br>
+            <br>
+        {% endif %}
+
     </div>
 {% endblock html_to_pdf %}

@@ -22,7 +22,7 @@ def generate_svm_color_map(number):
 
 def plot_contours(ax, clf, xx, yy, **params):
     Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape((xx.shape))
+    Z = Z.reshape(xx.shape)
     # print(Z.shape)
     out = ax.contourf(xx, yy, Z, **params)
     return out
@@ -44,8 +44,7 @@ def start(df, x_scaled_reduced, clusters_number):
     cluster_data = df.drop(['cluster'], axis=1)
 
     # Split dataset into train and test sets
-    x_train, x_test, y_train, y_test = train_test_split(
-        cluster_data, df.cluster, test_size=0.25, random_state=30)
+    x_train, x_test, y_train, y_test = train_test_split(cluster_data, df.cluster, test_size=0.25, random_state=30)
 
     # Scale the data for PCA
     scaler1 = StandardScaler()
@@ -62,7 +61,7 @@ def start(df, x_scaled_reduced, clusters_number):
 
     parameters = {'SVM__C': (0.001, 0.1, 10, 100, 10e5), 'SVM__gamma': (0.1, 0.01)}
 
-    create_grid = GridSearchCV(pipeline, param_grid=parameters, cv=clusters_number - 1)  # check
+    create_grid = GridSearchCV(pipeline, param_grid=parameters, cv=clusters_number -1)  # check
     create_grid.fit(x_train, y_train)
 
     svm = SVC(kernel='rbf', C=float(create_grid.best_params_[
@@ -73,7 +72,7 @@ def start(df, x_scaled_reduced, clusters_number):
     x0, x1 = x_test_scaled_reduced[:, 0], x_test_scaled_reduced[:, 1]
     xx, yy = make_meshgrid(x0, x1)
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(6, 6))
     fig.patch.set_facecolor('white')
     cdictl = generate_svm_color_map(clusters_number)
 
@@ -92,11 +91,11 @@ def start(df, x_scaled_reduced, clusters_number):
 
     plot_contours(ax, classify, xx, yy, cmap='seismic', alpha=0.4)
     plt.rc('axes', labelsize=16)  # Only needed first time
-    plt.legend(fontsize=14)
+    plt.legend()
 
     plt.xlabel('pc1', fontsize=12)
     plt.ylabel('pc2', fontsize=12)
-    plt.title('Two Principal Components', fontsize=14)
+    plt.title('Two Principal Components', fontsize=16)
     svm_plot = get_base64(plt)
     plt.clf()
 
