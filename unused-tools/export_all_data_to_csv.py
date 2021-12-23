@@ -75,7 +75,7 @@ if sessions_rows:
         cur.execute(sql)
         rows = cur.fetchall()
 
-        csv_file_path = 'static/data/'
+        csv_file_path = '../static/data/'
         fp = open(csv_file_path + 'data_' + session_id + '.csv', 'w', encoding='utf-8')
 
         cols = [i[0] for i in cur.description]

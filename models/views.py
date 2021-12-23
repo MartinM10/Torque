@@ -1177,6 +1177,9 @@ def using_orm(request, session_id):
 
 @transaction.atomic
 def separe_sessions(request):
+    """Searches for all stored sessions and separates them if the vehicle is stopped for more than 1 minute and 30
+    seconds """
+
     logging.info('SEPARE_SESSIONS STARTED ')
 
     sessions = Log.objects.all()
@@ -1518,6 +1521,8 @@ def obtain_stops(session_id):
 
 
 def session_in_map(request, session_id):
+    """Displays track information and geolocated data"""
+
     sessions = Log.objects.all()
     session = Log.objects.get(id=session_id)
 
@@ -1817,6 +1822,8 @@ def sql_query_longs_lats(sql_query):
 
 @transaction.atomic
 def upload_data(request):
+    """Receives data from the Torque app and stores it in the database"""
+
     session_app = request.GET.get('session')
     id_app = request.GET.get('id')
     email = request.GET.get('eml')

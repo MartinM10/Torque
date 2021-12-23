@@ -8,7 +8,7 @@ from pip._vendor.distlib.compat import raw_input
 fname = raw_input("Enter file name WITHOUT extension: ")
 # fname = "consumo_medio"
 current_dir = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(current_dir, 'static', 'data/')
+path = os.path.join(current_dir, '../static', 'data/')
 data = csv.reader(open(path + fname + '.csv'), delimiter=',')
 
 
